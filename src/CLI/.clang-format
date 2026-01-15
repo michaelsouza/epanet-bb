@@ -1,0 +1,8 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: Empty
+BreakBeforeBraces: Allman
+AccessModifierOffset: -2
+SpaceAfterCStyleCast: true
+Standard: Cpp11

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tree Decomposition - MPI Ranks</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+        }
+
+        svg {
+            display: block;
+        }
+
+        .node circle {
+            stroke-width: 1.5px;
+        }
+
+        .node text {
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #555;
+            stroke-width: 1px;
+        }
+
+        .level-line {
+            stroke: #333;
+            stroke-width: 1px;
+        }
+
+        .decomposition-line {
+            stroke: #c00;
+            stroke-width: 2px;
+            stroke-dasharray: 6, 4;
+        }
+
+        /* Rank colors - 3 distinct colors */
+        .rank0 { fill: #2166ac; stroke: #2166ac; }
+        .rank1 { fill: #d95f02; stroke: #d95f02; }
+        .rank2 { fill: #1b9e77; stroke: #1b9e77; }
+    </style>
+</head>
+<body>
+    <svg id="tree-svg" width="420" height="310"></svg>
+
+    <script>
+        const svg = document.getElementById('tree-svg');
+        const ns = 'http://www.w3.org/2000/svg';
+
+        // Configuration
+        const svgWidth = 420;
+        const nodeRadius = 10;
+        const smallNodeRadius = 7;
+        const centerX = svgWidth / 2;
+        const startY = 30;
+        const levelHeight = 55;
+
+        // Colors for 3 ranks
+        const rankColors = ['#2166ac', '#d95f02', '#1b9e77'];
+        const rankLabels = ['Rank 0', 'Rank 1', 'Rank 2'];
+
+        // Create SVG elements helper
+        function createSVGElement(type, attrs) {
+            const el = document.createElementNS(ns, type);
+            for (const [key, value] of Object.entries(attrs)) {
+                el.setAttribute(key, value);
+            }
+            return el;
+        }
+
+        // Draw a straight link
+        function drawLink(x1, y1, x2, y2, color = '#555') {
+            const path = createSVGElement('line', {
+                class: 'link',
+                x1: x1, y1: y1, x2: x2, y2: y2,
+                stroke: color
+            });
+            svg.appendChild(path);
+        }
+
+        // Draw a node
+        function drawNode(x, y, label, radius = nodeRadius, fillColor = '#fff', strokeColor = '#333', textColor = '#333') {
+            const g = createSVGElement('g', { class: 'node' });
+            g.setAttribute('transform', `translate(${x},${y})`);
+
+            const circle = createSVGElement('circle', {
+                r: radius,
+                fill: fillColor,
+                stroke: strokeColor,
+                'stroke-width': '1.5px'
+            });
+            g.appendChild(circle);
+
+            if (label !== null) {
+                const text = createSVGElement('text', {
+                    'text-anchor': 'middle',
+                    'dominant-baseline': 'central',
+                    fill: textColor,
+                    'font-size': radius > 8 ? '10px' : '8px'
+                });
+                text.textContent = label;
+                g.appendChild(text);
+            }
+
+            svg.appendChild(g);
+            return g;
+        }
+
+        // Draw subtree triangle (solid color, no alpha)
+        function drawSubtree(x, y, color, height = 40) {
+            const triWidth = 18;
+            const tri = createSVGElement('path', {
+                d: `M${x},${y} L${x - triWidth/2},${y + height} L${x + triWidth/2},${y + height} Z`,
+                fill: color,
+                stroke: color,
+                'stroke-width': 1
+            });
+            svg.appendChild(tri);
+
+            // Add dots inside (white for visibility)
+            const dotY = y + height * 0.55;
+            for (let i = -1; i <= 1; i++) {
+                const dot = createSVGElement('circle', {
+                    cx: x, cy: dotY + i * 5, r: 1.5, fill: 'white'
+                });
+                svg.appendChild(dot);
+            }
+        }
+
+        // Draw horizontal line
+        function drawLine(y, x1 = 30, x2 = svgWidth - 30) {
+            const line = createSVGElement('line', {
+                x1: x1, y1: y, x2: x2, y2: y,
+                class: 'level-line'
+            });
+            svg.appendChild(line);
+        }
+
+        // Draw level label
+        function drawLabel(x, y, text, fontSize = '11px', italic = true, color = '#333') {
+            const el = createSVGElement('text', {
+                x: x, y: y,
+                'text-anchor': 'middle',
+                'font-size': fontSize,
+                'font-style': italic ? 'italic' : 'normal',
+                fill: color
+            });
+            el.textContent = text;
+            svg.appendChild(el);
+        }
+
+        // === Draw the tree ===
+
+        // Level 0: Root
+        const rootY = startY;
+        drawNode(centerX, rootY, 'root', nodeRadius + 2);
+        drawLabel(svgWidth - 25, rootY, 'h=0', '10px');
+
+        // Line after root
+        drawLine(rootY + nodeRadius + 15);
+
+        // Level 1: 4 nodes (0, 1, 2, 3) - represents y_1 choices
+        const level1Y = startY + levelHeight;
+        const level1Spacing = 90;
+        const level1Nodes = [];
+
+        for (let i = 0; i < 4; i++) {
+            const x = centerX + (i - 1.5) * level1Spacing;
+            level1Nodes.push({ x: x, label: i });
+            drawLink(centerX, rootY + nodeRadius + 2, x, level1Y - nodeRadius);
+            drawNode(x, level1Y, i);
+        }
+        drawLabel(svgWidth - 25, level1Y, 'h=1', '10px');
+
+        // Line after level 1
+        drawLine(level1Y + nodeRadius + 15);
+
+        // Level 2: 16 nodes (decomposition level L=2)
+        // Each level 1 node has 4 children (labeled 0,1,2,3)
+        const level2Y = startY + 2 * levelHeight;
+        const level2Spacing = 22;
+        const level2Nodes = [];
+
+        let taskIndex = 0;
+        level1Nodes.forEach((parent, pIdx) => {
+            for (let i = 0; i < 4; i++) {
+                const x = parent.x + (i - 1.5) * level2Spacing;
+                const rank = taskIndex % 3; // Round-robin assignment to 3 ranks
+                level2Nodes.push({ x: x, rank: rank, parent: pIdx, child: i });
+
+                drawLink(parent.x, level1Y + nodeRadius, x, level2Y - smallNodeRadius, '#888');
+                // White circles with numbers inside
+                drawNode(x, level2Y, i, smallNodeRadius, '#fff', '#555', '#333');
+
+                taskIndex++;
+            }
+        });
+        drawLabel(svgWidth - 25, level2Y, 'h=L', '10px');
+
+        // Draw subtrees connected to level L nodes
+        const subtreeY = level2Y + smallNodeRadius + 2; // Start right below the circles
+        const subtreeHeight = 45;
+        level2Nodes.forEach(node => {
+            drawSubtree(node.x, subtreeY, rankColors[node.rank], subtreeHeight);
+        });
+
+        // Decomposition line (red dashed) - goes through the subtrees
+        const decompY = subtreeY + 8;
+        const decompLine = createSVGElement('line', {
+            x1: 30, y1: decompY, x2: svgWidth - 30, y2: decompY,
+            class: 'decomposition-line'
+        });
+        svg.appendChild(decompLine);
+
+        // Label for decomposition (on the left side)
+        const decompLabel = createSVGElement('text', {
+            x: 28, y: decompY - 2,
+            'text-anchor': 'end',
+            'font-size': '9px',
+            'font-style': 'italic',
+            fill: '#c00'
+        });
+        decompLabel.textContent = 'L';
+        svg.appendChild(decompLabel);
+
+        // Bottom line
+        const bottomY = subtreeY + subtreeHeight + 15;
+        drawLine(bottomY);
+
+        // Final level label
+        drawLabel(svgWidth - 25, bottomY + 20, 'h=T', '10px');
+
+        // Complete solutions placeholder
+        drawLabel(centerX, bottomY + 20, 'Complete solutions', '10px', true, '#555');
+
+        // === Legend (closer to Complete solutions) ===
+        const legendY = bottomY + 35;
+        const legendStartX = centerX - 100;
+
+        for (let r = 0; r < 3; r++) {
+            const x = legendStartX + r * 75;
+
+            // Small colored square
+            const rect = createSVGElement('rect', {
+                x: x - 8, y: legendY - 6,
+                width: 12, height: 12,
+                fill: rankColors[r],
+                rx: 2
+            });
+            svg.appendChild(rect);
+
+            // Label
+            const label = createSVGElement('text', {
+                x: x + 10, y: legendY + 2,
+                'font-size': '10px',
+                fill: '#333'
+            });
+            label.textContent = `Rank ${r}`;
+            svg.appendChild(label);
+        }
+    </script>
+</body>
+</html>

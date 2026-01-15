@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Two-Level Schedule Representation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Times New Roman', serif;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 15px;
+        }
+
+        .container {
+            padding: 10px;
+        }
+
+        .diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .level-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .level-label {
+            width: 70px;
+            text-align: right;
+            font-size: 12pt;
+            color: #333;
+        }
+
+        .level-label .subscript {
+            font-size: 9pt;
+            vertical-align: sub;
+        }
+
+        .hour-labels {
+            display: flex;
+            margin-left: 78px;
+            margin-bottom: 2px;
+        }
+
+        .hour-label {
+            width: 32px;
+            text-align: center;
+            font-size: 9pt;
+            color: #555;
+            font-style: italic;
+        }
+
+        .schedule-row {
+            display: flex;
+            gap: 2px;
+        }
+
+        .y-cell {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e0e0f0;
+            border: 1px solid #777;
+            font-size: 12pt;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .mapping-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0;
+            margin-left: 78px;
+        }
+
+        .arrow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .arrow {
+            font-size: 20pt;
+            color: #444;
+            line-height: 1;
+        }
+
+        .mapping-formula {
+            font-size: 10pt;
+            color: #444;
+            font-style: italic;
+        }
+
+        .x-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .pump-labels {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            width: 70px;
+            align-items: flex-end;
+        }
+
+        .pump-label-row {
+            height: 22px;
+            display: flex;
+            align-items: center;
+            font-size: 10pt;
+            color: #555;
+            font-style: italic;
+        }
+
+        .pump-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .pump-row {
+            display: flex;
+            gap: 2px;
+        }
+
+        .x-cell {
+            width: 32px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10pt;
+            font-weight: bold;
+            border: 1px solid #777;
+        }
+
+        .x-on {
+            background: #404040;
+            color: white;
+        }
+
+        .x-off {
+            background: #f0f0f0;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hour-labels">
+            <div class="hour-label">h=1</div>
+            <div class="hour-label">2</div>
+            <div class="hour-label">3</div>
+            <div class="hour-label">4</div>
+            <div class="hour-label">5</div>
+            <div class="hour-label">6</div>
+        </div>
+
+        <div class="diagram">
+            <div class="level-row">
+                <div class="level-label">
+                    <i>y</i><span class="subscript">h</span> =
+                </div>
+                <div class="schedule-row">
+                    <div class="y-cell">2</div>
+                    <div class="y-cell">3</div>
+                    <div class="y-cell">3</div>
+                    <div class="y-cell">2</div>
+                    <div class="y-cell">1</div>
+                    <div class="y-cell">0</div>
+                </div>
+            </div>
+
+            <div class="mapping-section">
+                <div class="arrow-container">
+                    <div class="arrow">&#8595;</div>
+                    <div class="mapping-formula">M(y<sub>h</sub>, x<sub>h-1</sub>, R)</div>
+                </div>
+            </div>
+
+            <div class="x-section">
+                <div class="pump-labels">
+                    <div class="pump-label-row">x<sub>1,h</sub></div>
+                    <div class="pump-label-row">x<sub>2,h</sub></div>
+                    <div class="pump-label-row">x<sub>3,h</sub></div>
+                </div>
+                <div class="pump-grid">
+                    <div class="pump-row">
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-off">0</div>
+                    </div>
+                    <div class="pump-row">
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-off">0</div>
+                        <div class="x-cell x-off">0</div>
+                    </div>
+                    <div class="pump-row">
+                        <div class="x-cell x-off">0</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-on">1</div>
+                        <div class="x-cell x-off">0</div>
+                        <div class="x-cell x-off">0</div>
+                        <div class="x-cell x-off">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

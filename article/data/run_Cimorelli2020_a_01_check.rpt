@@ -1,0 +1,26 @@
+============================================================
+PUMP SCHEDULE FEASIBILITY REPORT
+============================================================
+Solution: article/data/run_Cimorelli2020_a_01.json
+Network:  networks/any-town.inp
+
+============================================================
+CONSTRAINT CHECK
+============================================================
+Pressures:   OK (all nodes above minimum thresholds)
+Tank Levels: OK (all within [66.53, 71.53] m)
+Stability:   OK (final levels >= 66.93 m)
+
+============================================================
+SUMMARY
+============================================================
+Node 55:  min=42.34m, max=45.98m (threshold: 42.0m)
+Node 90:  min=51.39m, max=55.24m (threshold: 51.0m)
+Node 170:  min=30.07m, max=33.79m (threshold: 30.0m)
+Tank 65:  min=66.55m, max=71.49m, final=68.16m
+Tank 165:  min=66.71m, max=70.83m, final=67.34m
+Tank 265:  min=66.71m, max=70.42m, final=67.75m
+
+============================================================
+RESULT: PASS
+============================================================

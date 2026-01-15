@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definição}
+
+\begin{document}
+
+\section{Definição de política completa}
+
+Considere um grupo $g$ com $m$ bombas idênticas.
+
+\begin{definition}[Plano Agregado]
+	Um plano agregado é um vetor
+	\[
+		y=(y_1,\dots,y_T),\qquad y_h\in\{0,1,\dots,m\}.
+	\]
+\end{definition}
+
+\begin{definition}[Plano Detalhado]
+	Um plano detalhado correspondente a $y$ é uma matriz binária
+	\[
+		x\in\{0,1\}^{m\times T},\qquad \sum_{i=1}^m x_{i,h}=y_h\ \ \forall h.
+	\]
+\end{definition}
+
+\begin{definition}[Restrições Operacionais]
+	As restrições de actuação são dadas, para cada bomba $i$, por:
+	\[
+		A_i(x):=\sum_{h=2}^T \max(0,x_{i,h}-x_{i,h-1})\le NA_{\max},
+	\]
+	\[
+		D_i(x):=\sum_{h=2}^T \max(0,x_{i,h-1}-x_{i,h})\le NA_{\max}.
+	\]
+\end{definition}
+
+\begin{definition}[Implementabilidade]
+	A implementabilidade do agregado é o conjunto:
+	\[
+		\mathcal Y := \bigl\{ y:\ \exists x \text{ tal que } \sum_i x_{i,h}=y_h,\ A_i(x)\le NA_{\max},\ D_i(x)\le NA_{\max}\ \forall i,\bigr\}.
+	\]
+	Ou seja, $\mathcal Y$ é formado pelos agregados que possuem ao menos um detalhamento viável quanto às restrições de acionamentos $A_i$ e desligamentos $D_i$.
+\end{definition}
+
+\begin{definition}[Política]
+	Uma política é uma aplicação
+	\[
+		M:\{0,\dots,m\}^T \to \{0,1\}^{m\times T}\cup\{\bot\},
+	\]
+	onde $(M(y)=\bot)$ significa que a política falhou ou declarou inviabilidade.
+\end{definition}
+
+\begin{definition}[Política Completa]
+	Dizemos que $M$ é completa se e somente se:
+	\[
+		\forall y,\ \bigl(y\in\mathcal Y \Rightarrow M(y)\neq \bot\bigr).
+	\]
+\end{definition}
+
+Se o custo depende apenas de $(y)$, então qualquer política completa é ``ótima'' no sentido operacional: ela \textbf{nunca elimina} um $(y)$ implementável e, portanto, preserva o ótimo global em $(y)$.
+
+\section{Otimalidade da política LUS}
+
+\newtheorem{theorem}{Teorema}
+
+\subsection{Definição da Política LUS}
+
+A política \emph{Least Used Selection} (LUS) decide a transição de estado $x_{h-1} \to x_h$ com base no orçamento restante de acionamentos de cada bomba.
+
+Seja $r_{i,h}$ o número de acionamentos restantes para a bomba $i$ no final do período $h$. Inicialmente, $r_{i,0} = NA_{\max}$ para todo $i$. A atualização do orçamento é dada por:
+\[
+	r_{i,h} = r_{i,h-1} - |x_{i,h} - x_{i,h-1}|.
+\]
+A bomba $i$ é dita \emph{admissível} para comutação no instante $h$ se $r_{i,h-1} > 0$. Caso contrário, seu estado deve permanecer fixo ($x_{i,h} = x_{i,h-1}$).
+
+Dado o estado anterior $x_{h-1}$ e a meta agregada $y_h$, o algoritmo LUS determina $x_h$ da seguinte forma:
+
+\begin{enumerate}
+	\item Calcule o número de bombas atualmente ligadas $N_{on} = \sum_i x_{i,h-1}$.
+	\item Calcule a demanda de comutação $\Delta = y_h - N_{on}$.
+	\item \textbf{Caso $\Delta = 0$:} Nenhum estado muda. $x_{i,h} = x_{i,h-1}$ para todo $i$.
+
+	\item \textbf{Caso $\Delta > 0$ (Ligar bombas):}
+	      \begin{itemize}
+		      \item Identifique o conjunto de candidatos desligados: $\mathcal{C}_{off} = \{ i : x_{i,h-1} = 0 \}$.
+		      \item Filtre os admissíveis: $\mathcal{C}_{adm} = \{ i \in \mathcal{C}_{off} : r_{i,h-1} > 0 \}$.
+		      \item Se $|\mathcal{C}_{adm}| < \Delta$, retorne $\bot$ (inviável).
+		      \item Caso contrário, selecione os $\Delta$ índices em $\mathcal{C}_{adm}$ que possuem o \textbf{maior} valor de $r_{i,h-1}$. Em caso de empate, utilize, por exemplo, o menor índice $i$.
+		      \item Defina $x_{i,h}=1$ para os selecionados e mantenha os demais inalterados.
+	      \end{itemize}
+
+	\item \textbf{Caso $\Delta < 0$ (Desligar bombas):}
+	      \begin{itemize}
+		      \item Identifique, filtre e selecione analogamente $\Delta$ bombas do conjunto $\mathcal{C}_{on} = \{ i : x_{i,h-1} = 1 \}$ para desligar, priorizando as de maior $r_{i,h-1}$ (ou seja, aquelas com maior orçamento para desligamentos futuros).
+	      \end{itemize}
+\end{enumerate}
+
+\subsection{Teorema de Completude}
+
+\begin{theorem}
+	A política LUS é completa. Isto é, se existe um plano viável $y \in \mathcal{Y}$, então a LUS gera um detalhamento viável.
+\end{theorem}
+
+\begin{proof}
+	A prova segue por um argumento direto de troca (exchange argument) baseado na simetria das bombas, sem necessidade de indução formal.
+
+	Seja $x^*$ um detalhamento viável qualquer para $y$. Em qualquer instante onde a escolha da LUS difere de $x^*$, a LUS favorece bombas com maior orçamento restante de acionamentos.
+
+	Considere uma divergência onde a solução viável $x^*$ utiliza uma bomba $b$, enquanto a LUS opta por preservar $b$ e utilizar uma bomba $a$. Pela definição gulosa (Greedy) da LUS, sabemos que o orçamento restante de $a$ é maior ou igual ao de $b$ ($r_a \ge r_b$).
+
+	Como as bombas são fisicamente idênticas, podemos ``trocar os crachás'': atribuímos à bomba $a$ toda a sequência de operações futuras que $x^*$ havia planejado para $b$. Como $r_a \ge r_b$, a bomba $a$ possui capacidade suficiente para executar essa sequência sem violar a restrição $NA_{\max}$.
+
+	Aplicando este raciocínio a todas as bombas e instantes de tempo, concluímos que a trajetória construída pela LUS é capaz de satisfazer a demanda agregada $y$ sempre que qualquer outra trajetória $x^*$ for capaz.
+\end{proof}
+
+\end{document}

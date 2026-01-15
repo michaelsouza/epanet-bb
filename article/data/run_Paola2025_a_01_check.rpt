@@ -1,0 +1,26 @@
+============================================================
+PUMP SCHEDULE FEASIBILITY REPORT
+============================================================
+Solution: article/data/run_Paola2025_a_01.json
+Network:  networks/any-town.inp
+
+============================================================
+CONSTRAINT CHECK
+============================================================
+Pressures:   OK (all nodes above minimum thresholds)
+Tank Levels: OK (all within [66.53, 71.53] m)
+Stability:   OK (final levels >= 66.93 m)
+
+============================================================
+SUMMARY
+============================================================
+Node 55:  min=42.42m, max=45.70m (threshold: 42.0m)
+Node 90:  min=51.42m, max=54.74m (threshold: 51.0m)
+Node 170:  min=30.05m, max=33.24m (threshold: 30.0m)
+Tank 65:  min=66.57m, max=70.87m, final=68.17m
+Tank 165:  min=66.62m, max=69.93m, final=67.35m
+Tank 265:  min=66.84m, max=70.28m, final=67.76m
+
+============================================================
+RESULT: PASS
+============================================================

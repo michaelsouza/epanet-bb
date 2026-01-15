@@ -1,0 +1,28 @@
+============================================================
+EPANET B&B Scalability Test
+Configuration: -a 1 -h 24
+Process counts: [1, 2, 4, 8, 16, 32, 64, 128]
+============================================================
+Running: mpirun -n 1 build/run-epanet3-bb -a 1 -h 24
+Running: mpirun -n 2 build/run-epanet3-bb -a 1 -h 24
+Running: mpirun -n 4 build/run-epanet3-bb -a 1 -h 24
+Running: mpirun -n 8 build/run-epanet3-bb -a 1 -h 24
+Running: mpirun -n 16 build/run-epanet3-bb -a 1 -h 24
+Running: mpirun -n 32 build/run-epanet3-bb -a 1 -h 24
+Running: mpirun -n 64 build/run-epanet3-bb -a 1 -h 24
+Running: mpirun -n 128 build/run-epanet3-bb -a 1 -h 24
+
+============================================================
+Results Summary
+============================================================
+ np  wall_time  proc_min  proc_avg  proc_max  load_imbalance  total_tasks   speedup  efficiency
+  1  85.084040 85.048679 85.048679 85.048679        0.000000        65536  1.000000  100.000000
+  2  46.128034 39.618026 42.863821 46.109615        7.572341        65536  1.844519   92.225955
+  4  23.186373 18.438846 21.399521 23.176881        8.305608        65536  3.669571   91.739273
+  8  12.354683  8.556497 10.955669 12.349607       12.723442        65536  6.886785   86.084807
+ 16   7.471918  3.734757  5.594413  7.469082       33.509671        65536 11.387175   71.169846
+ 32   4.255524  1.635662  2.890218  4.253888       47.182243        65536 19.993787   62.480584
+ 64   3.179796  0.767071  1.569130  3.178737      102.579600        65536 26.757704   41.808912
+128   3.591129  0.465080  1.353605  3.590265      165.237187        65536 23.692839   18.510030
+Results saved to outputs/scalability_results.csv
+Figure saved to article/figures/scalability.png

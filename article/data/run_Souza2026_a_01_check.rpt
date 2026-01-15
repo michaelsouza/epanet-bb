@@ -1,0 +1,26 @@
+============================================================
+PUMP SCHEDULE FEASIBILITY REPORT
+============================================================
+Solution: article/data/run_Souza2026_a_01.json
+Network:  networks/any-town.inp
+
+============================================================
+CONSTRAINT CHECK
+============================================================
+Pressures:   OK (all nodes above minimum thresholds)
+Tank Levels: OK (all within [66.53, 71.53] m)
+Stability:   OK (final levels >= 66.93 m)
+
+============================================================
+SUMMARY
+============================================================
+Node 55:  min=42.46m, max=45.57m (threshold: 42.0m)
+Node 90:  min=51.49m, max=54.65m (threshold: 51.0m)
+Node 170:  min=30.14m, max=33.22m (threshold: 30.0m)
+Tank 65:  min=66.64m, max=71.51m, final=68.24m
+Tank 165:  min=66.67m, max=69.90m, final=67.41m
+Tank 265:  min=66.86m, max=70.08m, final=67.83m
+
+============================================================
+RESULT: PASS
+============================================================
