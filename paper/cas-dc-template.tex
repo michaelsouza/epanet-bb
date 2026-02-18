@@ -5,7 +5,6 @@
 \usepackage{algorithm}      % add
 \usepackage{algpseudocode}  % add
 \usepackage{graphicx}       % add
-\graphicspath{{figures/}}   % add
 \usepackage[numbers]{natbib}
 %\usepackage[authoryear]{natbib}
 %\usepackage[authoryear,longnamesfirst]{natbib}
@@ -58,37 +57,41 @@
 
 \author[1]{Michael Ferreira de Souza}
 \ead{michael@ufc.br}
-\credit{Conceptualization, Methodology, Software, Formal analysis, Investigation, Writing – original draft}
+\credit{Conceptualization, Methodology, Software, Formal analysis, Investigation, Writing - Original draft}
 
 \author[1]{Jéssica Gomes Melo da Rocha}
 \cormark[2]
 \ead{jessica@fisica.ufc.br}
-\credit{Methodology, Formal analysis, Validation, Writing – review \& editing}
+\credit{Conceptualization, Methodology, Formal analysis, Validation, Writing - Review \& Editing}
 
 \author[1]{Albert Einstein Fernandes Muritiba}
 \ead{einstein@ufc.br}
-\credit{Software, Validation, Visualization}
+\credit{Formal analysis, Validation, Visualization}
 
 \author[1]{Ascânio Dias Araújo}
 \cormark[1]
 \ead{ascanio@fisica.ufc.br}
-\credit{Supervision, Project administration, Funding acquisition, Writing – review \& editing}
+\credit{Supervision, Project administration}
 
 \author[2]{Carlile Campos Lavor}
 \ead{clavor@unicamp.br}
-\credit{Conceptualization, Supervision, Methodology, Writing – review \& editing}
+\credit{Supervision, Validation, Funding acquisition, Writing - Review \& Editing}
 
 \affiliation[1]{
   organization={Universidade Federal do Ceará},
+  addressline={Av. Mister Hull, s/n},
   city={Fortaleza},
   state={CE},
+  postcode={60455-760},
   country={Brazil}
 }
 
 \affiliation[2]{
   organization={IMECC, Universidade Estadual de Campinas},
+  addressline={Rua Sérgio Buarque de Holanda, 651},
   city={Campinas},
   state={SP},
+  postcode={13083-859},
   country={Brazil}
 }
 
@@ -103,7 +106,7 @@
 
 % Here goes the abstract (<= 250 palavras)
 \begin{abstract}
-  Pump scheduling in water distribution networks is a challenging combinatorial optimization problem that seeks to minimize energy costs while satisfying complex hydraulic constraints. Meta-heuristic approaches dominate the literature due to their flexibility but cannot guarantee global optimality. Exact methods such as Branch-and-Bound (B\&B) provide such guarantees but have historically been computationally prohibitive for realistic networks. This paper presents a scalable parallel B\&B framework incorporating three key innovations: MPI-based distributed computation, hydraulic snapshot persistence enabling constant-time state restoration during backtracking, and multi-criteria pruning within a depth-first search strategy. Integrated with a hydraulic simulation engine, the proposed solver reduces optimization time by one to two orders of magnitude compared to sequential implementations while maintaining optimality guarantees. Experimental results on benchmark networks demonstrate speedups of 29--115$\times$ and cost reductions of up to 3.7\% compared to state-of-the-art meta-heuristics. These advances make exact pump scheduling practical for day-ahead operational planning in water distribution networks.
+  Pump scheduling in water distribution networks is a challenging combinatorial optimization problem that seeks to minimize energy costs while satisfying complex hydraulic constraints. Meta-heuristic approaches dominate the literature due to their flexibility but cannot guarantee global optimality. Exact methods such as Branch-and-Bound (B\&B) provide such guarantees but have historically been computationally prohibitive for realistic networks. This paper presents a scalable parallel B\&B framework incorporating three key innovations: MPI-based distributed computation, hydraulic snapshot persistence enabling constant-time state restoration during backtracking, and multi-criteria pruning within a depth-first search strategy. Integrated with a hydraulic simulation engine, the proposed solver reduces optimization time by one to two orders of magnitude compared to sequential implementations while maintaining optimality guarantees. Experimental results on a benchmark network demonstrate speedups of 29--115$\times$ and establish new best-known solutions relative to state-of-the-art meta-heuristics. These advances make exact pump scheduling practical for day-ahead operational planning in water distribution networks.
 \end{abstract}
 
 % Use if graphical abstract is present
@@ -113,7 +116,11 @@
 
 % Research highlights (3–5 bullets, até 85 caracteres cada)
 \begin{highlights}
-\item Research highlights item 1
+\item Parallel exact optimization for pump scheduling
+\item Low-overhead hydraulic backtracking via state snapshots
+\item Cooperative pruning accelerates convergence to global optimality
+\item Efficient parallel search via deterministic load balancing
+\item New best-known solutions for water distribution networks
 \end{highlights}
 
 % Keywords (1–7 keywords)
@@ -569,11 +576,25 @@ Two directions merit further investigation. First, dynamic work stealing could i
 
 The source code and data required to reproduce the results presented in this work are available in the following GitHub repository: \url{https://github.com/michaelsouza/epanet-bb}.
 
+\section*{Funding}
+This research was partially funded by the Brazilian research agencies FAPESP (Grant Nos. 2013/07375-0, 2023/08706-1, and 2024/00923-6) and CNPq (Grant Nos. 305227/2022-0, 404616/2024-0, and 402609/2025-5). The funding agencies had no role in the study design; data collection, analysis, or interpretation; manuscript preparation; or the decision to submit the article for publication.
+
+\section*{Declaration of competing interests}
+The authors declare that they have no known competing financial interests or
+personal relationships that could have appeared to influence the work reported
+in this paper.
+
+\section*{Declaration of generative AI and AI-assisted technologies in the manuscript preparation process}
+During the preparation of this work, the authors used an AI-assisted language model (Claude, Anthropic) to improve readability, clarity, and
+professionalism in writing.
+After using this tool/service, the authors reviewed and edited the content as
+needed and take full responsibility for the content of the published article.
+
 \printcredits
 
 %% Loading bibliography style file
-%\bibliographystyle{model1-num-names}
-\bibliographystyle{cas-model2-names}
+\bibliographystyle{model1-num-names}
+%\bibliographystyle{cas-model2-names}
 
 % Loading bibliography database
 \bibliography{cas-refs}
