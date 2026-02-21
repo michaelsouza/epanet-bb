@@ -1,0 +1,56 @@
+
+\documentclass[10pt,stdletter,dateno]{newlfm}
+\usepackage{graphicx}
+\usepackage{kpfonts}
+
+\usepackage{url}
+
+\widowpenalty=1000
+\clubpenalty=1000
+\Background{back1.pdf}
+
+\newlfmP{headermarginskip=20pt}
+\newlfmP{sigsize=20pt}
+\newlfmP{dateskipafter=20pt}
+\newlfmP{addrfromphone}
+\newlfmP{addrfromemail}
+\PhrPhone{Phone}
+\PhrEmail{Email}
+
+
+
+\namefrom{Ascânio Dias Araújo}
+\addrfrom{%
+    \today\\[10pt]
+    Departamento de F\'{i}sica\\
+    Universidade Federal do Cear\'a\\
+    Campus do Pici - PO BOX 6030\\
+    Fortaleza – CE 60455-900 - Brasil\\
+}
+\phonefrom{+55 85 98134-3459}
+\emailfrom{ascanio@fisica.ufc.br}
+
+
+
+\greetto{Dear Professor Ana Deletic,}
+\closeline{Best Regards,}
+\begin{document}
+
+\newcommand{\journal}{Water Research. }
+\newcommand{\at}{article }
+\newcommand{\ptitle}{Parallel Branch-and-Bound for Exact Pump Scheduling with Constant-Time Hydraulic Backtracking}
+%\newcommand{\what}{In this paper we investigated the Raman-active spectra of Y$_2$NiMnO$_6$ double perovskite in the temperature range from 20 K up to 850 K. }
+\newcommand{\highlights}{
+\\
+In this manuscript, we present a distributed-memory parallel Branch-and-Bound framework for exact pump scheduling in water distribution networks. The proposed approach integrates low-overhead hydraulic backtracking via state snapshots, cooperative pruning strategies to accelerate convergence, and deterministic load balancing for efficient distributed search. 
+\\
+Unlike metaheuristic methods that do not provide optimality guarantees, our solver delivers provably optimal 24-hour schedules and achieves speedups of up to 115$\times$ compared to sequential exact implementations. 
+The method establishes new best-known solutions on a standard benchmark network under practical operational constraints.}
+
+\begin{newlfm}
+
+Enclosed is our paper entitled: {\it \ptitle}, which we are submitting to be considered by the Editorial Staff of \journal   \highlights 
+
+Thank you for your consideration.
+\end{newlfm}
+\end{document}
