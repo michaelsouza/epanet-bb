@@ -17,7 +17,8 @@ wn = wntr.network.WaterNetworkModel(project_root / 'networks/any-town.inp')
 
 def plot_network(output_path: Path) -> None:
     # Create figure with appropriate size for single column
-    fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
+    fig, ax = plt.subplots(figsize=(5, 5), dpi=500)
+
 
     # Get the network graph
     G = wn.to_graph()
@@ -77,7 +78,7 @@ def plot_network(output_path: Path) -> None:
 
     plt.tight_layout()
 
-    plt.savefig(output_path, dpi=300, bbox_inches='tight',
+    plt.savefig(output_path, dpi=500, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
     plt.close(fig)
 
@@ -87,7 +88,7 @@ def plot_network(output_path: Path) -> None:
     bbox = img.getbbox()
     if bbox:
         img_cropped = img.crop(bbox)
-        img_cropped.save(output_path)
+        img_cropped.save(output_path, dpi=(500, 500))
         print(f"Cropped image saved to {output_path}")
     else:
         print(f"No cropping needed, saved to {output_path}")
@@ -101,14 +102,14 @@ def plot_energy_cost_by_hour(output_path: Path, pattern_name: str = "PRICES") ->
     prices = [float(x) for x in pattern.multipliers]
     hours = list(range(1, len(prices) + 1))
 
-    fig, ax = plt.subplots(figsize=(5, 2.6), dpi=300)
+    fig, ax = plt.subplots(figsize=(5, 2.7), dpi=500)
     ax.bar(hours, prices, color="#2E86AB", width=0.9)
     ax.set_xlim(0.5, len(prices) + 0.5)
     ax.set_xlabel("Hour")
     ax.set_ylabel("Energy price")
     ax.grid(True, axis="y", linestyle="--", linewidth=0.6, alpha=0.5)
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches="tight",
+    plt.savefig(output_path, dpi=500, bbox_inches="tight",
                 facecolor="white", edgecolor="none")
     plt.close(fig)
 

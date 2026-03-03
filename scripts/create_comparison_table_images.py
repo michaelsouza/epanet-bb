@@ -194,7 +194,7 @@ def draw_table(na_max, entries, output_path):
     )
 
     plt.tight_layout(pad=1.0)
-    plt.savefig(output_path, dpi=200, bbox_inches="tight", pad_inches=0.1)
+    plt.savefig(output_path, dpi=500, bbox_inches="tight", pad_inches=0.1)
     plt.close()
     print(f"Generated: {output_path}")
 

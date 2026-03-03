@@ -189,7 +189,7 @@ def main():
         print(f"  Cost: ${solution['best_cost']:.2f}")
 
     # Create 2x3 figure: tank levels (top) + pressures (bottom)
-    fig, axes = plt.subplots(2, 3, figsize=(10, 6.0), dpi=300, sharex=True)
+    fig, axes = plt.subplots(2, 3, figsize=(10, 6.0), dpi=500, sharex=True)
 
     # Colors for different actuation limits
     colors = {1: "#E63946", 2: "#457B9D", 3: "#2A9D8F"}
@@ -294,7 +294,7 @@ def main():
     # Save figure
     output_path = project_root / "article/figures/tank_levels_24h.png"
     plt.savefig(
-        output_path, dpi=300, bbox_inches="tight", facecolor="white", edgecolor="none"
+        output_path, dpi=500, bbox_inches="tight", facecolor="white", edgecolor="none"
     )
     plt.close()
 

@@ -21,7 +21,7 @@ FIGURE_OUTPUT = "article/figures/scalability.png"
 def create_figure(df: pd.DataFrame):
     """Create scalability figure with speedup and efficiency."""
     plt.rcParams.update({"font.size": 10})
-    fig, ax1 = plt.subplots(figsize=(5.0, 3.2), dpi=300)
+    fig, ax1 = plt.subplots(figsize=(5.0, 3.2), dpi=500)
 
     ranks = df["np"].values
     speedup = df["speedup"].values
@@ -78,7 +78,7 @@ def create_figure(df: pd.DataFrame):
     labels = [l.get_label() for l in lines]
     ax1.legend(lines, labels, loc="lower right", framealpha=0.9)
     fig.tight_layout()
-    plt.savefig(FIGURE_OUTPUT, dpi=300, bbox_inches="tight")
+    plt.savefig(FIGURE_OUTPUT, dpi=500, bbox_inches="tight")
     print(f"Figure saved to {FIGURE_OUTPUT}")
 
 
