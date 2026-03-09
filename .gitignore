@@ -129,3 +129,6 @@ networks/*.rpt
 
 # Snapshot images (for development/debugging)
 article/*.png
+letter_Deletic_WR.aux
+.gitignore
+letter_Deletic_WR.log

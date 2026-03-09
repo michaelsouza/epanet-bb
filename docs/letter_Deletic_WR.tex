@@ -1,4 +1,3 @@
-
 \documentclass[10pt,stdletter,dateno]{newlfm}
 \usepackage{graphicx}
 \usepackage{kpfonts}
@@ -7,7 +6,6 @@
 
 \widowpenalty=1000
 \clubpenalty=1000
-\Background{back1.pdf}
 
 \newlfmP{headermarginskip=20pt}
 \newlfmP{sigsize=20pt}
@@ -38,6 +36,8 @@
 
 \newcommand{\journal}{Water Research. }
 \newcommand{\at}{article }
+\newcommand{\ufclogo}{}
+\IfFileExists{article/figures/ufc_logo.png}{\renewcommand{\ufclogo}{\includegraphics[width=0.22\textwidth]{article/figures/ufc_logo.png}}}{}
 \newcommand{\ptitle}{Parallel Branch-and-Bound for Exact Pump Scheduling with Constant-Time Hydraulic Backtracking}
 \newcommand{\highlights}{
 \\
@@ -47,6 +47,11 @@ Unlike metaheuristic methods that do not provide optimality guarantees, our solv
 The method establishes new best-known solutions on a standard benchmark network under practical operational constraints.}
 
 \begin{newlfm}
+\begin{center}
+\vspace*{-4mm}
+\ufclogo
+\vspace{5mm}
+\end{center}
 
 Enclosed is our paper entitled: {\it \ptitle}, which we are submitting to be considered by the Editorial Staff of \journal   \highlights 
 
