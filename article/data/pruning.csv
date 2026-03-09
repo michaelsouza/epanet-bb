@@ -1,8 +1,0 @@
-Criterion,1,2,3
-Actuation,61.9,43.9,23.7
-Cost bound,9.1,19.9,30.0
-Tank levels,0.0,0.0,0.0
-Pressure,0.8,3.8,9.0
-Total pruned,71.8,67.6,62.7
-Feasible,28.2,32.4,37.3
-Nodes (total),7.9M,1.4B,22.4B

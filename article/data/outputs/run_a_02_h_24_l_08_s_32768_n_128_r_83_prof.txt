@@ -1,9 +1,0 @@
-=== Profiling Results (Rank 83) ===
-processTask                   : 383938.41 ms (100.00%)
-epanetSolve                   : 367847.21 ms (95.81%)
-check_feasibility             :  6976.31 ms ( 1.82%)
-processLevel                  :    25.82 ms ( 0.01%)
-update_pumps                  :    10.82 ms ( 0.00%)
-initSnapshots                 :     5.62 ms ( 0.00%)
-sync_best                     :     0.13 ms ( 0.00%)
-=====================
