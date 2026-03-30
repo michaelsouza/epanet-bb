@@ -26,8 +26,8 @@
 \author[1]{Jéssica Gomes Melo da Rocha}
 \author[1]{Albert Einstein Fernandes Muritiba}
 \author[1,2]{Ascânio Dias Araújo}
-\author[3]{Carlile Lavor}
-\author[1,3]{Michael Souza}
+\author[3]{Carlile Campos Lavor}
+\author[1,3]{Michael Ferreira de Souza}
 
 \affil[1]{Dept.\ of Statistics and Applied Mathematics, Federal University of Ceará,
   Campus do Pici, Fortaleza, CE 60455-760, Brazil.
@@ -40,22 +40,7 @@
 \maketitle
 
 \begin{abstract}
-  Pump scheduling in water distribution networks is a challenging combinatorial
-  optimization problem that seeks to minimize energy costs while satisfying complex
-  hydraulic constraints. Meta-heuristic approaches dominate the literature due to their
-  flexibility but cannot guarantee global optimality. Exact methods such as
-  Branch-and-Bound (B\&B) provide such guarantees but have historically been
-  computationally prohibitive for realistic networks. This paper presents a scalable
-  parallel B\&B framework incorporating three key innovations: MPI-based distributed
-  computation, hydraulic snapshot persistence enabling constant-time state restoration
-  during backtracking, and multi-criteria pruning within a depth-first search strategy.
-  Integrated with a hydraulic simulation engine, the proposed solver reduces
-  optimization time by one to two orders of magnitude compared to sequential
-  implementations while maintaining optimality guarantees. Experimental results on a
-  benchmark network demonstrate speedups of 29 to 115 times and establish new
-  best-known solutions relative to state-of-the-art meta-heuristics. These advances
-  make exact pump scheduling practical for day-ahead operational planning in water
-  distribution networks.
+  Pump scheduling in water distribution networks is a challenging mixed-integer nonlinear program (MINLP) that seeks to minimize energy costs while satisfying complex hydraulic constraints. Meta-heuristic approaches dominate the literature due to their flexibility but cannot guarantee global optimality. Exact methods such as Branch-and-Bound (B\&B) provide such guarantees but have historically been computationally prohibitive for realistic networks. This paper presents a scalable parallel B\&B framework that combines depth-first search with cooperative pruning, decomposition of the search tree into MPI tasks, hydraulic snapshot persistence for constant-time state restoration during backtracking, and a Least Used Selection (LUS) strategy that dynamically balances actuation budgets across pumps to preserve feasibility deeper in the search tree. Candidate schedules are evaluated through hydraulic simulation in EPANET~3, allowing the method to enforce pressure and storage constraints while preserving exact optimality guarantees. The framework was tested on a benchmark dataset over a 24-hour planning horizon with multiple actuation limits. The proposed solver reduced computation time by one to two orders of magnitude relative to prior sequential exact methods, achieving speedups of 29 to 115 times. It also improved the best previously reported heuristic solutions in the least constrained case. These results show that exact pump scheduling is now feasible for day-ahead operational planning on realistic study networks. Beyond direct operational use, the method can serve as a benchmark for assessing heuristic methods and quantifying the gap between fast approximate schedules and the true optimum for a given hydraulic model. The source code is publicly available.
 \end{abstract}
 
 \section{Practical Applications}
