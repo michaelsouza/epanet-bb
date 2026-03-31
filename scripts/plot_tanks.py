@@ -16,7 +16,7 @@ Inputs:
 - `networks/any-town.inp`: The AnyTown water distribution network model.
 
 Outputs:
-- `paper/figures_new/Figure_6_tank_levels_24h.png`: A 2x3 grid plot visualizing the hydraulic state constraints.
+- `paper/figures_new/Figure_6_tank_levels_24h.pdf`: A 2x3 grid plot visualizing the hydraulic state constraints.
 
 Dependencies:
 - wntr: For EPANET hydraulic simulation.
@@ -278,7 +278,7 @@ def main():
     plt.subplots_adjust(bottom=0.13)
 
     # Save figure
-    output_path = project_root / "paper/figures_new/Figure_6_tank_levels_24h.png"
+    output_path = project_root / "paper/figures_new/Figure_6_tank_levels_24h.pdf"
     plt.savefig(
         output_path, dpi=500, bbox_inches="tight", facecolor="white", edgecolor="none"
     )

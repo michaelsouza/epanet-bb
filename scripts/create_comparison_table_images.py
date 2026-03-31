@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from pathlib import Path
 
-DATA_DIR = Path("article/data")
-OUTPUT_DIR = Path("article/figures")
+DATA_DIR = Path("paper/data")
+OUTPUT_DIR = Path("paper/figures_new")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Source display configuration (key -> label, color)
@@ -224,7 +224,7 @@ def main():
     for na_max in [1, 2, 3]:
         if data[na_max]:
             draw_table(
-                na_max, data[na_max], OUTPUT_DIR / f"comparison_table_a{na_max}.png"
+                na_max, data[na_max], OUTPUT_DIR / f"Figure_{na_max + 6}_comparison_table_a{na_max}.pdf"
             )
     export_csv(data, DATA_DIR / "comparison_table.csv")
     print("Done.")

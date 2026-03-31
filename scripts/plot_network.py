@@ -83,16 +83,20 @@ def plot_network(output_path: Path) -> None:
                 facecolor='white', edgecolor='none')
     plt.close(fig)
 
-    # Crop the image to remove any remaining white borders
-    from PIL import Image
-    img = Image.open(output_path)
-    bbox = img.getbbox()
-    if bbox:
-        img_cropped = img.crop(bbox)
-        img_cropped.save(output_path, dpi=(500, 500))
-        print(f"Cropped image saved to {output_path}")
+    if output_path.suffix.lower() in {".png", ".tif", ".tiff"}:
+        # Crop raster outputs to remove any remaining white borders.
+        from PIL import Image
+
+        img = Image.open(output_path)
+        bbox = img.getbbox()
+        if bbox:
+            img_cropped = img.crop(bbox)
+            img_cropped.save(output_path, dpi=(500, 500))
+            print(f"Cropped image saved to {output_path}")
+        else:
+            print(f"No cropping needed, saved to {output_path}")
     else:
-        print(f"No cropping needed, saved to {output_path}")
+        print(f"Saved vector figure to {output_path}")
 
 
 def plot_energy_cost_by_hour(output_path: Path, pattern_name: str = "PRICES") -> None:
@@ -118,8 +122,8 @@ def plot_energy_cost_by_hour(output_path: Path, pattern_name: str = "PRICES") ->
 def main() -> None:
     figures_dir.mkdir(parents=True, exist_ok=True)
 
-    plot_network(figures_dir / "Figure_3_anytown_network.png")
-    plot_energy_cost_by_hour(figures_dir / "Figure_4_anytown_energy_cost.png")
+    plot_network(figures_dir / "Figure_3_anytown_network.pdf")
+    plot_energy_cost_by_hour(figures_dir / "Figure_4_anytown_energy_cost.pdf")
 
 
 if __name__ == "__main__":

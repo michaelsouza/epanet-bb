@@ -1,0 +1,9 @@
+=== Profiling Results (Rank 28) ===
+sync_best                     :  2661.09 ms (100.00%)
+processTask                   :   825.13 ms (31.01%)
+epanetSolve                   :   633.43 ms (23.80%)
+check_feasibility             :     5.22 ms ( 0.20%)
+processLevel                  :     3.36 ms ( 0.13%)
+initSnapshots                 :     3.06 ms ( 0.11%)
+update_pumps                  :     0.03 ms ( 0.00%)
+=====================

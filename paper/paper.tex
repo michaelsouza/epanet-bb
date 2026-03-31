@@ -183,7 +183,7 @@ where $\mathcal{R}$ denotes the remaining actuation budget for each pump. Fig.~\
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.5\columnwidth]{figures/Figure_1_two_level_diagram.png}
+	\includegraphics[width=0.5\columnwidth]{figures/Figure_1_two_level_diagram.pdf}
 	\caption{Two-level schedule representation. The high-level variable $y_h$ indicates how many pumps are active at each hour (here: 2, 3, 3, 2, 1, 0 over six hours for three pumps). The mapping $\mathcal{M}$ derives binary configurations $x_{j,h}$ respecting actuation constraints.}
 	\label{fig:two_level}
 \end{figure}
@@ -198,7 +198,7 @@ We decompose the search tree into independent sub-problems to exploit distribute
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\columnwidth]{figures/Figure_2_tree_decomposition.png}
+	\includegraphics[width=0.9\columnwidth]{figures/Figure_2_tree_decomposition.pdf}
 	\caption{Task decomposition by prefix. The search tree is partitioned at level $L$, yielding $(N_p+1)^L$ independent subtrees distributed across MPI ranks. In this example, $L=2$ and $N_p=3$ generate 16 tasks assigned to 3 ranks via round-robin.}
 	\label{fig:tree_decomposition}
 \end{figure}
@@ -301,14 +301,14 @@ To evaluate solver performance, we employ the AnyTown Modified network, a well-e
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\columnwidth]{figures/Figure_3_anytown_network.png}
+	\includegraphics[width=0.9\columnwidth]{figures/Figure_3_anytown_network.pdf}
 	\caption{Topology of the AnyTown Modified network. The network includes a reservoir (node 10), three storage tanks (nodes 65, 165, 265), and 19 demand nodes connected by 44 pipes. Three parallel pumps supply water from the reservoir.}
 	\label{fig:anytown_network}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.8\columnwidth]{figures/Figure_4_anytown_energy_cost.png}
+	\includegraphics[width=0.8\columnwidth]{figures/Figure_4_anytown_energy_cost.pdf}
 	\caption{Hourly energy price pattern used for pump operating cost calculations in the AnyTown Modified network.}
 	\label{fig:anytown_energy_cost}
 \end{figure}
@@ -368,7 +368,7 @@ Notably, disabling pump sorting yields the \emph{fastest} runtime (3.11s) becaus
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\columnwidth]{figures/Figure_5_scalability.png}
+	\includegraphics[width=0.9\columnwidth]{figures/Figure_5_scalability.pdf}
 	\caption{Parallel scalability on AnyTown Modified ($T=24$, $NA_{\max}=1$).}
 	\label{fig:scalability}
 \end{figure}
@@ -381,7 +381,7 @@ We solved the complete 24-hour problem under varying actuation constraints with 
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=\linewidth]{figures/Figure_6_tank_levels_24h.png}
+	\includegraphics[width=\linewidth]{figures/Figure_6_tank_levels_24h.pdf}
 	\caption{Hydraulic trajectories for optimal schedules under different actuation limits ($NA_{\max}=1,2,3$). Top: tank water levels; dashed lines show bounds, dotted line shows initial level. Bottom: nodal pressures; dashed lines show minimum thresholds.}
 	\label{fig:tank_levels}
 \end{figure}
@@ -448,21 +448,21 @@ Computational performance shows substantial improvement over sequential B\&B: sp
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{figures/Figure_7_comparison_table_a1.png}
+	\includegraphics[width=\textwidth]{figures/Figure_7_comparison_table_a1.pdf}
 	\caption{Pump schedule comparison for $NA_{\max}=1$. EPANET-BB achieves the lowest cost (\$3,567.99), improving upon Cimorelli et al.'s GA (\$3,634.67) by 1.8\%.}
 	\label{fig:comparison_a1}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{figures/Figure_8_comparison_table_a2.png}
+	\includegraphics[width=\textwidth]{figures/Figure_8_comparison_table_a2.pdf}
 	\caption{Pump schedule comparison for $NA_{\max}=2$. EPANET-BB achieves the lowest cost (\$3,472.89), improving upon Cimorelli et al.'s GA (\$3,580.11) by 3.0\%.}
 	\label{fig:comparison_a2}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{figures/Figure_9_comparison_table_a3.png}
+	\includegraphics[width=\textwidth]{figures/Figure_9_comparison_table_a3.pdf}
 	\caption{Pump schedule comparison for $NA_{\max}=3$. EPANET-BB achieves the lowest cost (\$3,443.46), improving upon Cimorelli et al.'s GA (\$3,575.54) by 3.7\%.}
 	\label{fig:comparison_a3}
 \end{figure}

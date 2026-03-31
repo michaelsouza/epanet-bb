@@ -14,7 +14,7 @@ import pandas as pd
 from pathlib import Path
 
 # Configuration
-FIGURE_OUTPUT = "paper/figures_new/Figure_5_scalability.png"
+FIGURE_OUTPUT = "paper/figures_new/Figure_5_scalability.pdf"
 DATA = [
     {"np": 1, "wall_time": 85.08, "speedup": 1.00, "efficiency": 100.0},
     {"np": 2, "wall_time": 46.13, "speedup": 1.84, "efficiency": 92.2},
