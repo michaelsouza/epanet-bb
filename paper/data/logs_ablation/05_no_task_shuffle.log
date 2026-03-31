@@ -1,0 +1,158 @@
+Experiment: 05_no_task_shuffle
+Environment: {'BB_ENABLE_TASK_SHUFFLE': '0'}
+Command: mpirun -n 128 ./build/run-epanet3-bb -h 24 -a 1 -l 8 -s 32768
+Started at: 2026-01-12 17:00:08
+
+[36m════════════════════════════════════════
+[0m[36mBranch & Bound Configuration:
+[0m[37m  Input file:      networks/any-town.inp
+[0m[37m  Max hours:       24
+[0m[37m  Max actuations:  1
+[0m[37m  Level:           8
+[0m[37m  Sync interval:   32768
+[0m[37m  Verbose:         0
+[0m[37m  Stats file:      outputs/run_a_01_h_24_l_08_s_32768_n_128_r_00_stats.json
+[0m[37m  Best file:       outputs/run_a_01_h_24_l_08_s_32768_n_128_r_00_best.json
+[0m[37m  Profile file:    outputs/run_a_01_h_24_l_08_s_32768_n_128_r_00_prof.txt
+[0m[36mExperimental Toggles:
+[0m[37m  Snapshots:       ON
+[0m[37m  Cost Pruning:    ON
+[0m[37m  Pump Sorting:    ON
+[0m[37m  Task Shuffle:    OFF
+[0m[37m  Global Sync:     ON
+[0m[37m  Timestep Check:  OFF
+[0m[93mGenerated 65536 tasks
+[0m[93mProc 51: tasks=512, time(proc=0.115s, sync=0.000s, overhead=0.001s, total=0.116s), cost(local=INFINITY, global=INFINITY)
+[0m[[93mProc 99: tasks=512, time(proc=0.116s, sync=0.006s, overhead=0.001s, total=0.123s), cost(local=629143.63, global=INFINITY)
+[0m93mProc 115: tasks=512, time(proc=0.113s, sync=0.009s, overhead=0.001s, total=0.123s), cost(local=633220.90, global=INFINITY)
+[0m[93[93mProc 72: tasks=512, time(proc=0.117s, sync=0.006s, overhead=0.001s, total=0.123s), cost(local=INFINITY, global=INFINITY)
+[0m[93mProc 77: tasks=512, time(proc=0.114s, sync=0.014s, overhead=0.001s, total=0.128s), cost(local=INFINITY, global=INFINITY)
+[0m[93mProc 13: tasks=512, time(proc=0.116s, sync=0.005s, overhead=0.001s, total=0.122s), cost(local=INFINITY, global=INFINITY)
+[0mmProc 08: tasks=512, time(proc=0.118s, sync=0.002s, overhead=0.001s, total=0.121s), cost(local=INFINITY, global=INFINITY)
+[0m[[93mProc 108: tasks=512, time(proc=0.115s, sync=0.012s, overhead=0.001s, total=0.128s), cost(local=INFINITY, global=INFINITY)
+[0m93[93mProc 12: tasks=512, time(proc=0.113s, sync=0.018s, overhead=0.001s, total=0.132s), cost(local=INFINITY, global=INFINITY)
+[0m[93mProc 19: tasks=512, time(proc=0.123s, sync=0.007s, overhead=0.001s, total=0.130s), cost(local=526868.60, global=INFINITY)
+[0m[93mProc 28: tasks=512, time(proc=0.116s, sync=0.007s, overhead=0.001s, total=0.124s), cost(local=INFINITY, global=INFINITY)
+[0m[93mProc 35: tasks=512, time(proc=0.125s, sync=0.001s, overhead=0.001s, total=0.127s), cost(local=529171.00, global=INFINITY)
+[0mmProc 48: tasks=512, time(proc=0.122s, sync=0.009s, overhead=0.001s, total=0.131s), cost(local=529058.42, global=INFINITY)
+[0m[93mProc 55: tasks=512, time(proc=0.122s, sync=0.002s, overhead=0.001s, total=0.125s), cost(local=526223.44, global=INFINITY)
+[0m[93mProc 76: tasks=512, time(proc=0.114s, sync=0.009s, overhead=0.001s, total=0.124s), cost(local=INFINITY, global=INFINITY)
+[0m[93mProc 92: tasks=512, time(proc=0.117s, sync=0.014s, overhead=0.001s, total=0.131s), cost(local=INFINITY, global=INFINITY)
+[0m[93mProc 49: tasks=512, time(proc=0.126s, sync=0.000s, overhead=0.001s, total=0.127s), cost(local=529541.95, global=INFINITY)
+[0m[[93mProc 56: tasks=512, time(proc=0.128s, sync=0.004s, overhead=0.001s, total=0.133s), cost(local=518525.56, global=INFINITY)
+[0m93mProc 24: tasks=512, time(proc=0.130s, sync=0.003s, overhead=0.001s, total=0.134s), cost(local=514184.52, global=INFINITY)
+[0m[93mProc 52: tasks=512, time(proc=0.128s, sync=0.000s, overhead=0.001s, total=0.129s), cost(local=520650.61, global=INFINITY)
+[93mProc 50: tasks=512, time(proc=0.116s, sync=0.012s, overhead=0.001s, total=0.129s), cost(local=531424.14, global=INFINITY)
+[0m[0m[93mProc 60: tasks=512, time(proc=0.129s, sync=0.000s, overhead=0.001s, total=0.130s), cost(local=521301.19, global=INFINITY)
+[0m[[93mProc 78: tasks=512, time(proc=0.130s, sync=0.001s, overhead=0.001s, total=0.131s), cost(local=459026.25, global=INFINITY)
+[0m93[93mProc 29: tasks=512, time(proc=0.131s, sync=0.000s, overhead=0.001s, total=0.131s), cost(local=446290.08, global=INFINITY)
+[0mmProc 44: tasks=512, time(proc=0.129s, sync=0.006s, overhead=0.001s, total=0.136s), cost(local=519262.56, global=INFINITY)
+[0m[[93mProc 14: tasks=512, time(proc=0.135s, sync=0.000s, overhead=0.001s, total=0.136s), cost(local=465945.62, global=INFINITY)
+[0m93mProc 114: tasks=512, time(proc=0.121s, sync=0.014s, overhead=0.001s, total=0.136s), cost(local=535501.41, global=INFINITY)
+[0m[93mProc 68: tasks=512, time(proc=0.137s, sync=0.011s, overhead=0.001s, total=0.149s), cost(local=518682.07, global=INFINITY)
+[93mProc 98: tasks=512, time(proc=0.135s, sync=0.010s, overhead=0.001s, total=0.145s), cost(local=459295.43, global=INFINITY)
+[0m[93mProc 04: tasks=512, time(proc=0.144s, sync=0.000s, overhead=0.001s, total=0.145s), cost(local=521779.43, global=INFINITY)
+[0m[0m[93mProc 112: tasks=512, time(proc=0.151s, sync=0.000s, overhead=0.001s, total=0.152s), cost(local=533135.69, global=INFINITY)
+[0m[93mProc 119: tasks=512, time(proc=0.144s, sync=0.002s, overhead=0.001s, total=0.147s), cost(local=530300.71, global=INFINITY)
+[0m[93mProc 67: tasks=512, time(proc=0.146s, sync=0.000s, overhead=0.001s, total=0.147s), cost(local=529159.97, global=INFINITY)
+[0m[93mProc 03: tasks=512, time(proc=0.160s, sync=0.006s, overhead=0.001s, total=0.167s), cost(local=532257.33, global=INFINITY)
+[0m[93mProc 79: tasks=512, time(proc=0.167s, sync=0.000s, overhead=0.001s, total=0.168s), cost(local=456478.66, global=INFINITY)
+[0m[[93mProc 73: tasks=512, time(proc=0.165s, sync=0.000s, overhead=0.001s, total=0.166s), cost(local=445802.98, global=INFINITY)
+[0m93mProc 113: tasks=512, time(proc=0.165s, sync=0.000s, overhead=0.001s, total=0.166s), cost(local=533619.22, global=INFINITY)
+[0m[[93mProc 75: tasks=512, time(proc=0.172s, sync=0.000s, overhead=0.001s, total=0.173s), cost(local=463272.86, global=INFINITY)
+[0m93mProc 09: tasks=512, time(proc=0.164s, sync=0.000s, overhead=0.001s, total=0.165s), cost(local=446163.64, global=INFINITY)
+[0m[93mProc 07: tasks=512, time(proc=0.168s, sync=0.000s, overhead=0.001s, total=0.169s), cost(local=524094.29, global=INFINITY)
+[0m[93mProc 83: tasks=512, time(proc=0.173s, sync=0.000s, overhead=0.001s, total=0.174s), cost(local=467942.72, global=INFINITY)
+[0m[93[93mProc 96: tasks=512, time(proc=0.176s, sync=0.000s, overhead=0.001s, total=0.177s), cost(local=458258.80, global=INFINITY)
+[0mmProc 88: tasks=512, time(proc=0.173s, sync=0.000s, overhead=0.001s, total=0.174s), cost(local=451232.23, global=INFINITY)
+[0m[93mProc 71: tasks=512, time(proc=0.178s, sync=0.000s, overhead=0.001s, total=0.179s), cost(local=467895.11, global=INFINITY)
+[0m[93mProc 93: tasks=512, time(proc=0.185s, sync=0.000s, overhead=0.001s, total=0.186s), cost(local=446095.73, global=INFINITY)
+[0m[93mProc 15: tasks=512, time(proc=0.189s, sync=0.000s, overhead=0.001s, total=0.190s), cost(local=463261.15, global=INFINITY)
+[0m[93mProc 116: tasks=512, time(proc=0.186s, sync=0.000s, overhead=0.001s, total=0.187s), cost(local=524727.88, global=INFINITY)
+[0m[[93mProc 54: tasks=512, time(proc=0.198s, sync=0.000s, overhead=0.001s, total=0.199s), cost(local=452528.67, global=INFINITY)
+[0m93mProc 103: tasks=512, time(proc=0.196s, sync=0.000s, overhead=0.001s, total=0.197s), cost(local=456491.55, global=INFINITY)
+[0m[93mProc 124: tasks=512, time(proc=0.198s, sync=0.000s, overhead=0.001s, total=0.198s), cost(local=525378.46, global=INFINITY)
+[0m[93mProc 120: tasks=512, time(proc=0.196s, sync=0.000s, overhead=0.001s, total=0.197s), cost(local=522602.83, global=INFINITY)
+[0m[93mProc 34: tasks=512, time(proc=0.202s, sync=0.000s, overhead=0.001s, total=0.203s), cost(local=453314.13, global=INFINITY)
+[0m[93mProc 97: tasks=512, time(proc=0.203s, sync=0.000s, overhead=0.001s, total=0.203s), cost(local=459864.05, global=INFINITY)
+[0m[93mProc 11: tasks=512, time(proc=0.203s, sync=0.000s, overhead=0.001s, total=0.204s), cost(local=467774.07, global=INFINITY)
+[0m[93mProc 18: tasks=512, time(proc=0.211s, sync=0.000s, overhead=0.001s, total=0.212s), cost(local=452419.30, global=INFINITY)
+[0m[93mProc 30: tasks=512, time(proc=0.225s, sync=0.000s, overhead=0.001s, total=0.225s), cost(local=449964.45, global=INFINITY)
+[0m[93mProc 100: tasks=512, time(proc=0.231s, sync=0.000s, overhead=0.001s, total=0.232s), cost(local=451202.99, global=INFINITY)
+[0m[93mProc 109: tasks=512, time(proc=0.232s, sync=0.000s, overhead=0.001s, total=0.233s), cost(local=437333.77, global=INFINITY)
+[0m[93mProc 104: tasks=512, time(proc=0.264s, sync=0.000s, overhead=0.001s, total=0.265s), cost(local=444433.02, global=INFINITY)
+[0m[93mProc 00: tasks=512, time(proc=0.323s, sync=0.000s, overhead=0.001s, total=0.324s), cost(local=458029.55, global=INFINITY)
+[0m[93mProc 66: tasks=512, time(proc=0.338s, sync=0.000s, overhead=0.001s, total=0.339s), cost(local=458663.30, global=INFINITY)
+[0m[93mProc 32: tasks=512, time(proc=0.354s, sync=0.000s, overhead=0.001s, total=0.355s), cost(local=451815.12, global=INFINITY)
+[0m[93mProc 16: tasks=512, time(proc=0.362s, sync=0.000s, overhead=0.001s, total=0.363s), cost(local=450920.29, global=INFINITY)
+[0m[93mProc 02: tasks=512, time(proc=0.384s, sync=0.000s, overhead=0.001s, total=0.385s), cost(local=459023.96, global=INFINITY)
+[0m[93mProc 64: tasks=512, time(proc=0.390s, sync=0.000s, overhead=0.001s, total=0.391s), cost(local=457668.89, global=INFINITY)
+[0m[93mProc 118: tasks=512, time(proc=0.414s, sync=0.000s, overhead=0.001s, total=0.415s), cost(local=452482.16, global=INFINITY)
+[0m[93mProc 70: tasks=512, time(proc=0.420s, sync=0.000s, overhead=0.001s, total=0.421s), cost(local=381939.96, global=INFINITY)
+[0m[[93mProc 74: tasks=512, time(proc=0.432s, sync=0.000s, overhead=0.001s, total=0.433s), cost(local=376954.37, global=INFINITY)
+[0m93mProc 82: tasks=512, time(proc=0.423s, sync=0.000s, overhead=0.001s, total=0.424s), cost(local=381910.51, global=INFINITY)
+[0m[93mProc 59: tasks=512, time(proc=0.438s, sync=0.000s, overhead=0.001s, total=0.439s), cost(local=452295.22, global=INFINITY)
+[0m[93mProc 39: tasks=512, time(proc=0.450s, sync=0.000s, overhead=0.001s, total=0.451s), cost(local=455568.45, global=INFINITY)
+[0m[93mProc 57: tasks=512, time(proc=0.452s, sync=0.000s, overhead=0.001s, total=0.453s), cost(local=406595.89, global=INFINITY)
+[0m[93mProc 61: tasks=512, time(proc=0.455s, sync=0.000s, overhead=0.001s, total=0.456s), cost(local=409371.52, global=INFINITY)
+[0m[93mProc 45: tasks=512, time(proc=0.457s, sync=0.000s, overhead=0.001s, total=0.458s), cost(local=407877.16, global=INFINITY)
+[0m[93mProc 33: tasks=512, time(proc=0.468s, sync=0.000s, overhead=0.001s, total=0.469s), cost(local=452846.23, global=INFINITY)
+[0m[93mProc 31: tasks=512, time(proc=0.477s, sync=0.000s, overhead=0.001s, total=0.478s), cost(local=454632.37, global=INFINITY)
+[0m[93mProc 06: tasks=512, time(proc=0.473s, sync=0.000s, overhead=0.001s, total=0.474s), cost(local=452393.10, global=INFINITY)
+[0m[93mProc 94: tasks=512, time(proc=0.473s, sync=0.000s, overhead=0.001s, total=0.474s), cost(local=364670.00, global=INFINITY)
+[0m[93mProc 17: tasks=512, time(proc=0.481s, sync=0.000s, overhead=0.001s, total=0.482s), cost(local=452673.98, global=INFINITY)
+[0m[93mProc 53: tasks=512, time(proc=0.500s, sync=0.000s, overhead=0.001s, total=0.501s), cost(local=437780.62, global=INFINITY)
+[0m[93mProc 25: tasks=512, time(proc=0.518s, sync=0.000s, overhead=0.001s, total=0.519s), cost(local=405922.93, global=INFINITY)
+[0m[93mProc 27: tasks=512, time(proc=0.524s, sync=0.000s, overhead=0.001s, total=0.525s), cost(local=451622.26, global=INFINITY)
+[0m[93mProc 23: tasks=512, time(proc=0.529s, sync=0.000s, overhead=0.001s, total=0.530s), cost(local=454896.07, global=INFINITY)
+[0m[93mProc 10: tasks=512, time(proc=0.551s, sync=0.000s, overhead=0.001s, total=0.552s), cost(local=388640.69, global=INFINITY)
+[0m[[93mProc 36: tasks=512, time(proc=0.617s, sync=0.000s, overhead=0.001s, total=0.618s), cost(local=443597.69, global=INFINITY)
+[0m[93mProc 80: tasks=512, time(proc=0.614s, sync=0.000s, overhead=0.001s, total=0.615s), cost(local=450559.63, global=INFINITY)
+[0m93mProc 01: tasks=512, time(proc=0.611s, sync=0.000s, overhead=0.001s, total=0.612s), cost(local=459588.02, global=INFINITY)
+[0m[93mProc 20: tasks=512, time(proc=0.617s, sync=0.000s, overhead=0.001s, total=0.618s), cost(local=442702.86, global=INFINITY)
+[0m[93mProc 102: tasks=512, time(proc=0.633s, sync=0.000s, overhead=0.001s, total=0.634s), cost(local=369180.56, global=INFINITY)
+[0m[93mProc 65: tasks=512, time(proc=0.655s, sync=0.000s, overhead=0.001s, total=0.656s), cost(local=459227.36, global=INFINITY)
+[0m[93mProc 110: tasks=512, time(proc=0.663s, sync=0.000s, overhead=0.001s, total=0.663s), cost(local=359260.84, global=INFINITY)
+[0m[93mProc 40: tasks=512, time(proc=0.692s, sync=0.000s, overhead=0.001s, total=0.693s), cost(local=442926.86, global=INFINITY)
+[0m[93mProc 81: tasks=512, time(proc=0.858s, sync=0.000s, overhead=0.001s, total=0.859s), cost(local=384573.31, global=INFINITY)
+[0m[93mProc 69: tasks=512, time(proc=0.900s, sync=0.000s, overhead=0.001s, total=0.901s), cost(local=384629.09, global=INFINITY)
+[0m[93mProc 95: tasks=512, time(proc=0.967s, sync=0.000s, overhead=0.001s, total=0.968s), cost(local=365007.01, global=INFINITY)
+[0m[93mProc 05: tasks=512, time(proc=1.019s, sync=0.000s, overhead=0.001s, total=1.020s), cost(local=452685.98, global=INFINITY)
+[0m[93mProc 91: tasks=512, time(proc=1.077s, sync=0.000s, overhead=0.001s, total=1.078s), cost(local=368638.86, global=INFINITY)
+[0m[93mProc 125: tasks=512, time(proc=1.102s, sync=0.000s, overhead=0.001s, total=1.103s), cost(local=407115.50, global=INFINITY)
+[0m[93mProc 84: tasks=512, time(proc=1.097s, sync=0.000s, overhead=0.001s, total=1.098s), cost(local=375703.00, global=INFINITY)
+[0m[93mProc 87: tasks=512, time(proc=1.108s, sync=0.000s, overhead=0.001s, total=1.109s), cost(local=374941.90, global=INFINITY)
+[0m[93mProc 121: tasks=512, time(proc=1.129s, sync=0.000s, overhead=0.001s, total=1.130s), cost(local=408493.07, global=INFINITY)
+[0m[93mProc 89: tasks=512, time(proc=1.160s, sync=0.000s, overhead=0.001s, total=1.161s), cost(local=368956.23, global=INFINITY)
+[0m[93mProc 123: tasks=512, time(proc=1.220s, sync=0.000s, overhead=0.001s, total=1.221s), cost(local=454192.41, global=INFINITY)
+[0m[93mProc 117: tasks=512, time(proc=1.279s, sync=0.000s, overhead=0.001s, total=1.280s), cost(local=439677.80, global=INFINITY)
+[0m[93mProc 58: tasks=512, time(proc=1.433s, sync=0.000s, overhead=0.001s, total=1.434s), cost(local=358802.01, global=INFINITY)
+[0m[93mProc 38: tasks=512, time(proc=1.471s, sync=0.000s, overhead=0.001s, total=1.472s), cost(local=361956.45, global=INFINITY)
+[0m[93mProc 111: tasks=512, time(proc=1.476s, sync=0.000s, overhead=0.001s, total=1.477s), cost(local=363895.99, global=INFINITY)
+[0m[93mProc 62: tasks=512, time(proc=1.596s, sync=0.000s, overhead=0.001s, total=1.597s), cost(local=361577.64, global=INFINITY)
+[0m[93mProc 46: tasks=512, time(proc=1.600s, sync=0.000s, overhead=0.001s, total=1.601s), cost(local=360083.28, global=INFINITY)
+[0m[93mProc 107: tasks=512, time(proc=1.669s, sync=0.000s, overhead=0.001s, total=1.670s), cost(local=364613.24, global=INFINITY)
+[0m[93mProc 26: tasks=512, time(proc=1.817s, sync=0.000s, overhead=0.001s, total=1.818s), cost(local=358129.05, global=INFINITY)
+[0m[93mProc 22: tasks=512, time(proc=1.835s, sync=0.000s, overhead=0.001s, total=1.836s), cost(local=361061.62, global=INFINITY)
+[0m[93mProc 101: tasks=512, time(proc=1.851s, sync=0.000s, overhead=0.001s, total=1.852s), cost(local=368916.91, global=INFINITY)
+[0m[93mProc 105: tasks=512, time(proc=1.888s, sync=0.000s, overhead=0.001s, total=1.889s), cost(local=361949.98, global=INFINITY)
+[0m[93mProc 63: tasks=512, time(proc=3.567s, sync=0.000s, overhead=0.001s, total=3.568s), cost(local=366975.89, global=INFINITY)
+[0m[93mProc 47: tasks=512, time(proc=3.588s, sync=0.000s, overhead=0.001s, total=3.588s), cost(local=365481.53, global=INFINITY)
+[0m[93mProc 122: tasks=512, time(proc=3.655s, sync=0.000s, overhead=0.001s, total=3.656s), cost(local=359481.46, global=INFINITY)
+[0m[93mProc 43: tasks=512, time(proc=3.913s, sync=0.000s, overhead=0.001s, total=3.914s), cost(local=360996.89, global=INFINITY)
+[0m[93mProc 126: tasks=512, time(proc=3.970s, sync=0.000s, overhead=0.001s, total=3.971s), cost(local=359321.62, global=INFINITY)
+[0m[93mProc 37: tasks=512, time(proc=4.191s, sync=0.000s, overhead=0.001s, total=4.192s), cost(local=361799.32, global=INFINITY)
+[0m[93mProc 41: tasks=512, time(proc=4.240s, sync=0.000s, overhead=0.001s, total=4.241s), cost(local=356798.87, global=INFINITY)
+[0m[93mProc 86: tasks=512, time(proc=4.568s, sync=0.000s, overhead=0.001s, total=4.569s), cost(local=360700.96, global=INFINITY)
+[0m[93mProc 90: tasks=512, time(proc=4.949s, sync=0.000s, overhead=0.001s, total=4.949s), cost(local=357768.39, global=INFINITY)
+[0m[93mProc 21: tasks=512, time(proc=5.015s, sync=0.000s, overhead=0.001s, total=5.016s), cost(local=361281.82, global=INFINITY)
+[0m[93mProc 106: tasks=512, time(proc=7.640s, sync=0.000s, overhead=0.001s, total=7.641s), cost(local=358105.63, global=356798.87)
+[0m[93mProc 127: tasks=512, time(proc=8.390s, sync=0.000s, overhead=0.001s, total=8.391s), cost(local=364719.87, global=356798.87)
+[0m[93mProc 85: tasks=512, time(proc=10.481s, sync=0.000s, overhead=0.001s, total=10.481s), cost(local=361046.72, global=356798.87)
+[0m[93mProc 42: tasks=512, time(proc=15.127s, sync=0.000s, overhead=0.001s, total=15.128s), cost(local=357326.03, global=356798.87)
+[0m[92m💾 Writing best solution to file: outputs/run_a_01_h_24_l_08_s_32768_n_128_r_00_best.json
+[0m[92mSave profile to file: outputs/run_a_01_h_24_l_08_s_32768_n_128_r_00_prof.txt
+[0m[92mGlobal best cost: 356798.87
+[0m
+Finished at: 2026-01-12 17:00:25
+Duration: 16.95 seconds
