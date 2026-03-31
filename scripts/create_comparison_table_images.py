@@ -7,7 +7,7 @@ import matplotlib.patches as patches
 from pathlib import Path
 
 DATA_DIR = Path("paper/data")
-OUTPUT_DIR = Path("paper/figures_new")
+OUTPUT_DIR = Path("paper/figures")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Source display configuration (key -> label, color)

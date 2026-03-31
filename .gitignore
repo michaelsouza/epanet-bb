@@ -1,4 +1,4 @@
 .venv/*
+.vscode
 references
 todo.md
-.vscode

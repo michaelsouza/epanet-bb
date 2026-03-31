@@ -11,7 +11,7 @@ from pathlib import Path
 # Get the project root directory
 script_dir = Path(__file__).parent
 project_root = script_dir.parent
-figures_dir = project_root / "paper/figures_new"
+figures_dir = project_root / "paper/figures"
 
 # Load the network
 wn = wntr.network.WaterNetworkModel(project_root / 'networks/any-town.inp')
