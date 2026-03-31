@@ -132,3 +132,9 @@ article/*.png
 letter_Deletic_WR.aux
 .gitignore
 letter_Deletic_WR.log
+
+# Reference files
+references
+
+# Local notes
+todo.md

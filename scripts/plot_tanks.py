@@ -11,11 +11,12 @@ The output figure consists of:
 - Bottom row: Pressure heads for critical nodes 55, 90, and 170 over 24 hours.
 
 Inputs:
-- `article/data/outputs/agg_outputs.json`: Aggregated B&B optimization results.
+- `paper/data/run_Souza2026_a_01.json`, `paper/data/run_Souza2026_a_02.json`,
+  and `paper/data/run_Souza2026_a_03.json`: Best B&B optimization results.
 - `networks/any-town.inp`: The AnyTown water distribution network model.
 
 Outputs:
-- `article/figures/tank_levels_24h.png`: A 2x3 grid plot visualizing the hydraulic state constraints.
+- `paper/figures_new/Figure_6_tank_levels_24h.png`: A 2x3 grid plot visualizing the hydraulic state constraints.
 
 Dependencies:
 - wntr: For EPANET hydraulic simulation.
@@ -142,38 +143,23 @@ def main():
     """
     Main execution routine.
 
-    1. Loads optimization results from `agg_outputs.json`.
-    2. Filters for valid solutions (valid cost, correct horizon, known actuation limits).
-    3. Simulates each valid solution using the AnyTown network model.
-    4. Generates and saves a multi-panel figure comparing hydraulic responses.
+    1. Loads best-solution JSON files for `NA_max = 1, 2, 3`.
+    2. Simulates each solution using the AnyTown network model.
+    3. Generates and saves a multi-panel figure comparing hydraulic responses.
     """
-    # Load solutions for each actuation limit from the aggregated outputs.
-    # Expected schema:
-    #   {"runs": [{"config": {"a": 1, "h": 24, ...}, "best": {"x": [...], "cost": ...}}, ...]}
-    agg_path = project_root / "article/data/outputs/agg_outputs.json"
-    with open(agg_path, "r") as f:
-        agg = json.load(f)
-
     solutions = {}
-    for run in agg.get("runs", []):
-        cfg = run.get("config", {})
-        best = run.get("best", {})
-
-        a_max = cfg.get("a")
-        if a_max not in [1, 2, 3]:
-            continue
-        if cfg.get("h", HOURS) != HOURS:
-            continue
-        if "x" not in best or "cost" not in best:
-            continue
-
-        solutions[a_max] = {"best_x": best["x"], "best_cost": best["cost"]}
+    for a_max in [1, 2, 3]:
+        result_path = project_root / f"paper/data/run_Souza2026_a_{a_max:02d}.json"
+        with open(result_path, "r") as f:
+            payload = json.load(f)
+        solutions[a_max] = {
+            "best_x": payload["best_x"],
+            "best_cost": payload["best_cost"],
+        }
 
     missing = [a for a in [1, 2, 3] if a not in solutions]
     if missing:
-        raise RuntimeError(
-            f"Missing runs for actuation limits: {missing} in {agg_path}"
-        )
+        raise RuntimeError(f"Missing runs for actuation limits: {missing}")
 
     # Run simulations and collect tank levels + pressures
     all_tank_levels = {}
@@ -292,7 +278,7 @@ def main():
     plt.subplots_adjust(bottom=0.13)
 
     # Save figure
-    output_path = project_root / "article/figures/tank_levels_24h.png"
+    output_path = project_root / "paper/figures_new/Figure_6_tank_levels_24h.png"
     plt.savefig(
         output_path, dpi=500, bbox_inches="tight", facecolor="white", edgecolor="none"
     )

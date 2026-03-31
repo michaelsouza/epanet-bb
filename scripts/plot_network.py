@@ -11,6 +11,7 @@ from pathlib import Path
 # Get the project root directory
 script_dir = Path(__file__).parent
 project_root = script_dir.parent
+figures_dir = project_root / "paper/figures_new"
 
 # Load the network
 wn = wntr.network.WaterNetworkModel(project_root / 'networks/any-town.inp')
@@ -115,11 +116,10 @@ def plot_energy_cost_by_hour(output_path: Path, pattern_name: str = "PRICES") ->
 
 
 def main() -> None:
-    figures_dir = project_root / "article/figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
 
-    plot_network(figures_dir / "anytown_network.png")
-    plot_energy_cost_by_hour(figures_dir / "anytown_energy_cost.png")
+    plot_network(figures_dir / "Figure_3_anytown_network.png")
+    plot_energy_cost_by_hour(figures_dir / "Figure_4_anytown_energy_cost.png")
 
 
 if __name__ == "__main__":
