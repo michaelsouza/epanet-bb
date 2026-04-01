@@ -73,32 +73,6 @@ This work extends the foundational approach of \citeN{Costa2016} with distribute
 
 The pump scheduling problem is formulated as a mixed-integer nonlinear program (MINLP). The goal is to determine optimal ON/OFF schedules for all pumps over a fixed planning horizon, minimizing total energy costs while satisfying hydraulic and operational constraints.
 
-\subsection{Notation}
-
-\textbf{Sets:}
-\begin{itemize}
-	\item $\mathcal{H} = \{1, 2, \ldots, T\}$: Time steps in the planning horizon (typically $T = 24$ hours)
-	\item $\mathcal{I}$: Network nodes (junctions and tanks)
-	\item $\mathcal{K} \subseteq \mathcal{I}$: Storage tanks
-	\item $\mathcal{A}$: Network arcs (directed links connecting nodes)
-	\item $\mathcal{L} \subseteq \mathcal{A}$: Pipes
-	\item $\mathcal{P} \subseteq \mathcal{A}$: Pumps, with $|\mathcal{P}| = N_p$
-\end{itemize}
-
-\textbf{Parameters:}
-\begin{itemize}
-	\item $C_{j,h}$: Electricity tariff for pump $j$ at time $h$ (\$/kWh)
-	\item $P_{i}^{\min}, P_{i}^{\max}$: Pressure bounds at node $i$ (m)
-	\item $L_{k}^{\min}, L_{k}^{\max}$: Water level bounds for tank $k$ (m)
-	\item $L_{k,0}$: Initial water level in tank $k$
-	\item $NA_{\max}$: Maximum pump state transitions (ON$\to$OFF or OFF$\to$ON) per pump per day
-\end{itemize}
-
-\textbf{Decision Variables:}
-\begin{itemize}
-	\item $x_{j,h} \in \{0, 1\}$: Binary status of pump $j$ at hour $h$ (1 = ON, 0 = OFF)
-\end{itemize}
-
 \subsection{Objective Function}
 
 The objective minimizes total energy cost over the planning horizon:
@@ -133,7 +107,7 @@ where $E_{j,h}(\mathbf{x})$ denotes the energy consumed by pump $j$ during hour 
 	\label{eq:actuation_limits}
 \end{equation}
 
-\textbf{Hydraulic Model.} The hydraulic state is governed by physical laws governing flow conservation, head losses, and pump characteristics \cite{Bonvin2021}. Let $q_{a,h} \in \mathbb{R}$ denote the flow rate (m$^3$/h) through arc $a$ at hour $h$, and $H_{i,h} \geq 0$ denote the hydraulic head (m) at node $i$, defined as the sum of elevation and pressure head.
+\textbf{Hydraulic Model.} The hydraulic state is governed by physical laws governing flow conservation, head losses, and pump characteristics \cite{Bonvin2021}. Let $q_{a,h} \in \mathbb{R}$ denote the flow rate (m$^3$/s) through arc $a$ at time step $h$, and $H_{i,h} \geq 0$ denote the hydraulic head (m) at node $i$, defined as the sum of elevation and pressure head.
 
 Flow conservation at each internal node requires:
 \begin{multline}
@@ -141,7 +115,7 @@ Flow conservation at each internal node requires:
 	\quad \forall j \in \mathcal{I} \setminus \mathcal{K}, \; \forall h \in \mathcal{H}
 	\label{eq:flow_conservation}
 \end{multline}
-where $\delta^-(j)$ and $\delta^+(j)$ denote arcs entering and leaving node $j$, respectively, and $D_{j,h} \geq 0$ is the water demand rate at node $j$ during hour $h$.
+where $\delta^-(j)$ and $\delta^+(j)$ denote arcs entering and leaving node $j$, respectively, and $D_{j,h} \geq 0$ is the water demand rate at node $j$ during time step $h$.
 
 For each pipe $\ell = (i,j) \in \mathcal{L}$, head loss follows the Hazen-Williams or Darcy-Weisbach relationship \cite{Brown2002,Burgschweiger2009a}:
 \begin{equation}
@@ -164,7 +138,7 @@ Tank dynamics relate net inflow to water level change:
 	\forall k \in \mathcal{K}, \; \forall h \in \mathcal{H}
 	\label{eq:tank_dynamics}
 \end{multline}
-where $S_k$ is the tank cross-sectional area (m$^2$) and $\Delta t = 1$ hour.
+where $S_k$ is the tank cross-sectional area (m$^2$) and $\Delta t = 3600$~s.
 
 Rather than explicitly encoding the nonlinear constraints \eqref{eq:flow_conservation}--\eqref{eq:tank_dynamics} in the optimization, our approach evaluates feasibility through hydraulic simulation. For each candidate schedule $\mathbf{x}$ visited during Branch-and-Bound traversal, EPANET~3 computes the hydraulic state (flows, heads, tank levels) by solving the full system \eqref{eq:flow_conservation}--\eqref{eq:tank_dynamics} using the Global Gradient Algorithm \cite{Todini1988}. We then enforce constraints \eqref{eq:pressure_limits}, \eqref{eq:tank_bounds}, and \eqref{eq:tank_recovery} based on these simulated values. The actuation constraint \eqref{eq:actuation_limits} is enforced directly during schedule construction.
 
@@ -490,10 +464,7 @@ Two directions merit further investigation. First, dynamic work stealing could i
 
 \section*{Data Availability Statement}
 
-Some or all data, models, or code generated or used during the study are available
-in a repository online in accordance with funder data retention policies.
-The source code and benchmark data required to reproduce the results presented in
-this paper are available at \url{https://github.com/michaelsouza/epanet-bb}.
+Some or all data, models, or code generated or used during the study are available in a repository online in accordance with funder data retention policies. The EPANET-BB source code, benchmark network files, experiment configurations, and processed result tables used to support the findings of this study are available at \url{https://github.com/michaelsouza/epanet-bb}.
 
 \section*{Acknowledgments}
 
@@ -513,6 +484,39 @@ for publication.
 % Note: Declarations of competing interests and AI-assisted writing should be
 % entered through ASCE's manuscript submission system (Editorial Manager),
 % not included as separate sections in the manuscript.
+
+\section{Notation}
+
+\emph{The following symbols are used in this paper:}
+\nopagebreak
+\par
+\begin{tabular}{r @{\hspace{1em}=\hspace{1em}} l}
+	$\mathcal{A}$                & set of network arcs; \\
+	$C_{j,h}$                    & electricity tariff for pump $j$ at time step $h$ (\$/kWh); \\
+	$D_{j,h}$                    & water demand at node $j$ and time step $h$ (m$^3$/s); \\
+	$E_{j,h}$                    & energy consumed by pump $j$ during time step $h$ (kWh); \\
+	$\mathcal{H}$                & set of time steps in the planning horizon; \\
+	$H_{i,h}$                    & hydraulic head at node $i$ and time step $h$ (m); \\
+	$\mathcal{I}$                & set of network nodes; \\
+	$\mathcal{K}$                & set of storage tanks; \\
+	$L$                          & decomposition level used for task partitioning; \\
+	$L_{k,h}$                    & water level in tank $k$ at time step $h$ (m); \\
+	$\mathcal{L}$                & set of pipes; \\
+	$NA_{\max}$                  & maximum number of pump state transitions over the planning horizon; \\
+	$N_p$                        & number of pumps; \\
+	$\mathcal{P}$                & set of pumps; \\
+	$P_{i,h}$                    & pressure at node $i$ and time step $h$ (m); \\
+	$S_k$                        & tank cross-sectional area (m$^2$); \\
+	$T$                          & number of time steps in the planning horizon; \\
+	$UB_{\text{global}}$         & global upper bound on total operating cost; \\
+	$UB_{\text{local}}$          & local upper bound on total operating cost; \\
+	$q_{a,h}$                    & flow rate through arc $a$ at time step $h$ (m$^3$/s); \\
+	$x_{j,h}$                    & binary status of pump $j$ at time step $h$; \\
+	$y_h$                        & number of active pumps at time step $h$; \\
+	$\Delta t$                   & simulation time-step duration (s); \\
+	$\Phi_\ell(\cdot)$           & head-loss relation for pipe $\ell$; \\
+	$\Psi_p(\cdot)$              & head-gain relation for pump $p$. \\
+\end{tabular}
 
 \bibliography{refs}
 
