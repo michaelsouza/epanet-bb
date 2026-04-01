@@ -113,11 +113,18 @@ def plot_energy_cost_by_hour(output_path: Path, pattern_name: str = "PRICES") ->
     hours = list(range(1, len(prices) + 1))
 
     fig, ax = plt.subplots(figsize=(5, 2.7), dpi=500)
-    ax.bar(hours, prices, color="#2E86AB", width=0.9)
+    ax.bar(
+        hours,
+        prices,
+        color="#8c8c8c",
+        edgecolor="#222222",
+        linewidth=0.8,
+        width=0.9,
+    )
     ax.set_xlim(0.5, len(prices) + 0.5)
     ax.set_xlabel("Hour")
     ax.set_ylabel("Energy price")
-    ax.grid(True, axis="y", linestyle="--", linewidth=0.6, alpha=0.5)
+    ax.grid(True, axis="y", linestyle="--", linewidth=0.6, alpha=0.5, color="#bdbdbd")
     plt.tight_layout()
     plt.savefig(output_path, dpi=500, bbox_inches="tight",
                 facecolor="white", edgecolor="none")

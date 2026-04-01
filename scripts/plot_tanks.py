@@ -177,8 +177,8 @@ def main():
     # Create 2x3 figure: tank levels (top) + pressures (bottom)
     fig, axes = plt.subplots(2, 3, figsize=(10, 6.0), dpi=500, sharex=True)
 
-    # Colors for different actuation limits
-    colors = {1: "#E63946", 2: "#457B9D", 3: "#2A9D8F"}
+    # Use grayscale tones plus line style to keep the figure readable in black and white.
+    colors = {1: "#222222", 2: "#6f6f6f", 3: "#b0b0b0"}
     linestyles = {1: "-", 2: "--", 3: ":"}
 
     hours = np.arange(HOURS + 1)
@@ -203,8 +203,8 @@ def main():
         ax.axhline(y=LEVEL_INIT, color="gray", linestyle=":", alpha=0.5, linewidth=0.8)
 
         # Fill region outside bounds
-        ax.axhspan(LEVEL_MIN - 0.5, LEVEL_MIN, alpha=0.1, color="red")
-        ax.axhspan(LEVEL_MAX, LEVEL_MAX + 0.5, alpha=0.1, color="red")
+        ax.axhspan(LEVEL_MIN - 0.5, LEVEL_MIN, alpha=0.12, color="#d9d9d9")
+        ax.axhspan(LEVEL_MAX, LEVEL_MAX + 0.5, alpha=0.12, color="#d9d9d9")
 
         # Labels and formatting
         ax.set_ylabel("Water Level (m)")
@@ -248,7 +248,7 @@ def main():
             y_max = max(all_values + ([threshold] if threshold is not None else [])) + 1
             ax.set_ylim(y_min, y_max)
             if threshold is not None and y_min < threshold:
-                ax.axhspan(y_min, threshold, alpha=0.08, color="red")
+                ax.axhspan(y_min, threshold, alpha=0.10, color="#d9d9d9")
 
         ax.set_xlabel("Hour")
         ax.set_ylabel("Pressure (m)")

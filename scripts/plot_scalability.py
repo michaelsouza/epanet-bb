@@ -37,7 +37,7 @@ def create_figure(df: pd.DataFrame):
     efficiency = df["efficiency"].values
 
     # Speedup plot (left axis)
-    color_speedup = "tab:blue"
+    color_speedup = "#222222"
     ax1.set_xlabel("Number of MPI Processes", fontsize=16)
     ax1.set_ylabel("Speedup", color=color_speedup)
     (line1,) = ax1.plot(
@@ -46,6 +46,8 @@ def create_figure(df: pd.DataFrame):
         "o-",
         color=color_speedup,
         label="Speedup",
+        markerfacecolor="#222222",
+        markeredgecolor="#222222",
         markersize=4,
         linewidth=1.5,
     )
@@ -54,8 +56,8 @@ def create_figure(df: pd.DataFrame):
         ranks,
         ranks,
         "--",
-        color="gray",
-        alpha=0.5,
+        color="#9e9e9e",
+        alpha=0.9,
         label="Ideal Speedup",
         linewidth=1.2,
     )
@@ -64,11 +66,11 @@ def create_figure(df: pd.DataFrame):
     ax1.set_yscale("log", base=2)
     ax1.set_xticks(ranks)
     ax1.set_xticklabels([rf"$2^{{{i}}}$" for i in range(len(ranks))])
-    ax1.grid(True, which="both", linestyle="--", alpha=0.5)
+    ax1.grid(True, which="both", linestyle="--", alpha=0.5, color="#c7c7c7")
 
     # Efficiency on secondary axis (right axis)
     ax2 = ax1.twinx()
-    color_efficiency = "tab:red"
+    color_efficiency = "#7a7a7a"
     ax2.set_ylabel("Efficiency (%)", color=color_efficiency)
     (line3,) = ax2.plot(
         ranks,
@@ -76,6 +78,8 @@ def create_figure(df: pd.DataFrame):
         "s-",
         color=color_efficiency,
         label="Efficiency",
+        markerfacecolor="white",
+        markeredgecolor="#555555",
         markersize=4,
         linewidth=1.5,
     )

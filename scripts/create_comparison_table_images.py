@@ -10,12 +10,12 @@ DATA_DIR = Path("paper/data")
 OUTPUT_DIR = Path("paper/figures")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Source display configuration (key -> label, color)
+# Source display configuration (key -> label, grayscale fill, hatch)
 SOURCE_CONFIG = {
-    "Costa2016": ("Costa et al. (2016)", "#e74c3c"),
-    "Cimorelli2020": ("Cimorelli et al. (2020)", "#3498db"),
-    "Paola2025": ("De Paola et al. (2025)", "#9b59b6"),
-    "Souza2026": ("EPANET-BB", "#27ae60"),
+    "Costa2016": ("Costa et al. (2016)", "#222222", None),
+    "Cimorelli2020": ("Cimorelli et al. (2020)", "#7a7a7a", "///"),
+    "Paola2025": ("De Paola et al. (2025)", "#c7c7c7", "..."),
+    "Souza2026": ("EPANET-BB", "#ffffff", "\\\\\\"),
 }
 
 
@@ -38,7 +38,7 @@ def discover_sources():
         with open(filepath) as f:
             content = json.load(f)
 
-        label, color = SOURCE_CONFIG[source_key]
+        label, shade, hatch = SOURCE_CONFIG[source_key]
         x_full = np.array(content["best_x"], dtype=int).reshape(-1, 3)
         x_24h = x_full[1:, :]  # Drop hour 0
 
@@ -49,7 +49,8 @@ def discover_sources():
             {
                 "key": source_key,
                 "label": label,
-                "color": color,
+                "shade": shade,
+                "hatch": hatch,
                 "cost": content["best_cost"],
                 "time": content.get("duration", 0.0),
                 "schedule": x_24h,
@@ -96,12 +97,12 @@ def draw_table(na_max, entries, output_path):
     x_sw = x_pump + W_PUMP
     x_hours = x_sw + W_SW
 
-    header_bg, border = "#34495e", "#dddddd"
+    header_bg, border = "#3a3a3a", "#d0d0d0"
 
     def cell(x, y, w, h, text, bg, fg="black", bold=False, align="center", size=10):
         ax.add_patch(patches.Rectangle((x, y - h), w, h, ec=border, fc=bg))
         ha = {"left": "left", "right": "right"}.get(align, "center")
-        cx = x + (0.1 if align == "left" else w - 0.1 if align == "right" else w / 2)
+        cx = x + (0.18 if align == "left" else w - 0.1 if align == "right" else w / 2)
         ax.text(
             cx,
             y - h / 2,
@@ -141,13 +142,19 @@ def draw_table(na_max, entries, output_path):
 
     # Data rows
     for entry in entries:
-        bg_cost = "#d5f5e3" if entry["is_best"] else "#f8f9fa"
-        bg_time = "#d5f5e3" if entry["is_fastest"] else "#f8f9fa"
+        bg_cost = "#d9d9d9" if entry["is_best"] else "#f8f9fa"
+        bg_time = "#d9d9d9" if entry["is_fastest"] else "#f8f9fa"
 
         cell(x_src, y, W_SOURCE, H_SOURCE, entry["label"], "#f8f9fa", align="left")
         ax.add_patch(
             patches.Rectangle(
-                (x_src, y - H_SOURCE), 0.08, H_SOURCE, fc=entry["color"], ec="none"
+                (x_src, y - H_SOURCE),
+                0.12,
+                H_SOURCE,
+                fc=entry["shade"],
+                ec="#222222",
+                hatch=entry["hatch"],
+                lw=0.8,
             )
         )
         cell(x_cost, y, W_COST, H_SOURCE, f"{entry['cost']:.2f}", bg_cost, bold=True)
@@ -160,7 +167,7 @@ def draw_table(na_max, entries, output_path):
 
             for h in range(24):
                 on = entry["schedule"][h, p] == 1
-                bg = "#27ae60" if on else "#ecf0f1"
+                bg = "#3a3a3a" if on else "#ecf0f1"
                 ax.add_patch(
                     patches.Rectangle(
                         (x_hours + h * W_HOUR, yp - H_ROW),
@@ -190,7 +197,7 @@ def draw_table(na_max, entries, output_path):
         f"Maximum Actuations: {na_max}",
         fontsize=14,
         fontweight="bold",
-        color="#2c3e50",
+        color="#222222",
     )
 
     plt.tight_layout(pad=1.0)
