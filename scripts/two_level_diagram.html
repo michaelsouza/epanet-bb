@@ -17,10 +17,15 @@
             justify-content: center;
             align-items: flex-start;
             padding: 15px;
+            margin: 0;
         }
 
         .container {
             padding: 10px;
+        }
+
+        .container { 
+            padding-left: 0; 
         }
 
         .diagram {
@@ -162,72 +167,74 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="hour-labels">
-            <div class="hour-label">h=1</div>
-            <div class="hour-label">2</div>
-            <div class="hour-label">3</div>
-            <div class="hour-label">4</div>
-            <div class="hour-label">5</div>
-            <div class="hour-label">6</div>
+
+        <div class="container" id="fig">
+            <div class="hour-labels">
+                <div class="hour-label">h=1</div>
+                <div class="hour-label">2</div>
+                <div class="hour-label">3</div>
+                <div class="hour-label">4</div>
+                <div class="hour-label">5</div>
+                <div class="hour-label">6</div>
+            </div>
+
+            <div class="diagram">
+                <div class="level-row">
+                    <div class="level-label">
+                        <i>y</i><span class="subscript">h</span> =
+                    </div>
+                    <div class="schedule-row">
+                        <div class="y-cell">2</div>
+                        <div class="y-cell">3</div>
+                        <div class="y-cell">3</div>
+                        <div class="y-cell">2</div>
+                        <div class="y-cell">1</div>
+                        <div class="y-cell">0</div>
+                    </div>
+                </div>
+
+                <div class="mapping-section">
+                    <div class="arrow-container">
+                        <div class="arrow">&#8595;</div>
+                        <div class="mapping-formula">M(y<sub>h</sub>, x<sub>h-1</sub>, R)</div>
+                    </div>
+                </div>
+
+                <div class="x-section">
+                    <div class="pump-labels">
+                        <div class="pump-label-row">x<sub>1,h</sub></div>
+                        <div class="pump-label-row">x<sub>2,h</sub></div>
+                        <div class="pump-label-row">x<sub>3,h</sub></div>
+                    </div>
+                    <div class="pump-grid">
+                        <div class="pump-row">
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-off">0</div>
+                        </div>
+                        <div class="pump-row">
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-off">0</div>
+                            <div class="x-cell x-off">0</div>
+                        </div>
+                        <div class="pump-row">
+                            <div class="x-cell x-off">0</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-on">1</div>
+                            <div class="x-cell x-off">0</div>
+                            <div class="x-cell x-off">0</div>
+                            <div class="x-cell x-off">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="diagram">
-            <div class="level-row">
-                <div class="level-label">
-                    <i>y</i><span class="subscript">h</span> =
-                </div>
-                <div class="schedule-row">
-                    <div class="y-cell">2</div>
-                    <div class="y-cell">3</div>
-                    <div class="y-cell">3</div>
-                    <div class="y-cell">2</div>
-                    <div class="y-cell">1</div>
-                    <div class="y-cell">0</div>
-                </div>
-            </div>
-
-            <div class="mapping-section">
-                <div class="arrow-container">
-                    <div class="arrow">&#8595;</div>
-                    <div class="mapping-formula">M(y<sub>h</sub>, x<sub>h-1</sub>, R)</div>
-                </div>
-            </div>
-
-            <div class="x-section">
-                <div class="pump-labels">
-                    <div class="pump-label-row">x<sub>1,h</sub></div>
-                    <div class="pump-label-row">x<sub>2,h</sub></div>
-                    <div class="pump-label-row">x<sub>3,h</sub></div>
-                </div>
-                <div class="pump-grid">
-                    <div class="pump-row">
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-off">0</div>
-                    </div>
-                    <div class="pump-row">
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-off">0</div>
-                        <div class="x-cell x-off">0</div>
-                    </div>
-                    <div class="pump-row">
-                        <div class="x-cell x-off">0</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-on">1</div>
-                        <div class="x-cell x-off">0</div>
-                        <div class="x-cell x-off">0</div>
-                        <div class="x-cell x-off">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html>

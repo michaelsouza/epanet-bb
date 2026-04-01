@@ -1,0 +1,71 @@
+\documentclass[10pt,stdletter,dateno]{newlfm}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{kpfonts}
+
+\usepackage{url}
+
+\widowpenalty=1000
+\clubpenalty=1000
+
+\newlfmP{headermarginskip=20pt}
+\newlfmP{sigsize=20pt}
+\newlfmP{dateskipafter=20pt}
+\newlfmP{addrfromphone}
+\newlfmP{addrfromemail}
+\PhrPhone{Phone}
+\PhrEmail{Email}
+
+
+
+\namefrom{Michael Souza}
+\addrfrom{%
+    \today\\[10pt]
+    \emph{Departamento de Estat\'istica e Matem\'atica Aplicada}\\
+    Universidade Federal do Cear\'a\\
+    Campus do Pici, Bloco 910\\    
+    Fortaleza – CE 60455-900 - Brasil\\
+}
+
+\phonefrom{+55 85 99821-9955}
+\emailfrom{michael@ufc.br (corresponding author)}
+
+
+
+\greetto{Dear Editor,}
+\closeline{Sincerely,}
+\begin{document}
+
+\newcommand{\journal}{Water Research. }
+\newcommand{\at}{article }
+\newcommand{\ufclogo}{}
+\IfFileExists{article/figures/ufc_logo.png}{
+  \renewcommand{\ufclogo}{\includegraphics[width=0.22\textwidth]{article/figures/ufc_logo.png}}
+}{
+  \IfFileExists{../article/figures/ufc_logo.png}{
+    \renewcommand{\ufclogo}{\includegraphics[width=0.22\textwidth]{../article/figures/ufc_logo.png}}
+  }{}
+}
+\newcommand{\ptitle}{Parallel Branch-and-Bound for Exact Pump Scheduling with Constant-Time Hydraulic Backtracking}
+\newcommand{\mybodycontent}{
+We are pleased to submit our manuscript, ``\ptitle,'' for consideration in \journal
+
+Finding provably optimal pump schedules for real-world water distribution networks has long been intractable for exact methods. We address this directly with a distributed-memory Branch-and-Bound solver combining MPI-based parallel search, constant-time hydraulic state restoration via snapshot persistence, and cooperative global bound sharing. On a standard 24-hour benchmark, the solver achieves speedups of up to 115$\times$ over a sequential exact approach while preserving optimality guarantees --- and uncovers new best-known solutions that leading metaheuristics have not found.
+
+Beyond the algorithmic contribution, this is fundamentally a paper about making rigorous optimisation practical for water system operation. Its hydraulic fidelity, EPANET integration, and direct relevance to day-ahead operational planning make it a natural fit for Water Research and its readership in water systems engineering and infrastructure management.
+
+This manuscript is original, has not been submitted elsewhere, and all authors have approved the final version. We look forward to your consideration.
+}
+
+\begin{newlfm}
+\begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north west] at ([xshift=25mm,yshift=-40mm]current page.north west)
+        {\ufclogo};
+\end{tikzpicture}
+\noindent
+\vspace*{-2mm}
+\vspace{5mm}
+
+\mybodycontent
+\end{newlfm}
+\end{document}

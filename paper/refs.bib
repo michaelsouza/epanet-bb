@@ -28,7 +28,7 @@
 @article{Ashraf2024,
   abstract  = {Water distribution systems (WDS) are an integral part of critical infrastructure which is pivotal to urban development. As 70% of the world's population will likely live in urban environments in 2050, efficient simulation and planning tools for WDS play a crucial role in reaching UN's sustainable developmental goal (SDG) 6 - "Clean water and sanitation for all". In this realm, we propose a novel and efficient machine learning emulator, more precisely, a physics-informed deep learning (DL) model, for hydraulic state estimation in WDS. Using a recursive approach, our model only needs a few graph convolutional neural network (GCN) layers and employs an innovative algorithm based on message passing. Unlike conventional machine learning tasks, the model uses hydraulic principles to infer two additional hydraulic state features in the process of reconstructing the available ground truth feature in an unsupervised manner. To the best of our knowledge, this is the first DL approach to emulate the popular hydraulic simulator EPANET, utilizing no additional information. Like most DL models and unlike the hydraulic simulator, our model demonstrates vastly faster emulation times that do not increase drastically with the size of the WDS. Moreover, we achieve high accuracy on the ground truth and very similar results compared to the hydraulic simulator as demonstrated through experiments on five real-world WDS datasets.},
   author    = {Inaam Ashraf and Janine Strotherm and Luca Hermes and Barbara Hammer},
-  doi       = {https://doi.org/10.1609/aaai.v38i20.30192},
+  doi       = {10.1609/aaai.v38i20.30192},
   issn      = {2159-5399},
   journal   = {Proceedings of the AAAI Conference on Artificial Intelligence},
   month     = {March},
@@ -59,7 +59,7 @@
 @article{Bonvin2021,
   abstract  = {This paper offers a novel approach for computing globally optimal solutions to the pump scheduling problem in drinking water distribution networks. A tailored integer linear relaxation of the original non-convex formulation is devised and solved by branch and bound where integer nodes are investigated through non-linear programming to check the satisfaction of the non-convex constraints and compute the actual cost. This generic method can tackle a large variety of networks, e.g. with variable-speed pumps. We also propose to specialize it for a common subclass of networks with several improving techniques, including a new primal heuristic to repair near-feasible integer relaxed solutions. Our approach is numerically assessed on various case studies of the literature and compared with recently reported results.},
   author    = {Gratien Bonvin and Sophie Demassey and Andrea Lodi},
-  doi       = {https://doi.org/10.1007/s11081-020-09575-y},
+  doi       = {10.1007/s11081-020-09575-y},
   issn      = {1573-2924},
   journal   = {Optimization and Engineering},
   month     = {January},
@@ -67,7 +67,7 @@
   pages     = {1275–1313},
   publisher = {Springer Science and Business Media LLC},
   s2url     = {https://www.semanticscholar.org/paper/20fdab793b6828ce5fd1a98aaff01ebad5134b3a},
-  title     = {Pump scheduling in drinking water distribution networks with an LP/NLP-based branch and bound},
+  title     = {Pump scheduling in drinking water distribution networks with an {LP/NLP}-based branch and bound},
   volume    = {22},
   year      = {2021}
 }
@@ -84,7 +84,7 @@
   s2url     = {https://www.semanticscholar.org/paper/0e7e1915aca3cf834ad9759899469accac815af8},
   title     = {A novel hybrid optimization approach for cost-efficient pump scheduling in water supply systems},
   volume    = {138},
-  year      = {2025}
+  year      = {2026}
 }
 
 @article{Brion1991,
@@ -106,7 +106,7 @@
 @article{Broad2010,
   abstract  = {Optimization of large and hydraulically complex water distribution systems (WDSs) is computationally expensive as simulation models are required to evaluate the performance of solutions to the problem at hand. Metamodels can act as a surrogate or substitute for these simulation models and provide significant speed-ups in the optimization process. The application of metamodels in the field of WDS optimization has been limited to date, and little guidance has been given in terms of constructing metamodels for hydraulically complex systems. While it is relatively straightforward to obtain satisfactory metamodel approximations to simulation models of simple WDSs, this is not necessarily the case for more complex networks. In order to reduce the complexity of the relationship that is to be approximated by the metamodels, a number of factors have to be considered, including the complexity of the hydraulic simulation model, the complexity of the decision space, and the locations at which outputs are required from the hydraulic simulation model. This research presents a systematic methodology for dealing with these factors and demonstrates the effectiveness of the approach by applying it to an actual WDS. A system in Wallan, Victoria, Australia, is selected for demonstration purposes. Four different metamodelling scenarios are presented here. The results show that, for this case study, some skeletonization of the model is required to achieve suitably accurate metamodels. The optimization results show a reduction in the average daily pumping costs from $457 to $363; a saving of 21%. The net present value (NPV) over 25 years is used as the objective function, which includes both pumping and chlorine costs. The current operating regime corresponds to an NPV of $1.56 million, while the optimized solution has an NPV of $1.34 million; a saving of 14%. In addition to these economic benefits, the optimized solution achieves adequate disinfection throughout the system, whereas the current operating regime results in deficits in chlorine residuals at several locations in the system.},
   author    = {Darren R. Broad and Holger R. Maier and Graeme C. Dandy},
-  doi       = {https://doi.org/10.1061/(ASCE)WR.1943-5452.0000052},
+  doi       = {10.1061/(ASCE)WR.1943-5452.0000052},
   issn      = {1943-5452},
   journal   = {Journal of Water Resources Planning and Management},
   month     = {July},
@@ -256,7 +256,7 @@
   pages     = {347–375},
   publisher = {Springer Science and Business Media LLC},
   s2url     = {https://www.semanticscholar.org/paper/0e08406c853d4448de6da26d90afbec82b33b43c},
-  title     = {MADAM: a parallel exact solver for max-cut based on semidefinite programming and ADMM},
+  title     = {{MADAM}: a parallel exact solver for max-cut based on semidefinite programming and {ADMM}},
   volume    = {80},
   year      = {2021}
 }
@@ -384,13 +384,6 @@
   year      = {2012}
 }
 
-@misc{OpenWaterAnalyticsEPANET3,
-  author  = {{OpenWaterAnalytics}},
-  title   = {epanet-dev: EPANET 3 computational engine (development project)},
-  url     = {https://github.com/OpenWaterAnalytics/epanet-dev},
-  urldate = {2026-01-15}
-}
-
 @article{Paola2024,
   abstract  = {Pumps in Water Distribution Networks (WDNs) adequately provide effective pressure where low elevation or high head losses are detected within the system. One of the most effective strategies to ensure economic sustainability is Pump Scheduling (PS), assuring the optimization of pump management and enabling significant energy cost saving. Meta-heuristic algorithms can be applied to Pump Scheduling, given their ability to provide reliable global solutions, further complemented by limited computational efforts. Nevertheless, they do not assure the achievement of the optimal global solution. In this paper, the Pump Scheduling optimization was solved by applying a modified Harmony Search (HS) algorithm, aimed at optimizing the energy consumption and the maintenance costs of pumps, by limiting the number of daily switches. The EPANET 2.0 solver was employed for hydraulic simulations and novel setting equations and penalties were included to limit the number of feasible solutions. The model was tested on two benchmark water networks, showing its capability to return near-optimal solutions within a short computational time.},
   author    = {Francesco De Paola and Francesco Pugliese and Nicola Fontana and Maurizio Giugni},
@@ -403,7 +396,7 @@
   s2url     = {https://www.semanticscholar.org/paper/89e1c5cd9dd777e4d2d162bc46b078775302d83f},
   title     = {A new Digital Harmony Search algorithm for optimizing Pump Scheduling in Water Distribution Networks},
   volume    = {27},
-  year      = {2024}
+  year      = {2025}
 }
 
 @article{Rao2006,
@@ -419,7 +412,7 @@
   s2url     = {https://www.semanticscholar.org/paper/04ef46c0eb371bdf0f731aa4f442ac7913ae859a},
   title     = {Development of a real-time, near-optimal control process for water-distribution networks},
   volume    = {9},
-  year      = {2006}
+  year      = {2007}
 }
 
 @article{Rao2007,
@@ -453,16 +446,6 @@
   year      = {2023}
 }
 
-@techreport{Rossman2020,
-  address     = {Washington, DC},
-  author      = {Rossman, Lewis A. and Woo, Hyoungmin and Tryby, Michael and Shang, Feng and Janke, Robert and Haxton, Terranna},
-  institution = {U.S. Environmental Protection Agency},
-  number      = {EPA/600/R-20/133},
-  title       = {EPANET 2.2 User Manual},
-  url         = {https://www.epa.gov/water-research/epanet},
-  year        = {2020}
-}
-
 @inproceedings{Savic1997,
   abstract  = {Cost minimisation is the main issue for water companies when establishing pumping regimes for water distribution. Energy consumption and pump maintenance represent by far the biggest expenditure, accounting for around 90% of the lifetime cost of a water pump. This paper introduces multiobjective Genetic Algorithms (GAs) for pump scheduling in water supply systems. The two objectives considered are minimisation of energy and maintenance costs. Pump switching is introduced as a surrogate measure of maintenance cost. The multiobjective algorithm is compared to the single objective GA, with both techniques improved by using hybridisation with a local-search method.},
   author    = {Savic, Dragan A. and Walters, Godfrey A. and Schwab, M.},
@@ -487,24 +470,6 @@
   s2url     = {https://www.semanticscholar.org/paper/6581fc391e17bbacf959ae9b8d1072c29d6125b9},
   title     = {A gradient algorithm for the analysis of pipe networks},
   year      = {1988}
-}
-
-@article{Todini2000,
-  abstract  = {A technique, based upon the original definition of a “resilience” index to account for the fact that water distribution networks are designed as “looped systems” in order to increase the hydraulic reliability and the availability of water during pipe failures, is introduced. The problem is formulated as a vector optimisation problem with two objective functions: cost and resilience. The solution of the vector optimisation problem, in the space spanned by the objective functions is the non-dominated or Pareto set, the edge of which is rapidly approximated by the proposed heuristic technique even in the case of large real world networks.},
-  author    = {Ezio Todini},
-  doi       = {https://doi.org/10.1016/S1462-0758(00)00049-2},
-  issn      = {1462-0758},
-  journal   = {Urban Water},
-  keywords  = {Water distribution, Looped networks, Resilience, Reliability, Multi-objective, Optimisation, Heuristic},
-  month     = {June},
-  note      = {Developments in water distribution systems},
-  number    = {2},
-  pages     = {115–122},
-  publisher = {Elsevier BV},
-  title     = {Looped water distribution networks design using a resilience index based heuristic approach},
-  url       = {https://www.sciencedirect.com/science/article/pii/S1462075800000492},
-  volume    = {2},
-  year      = {2000}
 }
 
 @article{Verleye2016,

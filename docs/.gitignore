@@ -1,0 +1,38 @@
+# ======================
+# LaTeX build artifacts
+# ======================
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.xdv
+*.pdf
+
+# ======================
+# Temporary / backup
+# ======================
+*.bak
+*.tmp
+*~
+
+# ======================
+# OS files
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# Editor settings
+# ======================
+.vscode/*
+!.vscode/extensions.json
