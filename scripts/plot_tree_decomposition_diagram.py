@@ -18,7 +18,11 @@ mpl.rcParams.update(
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = PROJECT_ROOT / "paper/figures/Figure_2_tree_decomposition.pdf"
-RANK_COLORS = ["#2166ac", "#d95f02", "#1b9e77"]
+RANK_STYLES = [
+    {"face": "#111111", "hatch": None, "label": "Rank 0"},
+    {"face": "#7a7a7a", "hatch": "///", "label": "Rank 1"},
+    {"face": "#d9d9d9", "hatch": "...", "label": "Rank 2"},
+]
 
 
 def draw_node(
@@ -123,8 +127,9 @@ def main() -> None:
                     [x + 9, subtree_y + subtree_h],
                 ],
                 closed=True,
-                facecolor=RANK_COLORS[rank],
-                edgecolor=RANK_COLORS[rank],
+                facecolor=RANK_STYLES[rank]["face"],
+                edgecolor="#222222",
+                hatch=RANK_STYLES[rank]["hatch"],
                 linewidth=1,
             )
         )
@@ -156,15 +161,16 @@ def main() -> None:
                 12,
                 12,
                 boxstyle="round,pad=0,rounding_size=2",
-                facecolor=RANK_COLORS[rank],
-                edgecolor=RANK_COLORS[rank],
+                facecolor=RANK_STYLES[rank]["face"],
+                edgecolor="#222222",
+                hatch=RANK_STYLES[rank]["hatch"],
                 linewidth=1,
             )
         )
         ax.text(
             x + 10,
             legend_y + 2,
-            f"Rank {rank}",
+            RANK_STYLES[rank]["label"],
             ha="left",
             va="center",
             fontsize=10,

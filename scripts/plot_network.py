@@ -34,34 +34,39 @@ def plot_network(output_path: Path) -> None:
     tanks = [name for name, node in wn.tanks()]
     reservoirs = [name for name, node in wn.reservoirs()]
 
-    # Define colors
-    junction_color = '#2E86AB'  # Blue
-    tank_color = '#A23B72'      # Magenta/Purple
-    reservoir_color = '#F18F01' # Orange
-    pipe_color = '#555555'      # Dark gray
+    # Use grayscale plus distinct shapes so the figure remains legible in black and white.
+    junction_face = '#f2f2f2'
+    tank_face = '#9e9e9e'
+    reservoir_face = '#222222'
+    pipe_color = '#666666'
+    edge_color = '#222222'
 
     # Draw edges (pipes and pumps)
-    nx.draw_networkx_edges(G, pos, ax=ax, edge_color=pipe_color, width=1.5, alpha=0.8)
+    nx.draw_networkx_edges(G, pos, ax=ax, edge_color=pipe_color, width=1.5, alpha=0.9)
 
     # Draw nodes by type with different colors and larger sizes
     nx.draw_networkx_nodes(G, pos, nodelist=junctions, ax=ax,
-                           node_color=junction_color, node_size=350, alpha=0.95)
+                           node_color=junction_face, edgecolors=edge_color,
+                           linewidths=1.2, node_size=350, alpha=1.0)
     nx.draw_networkx_nodes(G, pos, nodelist=tanks, ax=ax,
-                           node_color=tank_color, node_size=500,
-                           node_shape='s', alpha=0.95)  # Square for tanks
+                           node_color=tank_face, edgecolors=edge_color,
+                           linewidths=1.2, node_size=500,
+                           node_shape='s', alpha=1.0)  # Square for tanks
     nx.draw_networkx_nodes(G, pos, nodelist=reservoirs, ax=ax,
-                           node_color=reservoir_color, node_size=550,
-                           node_shape='^', alpha=0.95)  # Triangle for reservoir
+                           node_color=reservoir_face, edgecolors=edge_color,
+                           linewidths=1.2, node_size=550,
+                           node_shape='^', alpha=1.0)  # Triangle for reservoir
 
-    # Draw labels inside nodes with white color
+    # Draw labels inside nodes with colors chosen for grayscale contrast.
     for node, (x, y) in pos.items():
+        text_color = 'white' if node in tanks or node in reservoirs else '#222222'
         ax.annotate(node, (x, y), fontsize=6, fontweight='bold',
-                    color='white', ha='center', va='center')
+                    color=text_color, ha='center', va='center')
 
-    # Create custom legend with matching colors
-    junction_patch = mpatches.Patch(color=junction_color, label='Junctions')
-    tank_patch = mpatches.Patch(color=tank_color, label='Tanks')
-    reservoir_patch = mpatches.Patch(color=reservoir_color, label='Reservoir')
+    # Create custom legend with matching grayscale fills and outlines.
+    junction_patch = mpatches.Patch(facecolor=junction_face, edgecolor=edge_color, label='Junctions')
+    tank_patch = mpatches.Patch(facecolor=tank_face, edgecolor=edge_color, label='Tanks')
+    reservoir_patch = mpatches.Patch(facecolor=reservoir_face, edgecolor=edge_color, label='Reservoir')
     pipe_line = Line2D([0], [0], color=pipe_color, linewidth=1.5, label='Pipes')
 
     ax.legend(
