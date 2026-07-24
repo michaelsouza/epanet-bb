@@ -10,3 +10,6 @@ paper/paper.fls
 paper/paper.log
 paper/paper.out
 paper/paper.synctex.gz
+build
+scripts/__pycache__
+tests/__pycache__
