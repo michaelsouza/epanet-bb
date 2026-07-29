@@ -146,6 +146,10 @@ output.mkdir()
     json.dumps({"search": {"status": "CONCLUSIVE"}}),
     encoding="utf-8",
 )
+(output / "rank_1_stats.json").write_text(
+    json.dumps({"search": {"status": "CONCLUSIVE"}}),
+    encoding="utf-8",
+)
 """,
             )
 
@@ -211,7 +215,74 @@ output.mkdir()
             )
             self.assertEqual(
                 execution_results["experiments"][0]["search_statuses"],
-                ["CONCLUSIVE"],
+                ["CONCLUSIVE", "CONCLUSIVE"],
+            )
+
+    def test_missing_rank_artifact_fails_the_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            working_directory = Path(temporary)
+            output_directory = working_directory / "campaign"
+            launcher = working_directory / "fake-mpiexec"
+            solver = working_directory / "fake-solver"
+            self.write_executable(
+                launcher,
+                """
+import subprocess
+import sys
+
+arguments = sys.argv[1:]
+rank_option = arguments.index("-n")
+command = arguments[rank_option + 2:]
+raise SystemExit(subprocess.run(command).returncode)
+""",
+            )
+            self.write_executable(
+                solver,
+                """
+import json
+from pathlib import Path
+
+output = Path("outputs")
+output.mkdir()
+(output / "rank_0_stats.json").write_text(
+    json.dumps({"search": {"status": "CONCLUSIVE"}}),
+    encoding="utf-8",
+)
+""",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(RUNNER),
+                    "--np",
+                    "2",
+                    "--mpi-launcher",
+                    str(launcher),
+                    "--binary",
+                    str(solver),
+                    "--input",
+                    str(NETWORK),
+                    "--output-dir",
+                    str(output_directory),
+                    "--hours",
+                    "3",
+                    "--actuations",
+                    "1",
+                ],
+                cwd=working_directory,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 1)
+            receipt = json.loads(
+                (output_directory / "execution-results.json").read_text()
+            )
+            self.assertEqual(receipt["status"], "inconclusive")
+            self.assertIn(
+                "produced 1 rank statistics; expected 2",
+                receipt["experiments"][0]["validation_error"],
             )
 
     def test_inconclusive_rank_artifact_fails_the_execution(self):

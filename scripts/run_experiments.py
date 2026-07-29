@@ -47,11 +47,14 @@ def executable_path(value: str | Path) -> Path:
     return Path(resolved).absolute()
 
 
-def search_statuses(working_directory: Path) -> list[str]:
+def search_statuses(
+    working_directory: Path, expected_ranks: int
+) -> list[str]:
     paths = sorted((working_directory / "outputs").glob("*_stats.json"))
-    if not paths:
+    if len(paths) != expected_ranks:
         raise ConfigurationError(
-            f"solver produced no rank statistics in {working_directory / 'outputs'}"
+            f"solver produced {len(paths)} rank statistics; "
+            f"expected {expected_ranks} in {working_directory / 'outputs'}"
         )
     statuses = []
     for path in paths:
@@ -305,7 +308,9 @@ def main(argv: list[str] | None = None) -> int:
             results["status"] = "failed"
             break
         try:
-            statuses = search_statuses(working_directory)
+            statuses = search_statuses(
+                working_directory, int(plan["process_count"]["value"])
+            )
         except ConfigurationError as exc:
             record["search_statuses"] = []
             record["validation_error"] = str(exc)
