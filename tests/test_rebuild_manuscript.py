@@ -201,7 +201,9 @@ class RebuildManuscriptTests(unittest.TestCase):
                 self.assertEqual(len(matches), 1)
                 self.assertEqual(matches[0].read_bytes()[:4], b"%PDF")
                 self.assertGreater(matches[0].stat().st_size, 1000)
-            comparison_csv = output_directory / "comparison_table.csv"
+            comparison_csv = (
+                output_directory / "data" / "comparison_table.csv"
+            )
             self.assertGreater(comparison_csv.stat().st_size, 100)
 
             receipt = json.loads(
