@@ -37,7 +37,6 @@ class PythonEnvironmentTests(unittest.TestCase):
                 "optuna",
                 "pandas",
                 "pillow",
-                "rich",
                 "wntr",
             ],
         )

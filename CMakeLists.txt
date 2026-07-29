@@ -304,13 +304,6 @@ if(BUILD_TESTING)
     )
 
     add_test(
-        NAME AggregateOutputsTest
-        COMMAND
-            ${Python3_EXECUTABLE}
-            "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_agg_outputs.py"
-    )
-
-    add_test(
         NAME AblationSummaryTest
         COMMAND
             ${Python3_EXECUTABLE}

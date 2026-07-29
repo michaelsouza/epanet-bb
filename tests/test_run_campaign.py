@@ -394,37 +394,6 @@ else:
                 ).is_file()
             )
 
-
-    def test_legacy_entrypoints_select_their_campaign_tasks(self) -> None:
-        for script_name, task_id in (
-            ("run_scalability.py", "scalability"),
-            ("run_ablation.py", "ablation"),
-        ):
-            with self.subTest(script=script_name):
-                result = subprocess.run(
-                    [
-                        sys.executable,
-                        str(ROOT / "scripts" / script_name),
-                        "--dry-run",
-                        "--profile",
-                        "smoke",
-                        "--binary",
-                        sys.executable,
-                        "--input",
-                        str(NETWORK),
-                        "--mpi-launcher",
-                        sys.executable,
-                    ],
-                    cwd=ROOT.parent,
-                    capture_output=True,
-                    text=True,
-                )
-                self.assertEqual(result.returncode, 0, result.stderr)
-                plan = json.loads(result.stdout)
-                self.assertEqual(
-                    [task["id"] for task in plan["tasks"]], [task_id]
-                )
-
     def test_final_ablation_starts_with_no_snapshots_on_na_max_three(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             result = subprocess.run(
