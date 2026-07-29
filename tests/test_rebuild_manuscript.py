@@ -76,6 +76,7 @@ class RebuildManuscriptTests(unittest.TestCase):
             self.assertEqual(
                 [task["id"] for task in plan["tasks"]],
                 [
+                    "manuscript-data",
                     "diagrams",
                     "case-study",
                     "scalability",
@@ -135,7 +136,7 @@ class RebuildManuscriptTests(unittest.TestCase):
                 "Figure_1_two_level_diagram.pdf",
                 "Figure_2_tree_decomposition.pdf",
             ):
-                artifact = output_directory / name
+                artifact = output_directory / "figures" / name
                 self.assertEqual(artifact.read_bytes()[:4], b"%PDF")
                 self.assertGreater(artifact.stat().st_size, 1000)
 
@@ -192,7 +193,11 @@ class RebuildManuscriptTests(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             for number in range(1, 10):
-                matches = list(output_directory.glob(f"Figure_{number}_*.pdf"))
+                matches = list(
+                    (output_directory / "figures").glob(
+                        f"Figure_{number}_*.pdf"
+                    )
+                )
                 self.assertEqual(len(matches), 1)
                 self.assertEqual(matches[0].read_bytes()[:4], b"%PDF")
                 self.assertGreater(matches[0].stat().st_size, 1000)
@@ -203,7 +208,7 @@ class RebuildManuscriptTests(unittest.TestCase):
                 (output_directory / "rebuild-results.json").read_text()
             )
             self.assertEqual(receipt["status"], "complete")
-            self.assertEqual(len(receipt["tasks"]), 5)
+            self.assertEqual(len(receipt["tasks"]), 6)
             self.assertEqual(
                 sorted(path.name for path in working_directory.iterdir()),
                 ["rebuilt"],

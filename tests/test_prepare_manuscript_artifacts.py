@@ -89,7 +89,7 @@ class PrepareManuscriptArtifactsTests(unittest.TestCase):
             )
             self.assertIn("\\multicolumn{2}{c}{Wall time (s)}", tex)
             self.assertIn("\\cline{2-3}", tex)
-            self.assertIn("c@{\\quad}r@{}", tex)
+            self.assertIn("r@{\\quad}r@{}", tex)
             self.assertIn(
                 "$N_{\\mathrm{procs}}$ & Median & Range (\\%) & Speedup & "
                 "Eff. (\\%) & Load imb. (\\%)",
