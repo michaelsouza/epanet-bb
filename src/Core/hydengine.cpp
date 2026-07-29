@@ -56,7 +56,9 @@ static const string s_Reductions2 =
 HydEngine::HydEngine()
     : engineState(HydEngine::CLOSED), network(nullptr), hydSolver(nullptr),
       matrixSolver(nullptr), saveToFile(false), halted(false), startTime(0),
-      rptTime(0), hydStep(0), currentTime(0), timeOfDay(0), peakKwatts(0.0) {}
+      rptTime(0), hydStep(0), currentTime(0), timeOfDay(0),
+      lastSolveStatus(HydSolver::SUCCESSFUL), lastSolveTrials(0),
+      peakKwatts(0.0) {}
 
 //-----------------------------------------------------------------------------
 
@@ -128,6 +130,8 @@ void HydEngine::init(bool initFlows) {
   }
 
   halted = 0;
+  lastSolveStatus = HydSolver::SUCCESSFUL;
+  lastSolveTrials = 0;
   currentTime = 0;
   hydStep = 0;
   startTime = network->option(Options::START_TIME);
@@ -144,6 +148,11 @@ void HydEngine::init(bool initFlows) {
 int HydEngine::solve(int *t) {
   if (engineState != HydEngine::INITIALIZED)
     return 0;
+  for (Node *node : network->nodes) {
+    if (node->type() == Node::TANK) {
+      static_cast<Tank *>(node)->beginSaturationEvaluation();
+    }
+  }
   if (network->option(Options::REPORT_STATUS)) {
     network->msgLog << endl
                     << "  Hour " << Utilities::getTime(currentTime)
@@ -161,6 +170,8 @@ int HydEngine::solve(int *t) {
   if (statusCode == HydSolver::SUCCESSFUL && isPressureDeficient()) {
     statusCode = resolvePressureDeficiency(trials);
   }
+  lastSolveStatus = statusCode;
+  lastSolveTrials = trials;
   reportDiagnostics(statusCode, trials);
   if (halted)
     throw SystemError(SystemError::HYDRAULICS_SOLVER_FAILURE);

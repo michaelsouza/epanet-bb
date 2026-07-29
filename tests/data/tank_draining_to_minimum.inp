@@ -1,0 +1,28 @@
+[TITLE]
+Tank saturation test: draining to the minimum level
+
+[JUNCTIONS]
+
+[RESERVOIRS]
+SINK -10
+
+[TANKS]
+TANK 0 5 0 10 10 0
+
+[PIPES]
+DRAIN TANK SINK 1000 12 100 0 OPEN
+
+[TIMES]
+Duration 2:00
+Hydraulic Timestep 1:00
+Report Timestep 1:00
+
+[OPTIONS]
+Units GPM
+Headloss H-W
+
+[REPORT]
+Status No
+Summary No
+
+[END]

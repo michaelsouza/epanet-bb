@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "study_name": "tuning-smoke",
+  "binary": "build/run-epanet3-bb",
+  "input": "networks/any-town.inp",
+  "output_dir": "build/experiments/tuning-smoke",
+  "hours": 3,
+  "max_actuations": 1,
+  "search_space": {
+    "np": [1, 2],
+    "level": [1],
+    "sync_interval": [32, 64]
+  },
+  "timeout_seconds": 30,
+  "repetitions": 1,
+  "sampler_seed": 20260724,
+  "mpi_launcher": "/usr/bin/mpiexec",
+  "mpi_launcher_args": [],
+  "environment": {
+    "HWLOC_COMPONENTS": "-gl"
+  },
+  "hydraulic_accuracy": null,
+  "hydraulic_max_trials": null
+}

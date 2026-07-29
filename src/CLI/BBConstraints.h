@@ -27,7 +27,8 @@ public:
     STABILITY,
     COST,
     ACTUATIONS,
-    TIMESTEP
+    TIMESTEP,
+    TANK_SATURATION
   };
 
   static std::map<Reason, std::string> labels;
@@ -45,8 +46,9 @@ public:
   std::string inpFile;              ///< Path to input file
   double best_cost_local;           ///< Local best cost
   double best_cost_global;          ///< Global best cost
-  std::vector<int> best_x;          ///< Best pump statuses
-  std::vector<int> best_y;          ///< Best pump speed patterns
+  std::vector<int> best_x;          ///< Reconstructed binary witness
+  std::vector<int> best_canonical_x; ///< Canonical statuses simulated hydraulically
+  std::vector<int> best_y;          ///< Best aggregate pump schedule
   
   bool enable_cost_pruning;
   bool enable_global_sync;
@@ -94,6 +96,13 @@ public:
    * @return true if all tank level constraints are satisfied
    */
   bool check_levels(Project &p, int verbose = 0);
+
+  /**
+   * @brief Detects corrective flow blocking at a tank boundary
+   * @param verbose If true, prints the tank and intervention cause
+   * @return true if no saturation intervention occurred in the latest solve
+   */
+  bool check_tank_saturation(const Project &p, int verbose = 0);
 
   /**
    * @brief Verifies that final tank levels match initial levels
@@ -193,13 +202,15 @@ public:
    * @param x Pump statuses of the new solution
    * @param y Pump speed patterns of the new solution
    */
-  void update_best(double cost, std::vector<int> x, std::vector<int> y);
+  void update_best(double cost, std::vector<int> x, std::vector<int> y,
+                   std::vector<int> canonical_x = {});
 
   /**
    * @brief Writes the best solution to a JSON file
    * @param fn Path to the output file
    */
-  void to_json(char *fn) const;
+  void to_json(char *fn, bool search_conclusive = true) const;
+  nlohmann::json to_json_value(bool search_conclusive = true) const;
 
 private:
   /**

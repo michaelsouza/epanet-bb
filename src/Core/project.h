@@ -25,11 +25,13 @@
 #include "Core/hydengine.h"
 #include "Core/network.h"
 #include "Core/qualengine.h"
+#include "Elements/tanksaturationintervention.h"
 #include "Output/outputfile.h"
 #include "Utilities/utilities.h"
 
 #include <fstream>
 #include <string>
+#include <vector>
 
 class ProjectData {
 public:
@@ -60,6 +62,9 @@ public:
   int initSolver(bool initFlows);
   int runSolver(int *t);
   int advanceSolver(int *dt);
+  int lastHydraulicStatus() const { return hydEngine.getLastSolveStatus(); }
+  int lastHydraulicTrials() const { return hydEngine.getLastSolveTrials(); }
+  std::vector<TankSaturationIntervention> tankSaturationEvents() const;
 
   int openOutput(const char *fname);
   int saveOutput();

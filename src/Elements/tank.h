@@ -14,6 +14,7 @@
 
 #include "Elements/curve.h"
 #include "Elements/node.h"
+#include "Elements/tanksaturationintervention.h"
 #include "Models/tankmixmodel.h"
 
 #include <string>
@@ -39,6 +40,12 @@ public:
   bool isFull() { return head >= maxHead; }
   bool isEmpty() { return head <= minHead; }
   bool isClosed(double flow);
+  void beginSaturationEvaluation() {
+    saturationIntervention = TankSaturationInterventionType::NONE;
+  }
+  TankSaturationInterventionType getSaturationIntervention() const {
+    return saturationIntervention;
+  }
 
   // Tank-specific methods
   double getVolume() { return volume; }
@@ -66,6 +73,8 @@ public:
   double pastHead;    //!< water elev. in previous time period (ft)
   double pastVolume;  //!< volume in previous time period (ft3)
   double pastOutflow; //!< outflow in previous time period (cfs)
+  TankSaturationInterventionType
+      saturationIntervention; //!< corrective boundary action in latest solve
 
   //! Serialize to JSON for Tank
   nlohmann::json to_json() const override {
@@ -82,7 +91,9 @@ public:
                          {"ucfLength", ucfLength},
                          {"pastHead", pastHead},
                          {"pastVolume", pastVolume},
-                         {"pastOutflow", pastOutflow}});
+                         {"pastOutflow", pastOutflow},
+                         {"saturationIntervention",
+                          static_cast<int>(saturationIntervention)}});
     return jsonObj;
   }
 
@@ -102,6 +113,9 @@ public:
     pastHead = j.at("pastHead").get<double>();
     pastVolume = j.at("pastVolume").get<double>();
     pastOutflow = j.at("pastOutflow").get<double>();
+    saturationIntervention = tankSaturationInterventionTypeFromInt(
+        j.value("saturationIntervention",
+                static_cast<int>(TankSaturationInterventionType::NONE)));
   }
 
   virtual void copy_to(NodeData &data) const override {
@@ -119,6 +133,7 @@ public:
     data.pastHead = pastHead;
     data.pastVolume = pastVolume;
     data.pastOutflow = pastOutflow;
+    data.tankSaturationIntervention = saturationIntervention;
   }
 
   void copy_from(const NodeData &data) override {
@@ -136,6 +151,7 @@ public:
     pastHead = data.pastHead;
     pastVolume = data.pastVolume;
     pastOutflow = data.pastOutflow;
+    saturationIntervention = data.tankSaturationIntervention;
   }
 };
 

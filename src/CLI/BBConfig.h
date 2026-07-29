@@ -17,6 +17,8 @@ public:
   int level = 8;
   int sync_interval = 32768;  // Synchronization interval (every N tasks)
   int verbose = 0;
+  int hydraulic_max_trials = 0; // Zero preserves the input-file value.
+  double hydraulic_accuracy = 0.0; // Zero preserves the input-file value.
 
   bool enable_snapshots = true;
   bool enable_cost_pruning = true;
@@ -24,6 +26,8 @@ public:
   bool enable_task_shuffle = true;
   bool enable_global_sync = true;
   bool enable_timestep_check = false;
+  bool enable_exact_disaggregation = true;
+  bool enable_search_trace = false;
 
   char fn_stats[256];
   char fn_best[256];

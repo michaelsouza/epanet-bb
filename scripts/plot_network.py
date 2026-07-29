@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Generate plots for the AnyTown case study using WNTR."""
+"""Generate plots for a water-network case study using WNTR."""
 
+import argparse
 import wntr
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -8,15 +9,10 @@ from matplotlib.lines import Line2D
 import networkx as nx
 from pathlib import Path
 
-# Get the project root directory
-script_dir = Path(__file__).parent
-project_root = script_dir.parent
-figures_dir = project_root / "paper/figures"
+PROJECT_ROOT = Path(__file__).absolute().parents[1]
 
-# Load the network
-wn = wntr.network.WaterNetworkModel(project_root / 'networks/any-town.inp')
 
-def plot_network(output_path: Path) -> None:
+def plot_network(wn: wntr.network.WaterNetworkModel, output_path: Path) -> None:
     # Create figure with appropriate size for single column
     fig, ax = plt.subplots(figsize=(5, 5), dpi=500)
 
@@ -104,7 +100,11 @@ def plot_network(output_path: Path) -> None:
         print(f"Saved vector figure to {output_path}")
 
 
-def plot_energy_cost_by_hour(output_path: Path, pattern_name: str = "PRICES") -> None:
+def plot_energy_cost_by_hour(
+    wn: wntr.network.WaterNetworkModel,
+    output_path: Path,
+    pattern_name: str = "PRICES",
+) -> None:
     pattern = wn.get_pattern(pattern_name)
     if pattern is None:
         raise RuntimeError(f"Pattern '{pattern_name}' not found in network.")
@@ -132,10 +132,33 @@ def plot_energy_cost_by_hour(output_path: Path, pattern_name: str = "PRICES") ->
 
 
 def main() -> None:
-    figures_dir.mkdir(parents=True, exist_ok=True)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=PROJECT_ROOT / "networks" / "any-town.inp",
+    )
+    parser.add_argument(
+        "--network-output",
+        type=Path,
+        default=PROJECT_ROOT / "paper" / "figures" / "Figure_3_anytown_network.pdf",
+    )
+    parser.add_argument(
+        "--energy-output",
+        type=Path,
+        default=PROJECT_ROOT / "paper" / "figures" / "Figure_4_anytown_energy_cost.pdf",
+    )
+    arguments = parser.parse_args()
 
-    plot_network(figures_dir / "Figure_3_anytown_network.pdf")
-    plot_energy_cost_by_hour(figures_dir / "Figure_4_anytown_energy_cost.pdf")
+    input_path = arguments.input.expanduser().absolute()
+    network_output = arguments.network_output.expanduser().absolute()
+    energy_output = arguments.energy_output.expanduser().absolute()
+    network_output.parent.mkdir(parents=True, exist_ok=True)
+    energy_output.parent.mkdir(parents=True, exist_ok=True)
+
+    wn = wntr.network.WaterNetworkModel(input_path)
+    plot_network(wn, network_output)
+    plot_energy_cost_by_hour(wn, energy_output)
 
 
 if __name__ == "__main__":

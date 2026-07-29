@@ -4,6 +4,7 @@
 #include "BBSolver.h"
 #include "BBStatistics.h"
 #include "Profiler.h"
+#include "RunMetadata.h"
 
 #include <algorithm>
 #include <chrono>
@@ -165,7 +166,8 @@ void populate_tasks(std::vector<BBTask> &tasks, const BBConfig &config, const BB
   }
 }
 
-void show_global_best(const BBConstraints &constraints)
+void show_global_best(
+    const BBConstraints &constraints, bool search_conclusive)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -177,7 +179,13 @@ void show_global_best(const BBConstraints &constraints)
 
   if (rank == 0)
   {
-    Console::printf(Console::Color::BRIGHT_GREEN, "Global best cost: %s\n", constraints.fmt_cost(global_best).c_str());
+    Console::printf(
+        search_conclusive ? Console::Color::BRIGHT_GREEN
+                          : Console::Color::BRIGHT_RED,
+        search_conclusive
+            ? "Global best cost: %s\n"
+            : "Global incumbent cost (search inconclusive): %s\n",
+        constraints.fmt_cost(global_best).c_str());
   }
 }
 
@@ -195,6 +203,7 @@ int main(int argc, char *argv[])
     BBConfig config(argc, argv);
     BBConstraints constraints(config);
     BBStatistics stats(config);
+    stats.set_run_metadata(RunMetadata::capture(argv[0], num_procs));
 
     if (rank == 0)
     {
@@ -264,11 +273,18 @@ int main(int argc, char *argv[])
     constraints.sync_best();
     MPI_Barrier(MPI_COMM_WORLD);
 
+    int local_conclusive = stats.is_conclusive() ? 1 : 0;
+    int global_conclusive = 0;
+    MPI_Allreduce(
+        &local_conclusive, &global_conclusive, 1, MPI_INT, MPI_MIN,
+        MPI_COMM_WORLD);
+    stats.set_global_conclusive(global_conclusive != 0);
+
     stats.to_json(config.fn_stats);
-    constraints.to_json(config.fn_best);
+    constraints.to_json(config.fn_best, global_conclusive != 0);
     Profiler::save(config.fn_profile);
 
-    show_global_best(constraints);
+    show_global_best(constraints, global_conclusive != 0);
   }
 
   MPI_Finalize();

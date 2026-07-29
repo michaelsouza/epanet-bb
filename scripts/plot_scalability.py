@@ -6,28 +6,24 @@ This script reads scalability results from CSV and creates a publication-quality
 figure showing speedup and efficiency vs number of MPI processes.
 
 Usage:
-    .venv/bin/python scripts/plot_scalability.py
+    .venv/bin/python scripts/plot_scalability.py \
+        --data paper/data/scalability_results.csv \
+        --output build/reproduced-manuscript/Figure_5_scalability.pdf
 """
 
+import argparse
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
 
-# Configuration
-FIGURE_OUTPUT = "paper/figures/Figure_5_scalability.pdf"
-DATA = [
-    {"np": 1, "wall_time": 85.08, "speedup": 1.00, "efficiency": 100.0},
-    {"np": 2, "wall_time": 46.13, "speedup": 1.84, "efficiency": 92.2},
-    {"np": 4, "wall_time": 23.19, "speedup": 3.67, "efficiency": 91.7},
-    {"np": 8, "wall_time": 12.35, "speedup": 6.89, "efficiency": 86.1},
-    {"np": 16, "wall_time": 7.47, "speedup": 11.39, "efficiency": 71.2},
-    {"np": 32, "wall_time": 4.26, "speedup": 20.00, "efficiency": 62.5},
-    {"np": 64, "wall_time": 3.18, "speedup": 26.76, "efficiency": 41.8},
-    {"np": 128, "wall_time": 3.59, "speedup": 23.69, "efficiency": 18.5},
-]
+PROJECT_ROOT = Path(__file__).absolute().parents[1]
+DEFAULT_DATA = PROJECT_ROOT / "paper" / "data" / "scalability_results.csv"
+DEFAULT_OUTPUT = (
+    PROJECT_ROOT / "paper" / "figures" / "Figure_5_scalability.pdf"
+)
 
 
-def create_figure(df: pd.DataFrame):
+def create_figure(df: pd.DataFrame, output_path: Path) -> None:
     """Create scalability figure with speedup and efficiency."""
     plt.rcParams.update({"font.size": 14})
     fig, ax1 = plt.subplots(figsize=(10, 5.88), dpi=200)
@@ -48,7 +44,7 @@ def create_figure(df: pd.DataFrame):
         label="Speedup",
         markerfacecolor="#222222",
         markeredgecolor="#222222",
-        markersize=4,
+        markersize=8,
         linewidth=1.5,
     )
     # Ideal speedup line
@@ -80,7 +76,7 @@ def create_figure(df: pd.DataFrame):
         label="Efficiency",
         markerfacecolor="white",
         markeredgecolor="#555555",
-        markersize=4,
+        markersize=8,
         linewidth=1.5,
     )
     ax2.tick_params(axis="y", labelcolor=color_efficiency)
@@ -92,18 +88,29 @@ def create_figure(df: pd.DataFrame):
     ax1.legend(lines, labels, loc="lower right", fontsize=14, framealpha=0.9)
     plt.title("Scalability Analysis", fontsize=18)
     fig.tight_layout()
-    plt.savefig(FIGURE_OUTPUT, dpi=500, bbox_inches="tight")
-    print(f"Figure saved to {FIGURE_OUTPUT}")
+    plt.savefig(output_path, dpi=500, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Figure saved to {output_path}")
 
 
-def main():
-    # Ensure output directory exists
-    Path(FIGURE_OUTPUT).parent.mkdir(parents=True, exist_ok=True)
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    arguments = parser.parse_args()
 
-    df = pd.DataFrame(DATA)
-
-    # Create figure
-    create_figure(df)
+    data_path = arguments.data.expanduser().absolute()
+    output_path = arguments.output.expanduser().absolute()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.read_csv(data_path)
+    required_columns = {"np", "speedup", "efficiency"}
+    missing_columns = required_columns.difference(df.columns)
+    if missing_columns:
+        raise ValueError(
+            "scalability data is missing columns: "
+            + ", ".join(sorted(missing_columns))
+        )
+    create_figure(df, output_path)
 
 
 if __name__ == "__main__":

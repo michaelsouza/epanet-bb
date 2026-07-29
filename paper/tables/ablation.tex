@@ -1,0 +1,13 @@
+\begin{tabular}{@{}l@{\quad}r@{\;}c@{\quad}r@{\quad}r@{}}
+  \hline
+   & \multicolumn{2}{c}{Wall time (s)} &  &  \\
+  \cline{2-3}
+  Configuration & Median & Range (\%) & Slowdown & Load imb. (\%) \\
+  \hline
+  All features & 433 & 1.2 & 1.00$\times$ & 49.3 \\
+  No cost pruning & 11578 & 4.2 & 26.86$\times$ & 77.5 \\
+  No snapshots & 4139 & 4.7 & 9.60$\times$ & 41.4 \\
+  No task shuffling & 2535 & 0.9 & 5.84$\times$ & 701.2 \\
+  No global synchronization & 444 & 1.4 & 1.03$\times$ & 50.8 \\
+  \hline
+\end{tabular}

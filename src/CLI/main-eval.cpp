@@ -8,10 +8,14 @@
 #include "Console.h"
 
 #include "Core/project.h"
+#include "Elements/tank.h"
 
+#include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -26,7 +30,80 @@ struct EvalResult
   int hour_failed = -1;
   std::vector<int> x;
   std::vector<int> y;
+  std::vector<int> periodic_switch_counts;
+  bool hydraulic_converged = true;
+  int hydraulic_status = 0;
+  int hydraulic_solves = 0;
+  int hydraulic_trials_total = 0;
+  int hydraulic_trials_maximum = 0;
+  double hydraulic_seconds = 0.0;
+  double relative_accuracy = 0.0;
+  int hydraulic_max_trials = 0;
+  int failure_time_seconds = -1;
+  std::string length_units;
+  std::string pressure_units;
+  std::string flow_units;
+  json hydraulic_trace = json::array();
 };
+
+const char *interventionLabel(TankSaturationInterventionType type)
+{
+  if (type == TankSaturationInterventionType::BLOCKED_INFLOW_AT_MAXIMUM)
+    return "BLOCKED_INFLOW_AT_MAXIMUM";
+  if (type == TankSaturationInterventionType::BLOCKED_OUTFLOW_AT_MINIMUM)
+    return "BLOCKED_OUTFLOW_AT_MINIMUM";
+  return "NONE";
+}
+
+json hydraulicSnapshot(Project &project, Network *network, int hour,
+                       int time_seconds, int status, int trials,
+                       double duration_seconds)
+{
+  json nodes = json::array();
+  for (Node *node : network->nodes)
+  {
+    const char *type = node->type() == Node::JUNCTION ? "JUNCTION" :
+                       node->type() == Node::TANK ? "TANK" : "RESERVOIR";
+    json record = {
+        {"id", node->name},
+        {"type", type},
+        {"head", node->head * network->ucf(Units::LENGTH)},
+        {"pressure", (node->head - node->elev) *
+                         network->ucf(Units::PRESSURE)}};
+    if (node->type() == Node::TANK)
+      record["level"] = (node->head - node->elev) *
+                        network->ucf(Units::LENGTH);
+    nodes.push_back(std::move(record));
+  }
+
+  json links = json::array();
+  for (Link *link : network->links)
+  {
+    links.push_back({
+        {"id", link->name},
+        {"type", link->typeStr()},
+        {"flow", link->flow * network->ucf(Units::FLOW)},
+        {"status", link->status}});
+  }
+
+  json interventions = json::array();
+  for (const auto &event : project.tankSaturationEvents())
+  {
+    interventions.push_back({
+        {"tank", event.tank_name},
+        {"type", interventionLabel(event.type)}});
+  }
+
+  return {
+      {"hour", hour},
+      {"time_seconds", time_seconds},
+      {"status", status},
+      {"trials", trials},
+      {"duration_seconds", duration_seconds},
+      {"nodes", std::move(nodes)},
+      {"links", std::move(links)},
+      {"tank_saturation_interventions", std::move(interventions)}};
+}
 
 // Converts y[h] to x[h] using actuation constraints (adapted from BBSolver::updateX)
 bool updateX(int h, int h_max, int num_pumps, int max_actuations, std::vector<int> &x, const std::vector<int> &y)
@@ -71,7 +148,10 @@ bool updateX(int h, int h_max, int num_pumps, int max_actuations, std::vector<in
   return success;
 }
 
-EvalResult evaluateSolution(const std::vector<int> &y, int h_max, int max_actuations, const std::string &inpFile,
+EvalResult evaluateSolution(const std::vector<int> &y, const std::optional<std::vector<int>> &binary_schedule,
+                            int h_max, int max_actuations, const std::string &inpFile,
+                            const std::optional<double> &hydraulic_accuracy,
+                            const std::optional<int> &hydraulic_max_trials,
                             int verbose)
 {
   EvalResult result;
@@ -89,8 +169,46 @@ EvalResult evaluateSolution(const std::vector<int> &y, int h_max, int max_actuat
   BBConstraints constraints(config);
   int num_pumps = constraints.get_num_pumps();
 
-  // Initialize x vector (all pumps off at h=0)
-  result.x.resize((h_max + 1) * num_pumps, 0);
+  if (binary_schedule.has_value())
+  {
+    result.x = binary_schedule.value();
+    if (result.x.size() != static_cast<std::size_t>((h_max + 1) * num_pumps))
+      throw std::invalid_argument("best_x size must be (h_max + 1) * number of pumps");
+
+    for (int h = 0; h <= h_max; ++h)
+    {
+      int active_pumps = 0;
+      for (int pump = 0; pump < num_pumps; ++pump)
+      {
+        const int status = result.x.at(h * num_pumps + pump);
+        if (status != 0 && status != 1)
+          throw std::invalid_argument("best_x must contain only binary values");
+        active_pumps += status;
+      }
+      if (active_pumps != y.at(h))
+        throw std::invalid_argument("best_x and best_y must agree at every hour");
+    }
+
+    result.periodic_switch_counts.assign(num_pumps, 0);
+    for (int pump = 0; pump < num_pumps; ++pump)
+    {
+      for (int h = 2; h <= h_max; ++h)
+        result.periodic_switch_counts[pump] +=
+            result.x.at((h - 1) * num_pumps + pump) !=
+            result.x.at(h * num_pumps + pump);
+      result.periodic_switch_counts[pump] +=
+          result.x.at(h_max * num_pumps + pump) !=
+          result.x.at(num_pumps + pump);
+      if (result.periodic_switch_counts[pump] > 2 * max_actuations)
+      {
+        result.prune_reason = BBPrune::Reason::ACTUATIONS;
+        result.hour_failed = h_max;
+        return result;
+      }
+    }
+  }
+  else
+    result.x.resize((h_max + 1) * num_pumps, 0);
 
   // Load EPANET project
   Project p;
@@ -105,6 +223,18 @@ EvalResult evaluateSolution(const std::vector<int> &y, int h_max, int max_actuat
   Network *nw = p.getNetwork();
   int t_max = 3600 * h_max;
   nw->options.setOption(Options::TimeOption::TOTAL_DURATION, t_max);
+  if (hydraulic_accuracy.has_value())
+    nw->options.setOption(Options::ValueOption::RELATIVE_ACCURACY,
+                          hydraulic_accuracy.value());
+  if (hydraulic_max_trials.has_value())
+    nw->options.setOption(Options::IndexOption::MAX_TRIALS,
+                          hydraulic_max_trials.value());
+  result.relative_accuracy =
+      nw->option(Options::ValueOption::RELATIVE_ACCURACY);
+  result.hydraulic_max_trials = nw->option(Options::IndexOption::MAX_TRIALS);
+  result.length_units = nw->getUnits(Units::LENGTH);
+  result.pressure_units = nw->getUnits(Units::PRESSURE);
+  result.flow_units = nw->getUnits(Units::FLOW);
 
   // Initialize solver
   if (p.initSolver(EN_INITFLOW) != 0)
@@ -118,7 +248,8 @@ EvalResult evaluateSolution(const std::vector<int> &y, int h_max, int max_actuat
   for (int h = 1; h <= h_max; ++h)
   {
     // Convert y[h] to x[h]
-    if (!updateX(h, h_max, num_pumps, max_actuations, result.x, y))
+    if (!binary_schedule.has_value() &&
+        !updateX(h, h_max, num_pumps, max_actuations, result.x, y))
     {
       result.prune_reason = BBPrune::Reason::ACTUATIONS;
       result.hour_failed = h;
@@ -137,9 +268,26 @@ EvalResult evaluateSolution(const std::vector<int> &y, int h_max, int max_actuat
 
     do
     {
-      if (p.runSolver(&t) != 0)
+      const auto solve_started = std::chrono::steady_clock::now();
+      const int solve_status = p.runSolver(&t);
+      const double solve_seconds = std::chrono::duration<double>(
+          std::chrono::steady_clock::now() - solve_started).count();
+      const int solve_trials = p.lastHydraulicTrials();
+      result.hydraulic_solves++;
+      result.hydraulic_trials_total += solve_trials;
+      result.hydraulic_trials_maximum =
+          std::max(result.hydraulic_trials_maximum, solve_trials);
+      result.hydraulic_seconds += solve_seconds;
+      result.hydraulic_trace.push_back(hydraulicSnapshot(
+          p, nw, h, t, solve_status, solve_trials, solve_seconds));
+      if (solve_status != 0)
       {
         Console::printf(Console::Color::RED, "Error: runSolver failed at hour %d\n", h);
+        result.hydraulic_converged = false;
+        result.hydraulic_status = solve_status;
+        result.hour_failed = h;
+        result.failure_time_seconds = t;
+        result.cost = cost;
         return result;
       }
       if (p.advanceSolver(&dt) != 0)
@@ -209,7 +357,10 @@ void printUsage(const char *prog)
   std::cerr << "{\n";
   std::cerr << "  \"y\": [0, 1, 1, 2, ...],  // pump count per hour (length = h_max + 1)\n";
   std::cerr << "  \"h_max\": 24,             // simulation hours\n";
-  std::cerr << "  \"max_actuations\": 1,     // max pump switches\n";
+  std::cerr << "  \"max_actuations\": 1,     // max complete periodic cycles per pump\n";
+  std::cerr << "  \"schedule_mode\": \"aggregate\", // or binary, which requires best_x\n";
+  std::cerr << "  \"hydraulic_accuracy\": 0.0001, // optional relative accuracy override\n";
+  std::cerr << "  \"hydraulic_max_trials\": 40,  // optional trial-limit override\n";
   std::cerr << "  \"inp_file\": \"networks/anytown-24h.inp\",  // optional, default: networks/anytown-24h.inp\n";
   std::cerr << "  \"verbose\": 0             // optional (int, default 0)\n";
   std::cerr << "}\n";
@@ -263,6 +414,48 @@ int main(int argc, char *argv[])
   int h_max = input.value("h_max", 24);
   int max_actuations = input.value("max_actuations", 1);
   std::string inpFile = input.value("inp_file", "networks/anytown.inp");
+  std::string scheduleMode = input.value("schedule_mode", "aggregate");
+  if (scheduleMode != "aggregate" && scheduleMode != "binary")
+  {
+    std::cerr << "Error: schedule_mode must be 'aggregate' or 'binary'\n";
+    MPI_Finalize();
+    return EXIT_FAILURE;
+  }
+  std::optional<std::vector<int>> binarySchedule;
+  if (scheduleMode == "binary")
+  {
+    if (!input.contains("best_x") || !input["best_x"].is_array())
+    {
+      std::cerr << "Error: binary schedule_mode requires a best_x array\n";
+      MPI_Finalize();
+      return EXIT_FAILURE;
+    }
+    binarySchedule = input["best_x"].get<std::vector<int>>();
+  }
+  std::optional<double> hydraulicAccuracy;
+  if (input.contains("hydraulic_accuracy"))
+  {
+    if (!input["hydraulic_accuracy"].is_number() ||
+        input["hydraulic_accuracy"].get<double>() <= 0.0)
+    {
+      std::cerr << "Error: hydraulic_accuracy must be positive\n";
+      MPI_Finalize();
+      return EXIT_FAILURE;
+    }
+    hydraulicAccuracy = input["hydraulic_accuracy"].get<double>();
+  }
+  std::optional<int> hydraulicMaxTrials;
+  if (input.contains("hydraulic_max_trials"))
+  {
+    if (!input["hydraulic_max_trials"].is_number_integer() ||
+        input["hydraulic_max_trials"].get<int>() <= 0)
+    {
+      std::cerr << "Error: hydraulic_max_trials must be a positive integer\n";
+      MPI_Finalize();
+      return EXIT_FAILURE;
+    }
+    hydraulicMaxTrials = input["hydraulic_max_trials"].get<int>();
+  }
   
   // Handle verbose as int, but allow bool (true -> 1, false -> 0)
   int verbose = 0;
@@ -292,7 +485,19 @@ int main(int argc, char *argv[])
   Console::printf(Console::Color::BRIGHT_WHITE, "  h_max: %d, max_actuations: %d\n", h_max, max_actuations);
   Console::printf(Console::Color::BRIGHT_WHITE, "  inp_file: %s\n", inpFile.c_str());
 
-  EvalResult result = evaluateSolution(y, h_max, max_actuations, inpFile, verbose);
+  EvalResult result;
+  try
+  {
+    result = evaluateSolution(y, binarySchedule, h_max, max_actuations,
+                              inpFile, hydraulicAccuracy,
+                              hydraulicMaxTrials, verbose);
+  }
+  catch (const std::invalid_argument &error)
+  {
+    std::cerr << "Error: " << error.what() << "\n";
+    MPI_Finalize();
+    return EXIT_FAILURE;
+  }
 
   // Build output JSON
   json output;
@@ -300,6 +505,28 @@ int main(int argc, char *argv[])
   output["cost"] = result.cost / 100.0; // convert cents to dollars
   output["prune_reason"] = BBPrune::labels[result.prune_reason];
   output["hour_failed"] = result.hour_failed >= 0 ? json(result.hour_failed) : json(nullptr);
+  output["schedule_mode"] = scheduleMode;
+  output["periodic_switch_counts"] = result.periodic_switch_counts;
+  output["hydraulic"] = {
+      {"converged", result.hydraulic_converged},
+      {"status", result.hydraulic_status},
+      {"relative_accuracy", result.relative_accuracy},
+      {"relative_accuracy_origin",
+       hydraulicAccuracy.has_value() ? "request" : "input_file"},
+      {"max_trials", result.hydraulic_max_trials},
+      {"solve_count", result.hydraulic_solves},
+      {"trials_total", result.hydraulic_trials_total},
+      {"trials_maximum", result.hydraulic_trials_maximum},
+      {"solve_seconds", result.hydraulic_seconds},
+      {"failure_time_seconds",
+       result.failure_time_seconds >= 0 ? json(result.failure_time_seconds) :
+                                          json(nullptr)},
+      {"trace", result.hydraulic_trace},
+      {"units",
+       {{"head", result.length_units},
+        {"pressure", result.pressure_units},
+        {"level", result.length_units},
+        {"flow", result.flow_units}}}};
   
   // Output result
   if (outputFile.empty())

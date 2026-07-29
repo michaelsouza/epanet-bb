@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "accuracies": [
+    {
+      "id": "1e-3",
+      "value": 0.001
+    },
+    {
+      "id": "1e-4",
+      "value": 0.0001
+    },
+    {
+      "id": "1e-7",
+      "value": 1e-07
+    }
+  ],
+  "fixed_schedules": {
+    "repetitions": 5,
+    "hydraulic_max_trials": 40
+  },
+  "optimizations": {
+    "repetitions": 3,
+    "process_count": 64,
+    "hours": 24,
+    "actuations": [
+      1,
+      2,
+      3
+    ],
+    "level": 8,
+    "sync_interval": 32768,
+    "hydraulic_max_trials": 40,
+    "timeout_seconds": 900
+  },
+  "smoke": {
+    "accuracy_id": "1e-4",
+    "process_count": 1,
+    "hours": 3,
+    "actuations": [
+      1
+    ],
+    "level": 1,
+    "sync_interval": 32,
+    "timeout_seconds": 30
+  }
+}

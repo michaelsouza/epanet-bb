@@ -24,15 +24,15 @@ Dependencies:
 - numpy: For numerical operations.
 """
 
+import argparse
 import json
+import tempfile
 import numpy as np
 import matplotlib.pyplot as plt
 import wntr
 from pathlib import Path
 
-# Get the project root directory
-script_dir = Path(__file__).parent
-project_root = script_dir.parent
+PROJECT_ROOT = Path(__file__).absolute().parents[1]
 
 # Pump names in the order used by B&B (must match BBConstraints.cpp)
 PUMP_ORDER = ["111", "222", "333"]
@@ -102,7 +102,8 @@ def run_simulation_with_schedule(inp_path: str, schedules: dict) -> tuple[dict, 
 
     # Run simulation
     sim = wntr.sim.EpanetSimulator(wn)
-    results = sim.run_sim()
+    with tempfile.TemporaryDirectory(prefix="epanet-bb-hydraulics-") as directory:
+        results = sim.run_sim(file_prefix=str(Path(directory) / "simulation"))
 
     # Extract tank levels at each hour
     tank_levels = {}
@@ -139,7 +140,7 @@ def run_simulation_with_schedule(inp_path: str, schedules: dict) -> tuple[dict, 
     return tank_levels, pressures
 
 
-def main():
+def main() -> None:
     """
     Main execution routine.
 
@@ -147,9 +148,29 @@ def main():
     2. Simulates each solution using the AnyTown network model.
     3. Generates and saves a multi-panel figure comparing hydraulic responses.
     """
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--data-dir", type=Path, default=PROJECT_ROOT / "paper" / "data"
+    )
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=PROJECT_ROOT / "networks" / "any-town.inp",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=PROJECT_ROOT / "paper" / "figures" / "Figure_6_tank_levels_24h.pdf",
+    )
+    arguments = parser.parse_args()
+    data_directory = arguments.data_dir.expanduser().absolute()
+    input_path = arguments.input.expanduser().absolute()
+    output_path = arguments.output.expanduser().absolute()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     solutions = {}
     for a_max in [1, 2, 3]:
-        result_path = project_root / f"paper/data/run_Souza2026_a_{a_max:02d}.json"
+        result_path = data_directory / f"run_Souza2026_a_{a_max:02d}.json"
         with open(result_path, "r") as f:
             payload = json.load(f)
         solutions[a_max] = {
@@ -164,12 +185,12 @@ def main():
     # Run simulations and collect tank levels + pressures
     all_tank_levels = {}
     all_pressures = {}
-    inp_path = project_root / "networks/any-town.inp"
-
     for a_max, solution in solutions.items():
         print(f"Running simulation for NA_max = {a_max}...")
         schedules = extract_pump_schedules(solution["best_x"])
-        tank_levels, pressures = run_simulation_with_schedule(str(inp_path), schedules)
+        tank_levels, pressures = run_simulation_with_schedule(
+            str(input_path), schedules
+        )
         all_tank_levels[a_max] = tank_levels
         all_pressures[a_max] = pressures
         print(f"  Cost: ${solution['best_cost']:.2f}")
@@ -242,6 +263,8 @@ def main():
             ax.axhline(
                 y=threshold, color="gray", linestyle="--", alpha=0.7, linewidth=0.8
             )
+            if idx == 0:
+                ax.text(24.5, threshold, "$P_{\\min}$", va="center", fontsize=8)
 
         if all_values:
             y_min = min(all_values + ([threshold] if threshold is not None else [])) - 1
@@ -278,7 +301,6 @@ def main():
     plt.subplots_adjust(bottom=0.13)
 
     # Save figure
-    output_path = project_root / "paper/figures/Figure_6_tank_levels_24h.pdf"
     plt.savefig(
         output_path, dpi=500, bbox_inches="tight", facecolor="white", edgecolor="none"
     )

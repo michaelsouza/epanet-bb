@@ -25,7 +25,8 @@
 // Static map of prune reasons to labels
 std::map<BBPrune::Reason, std::string> BBPrune::labels = {
     {BBPrune::NONE, "NONE"}, {BBPrune::PRESSURES, "PRESSURES"},   {BBPrune::LEVELS, "LEVELS"},    {BBPrune::STABILITY, "STABILITY"},
-    {BBPrune::COST, "COST"}, {BBPrune::ACTUATIONS, "ACTUATIONS"}, {BBPrune::TIMESTEP, "TIMESTEP"}};
+    {BBPrune::COST, "COST"}, {BBPrune::ACTUATIONS, "ACTUATIONS"}, {BBPrune::TIMESTEP, "TIMESTEP"},
+    {BBPrune::TANK_SATURATION, "TANK_SATURATION"}};
 
 
 // Constructor
@@ -98,11 +99,16 @@ BBConstraints::~BBConstraints()
   }
 }
 
-void BBConstraints::update_best(double cost, std::vector<int> x, std::vector<int> y)
+void BBConstraints::update_best(double cost, std::vector<int> x,
+                                std::vector<int> y,
+                                std::vector<int> canonical_x)
 {
-  best_cost_local = std::min(best_cost_local, cost);
-  best_x = x;
-  best_y = y;
+  if (cost >= best_cost_local)
+    return;
+  best_cost_local = cost;
+  best_x = std::move(x);
+  best_y = std::move(y);
+  best_canonical_x = std::move(canonical_x);
 }
 
 // Function to display the constraints
@@ -283,6 +289,27 @@ bool BBConstraints::check_levels(Project &p, int verbose)
   return all_ok;
 }
 
+bool BBConstraints::check_tank_saturation(const Project &p, int verbose)
+{
+  const auto events = p.tankSaturationEvents();
+  if (verbose && !events.empty())
+  {
+    Console::printf(Console::Color::BRIGHT_WHITE,
+                    "\nChecking tank saturation interventions:\n");
+    for (const auto &event : events)
+    {
+      const char *cause =
+          event.type ==
+                  TankSaturationInterventionType::BLOCKED_INFLOW_AT_MAXIMUM
+              ? "blocked inflow at maximum"
+              : "blocked outflow at minimum";
+      Console::printf(Console::Color::RED, "  \u274C tank[%s]: %s\n",
+                      event.tank_name.c_str(), cause);
+    }
+  }
+  return events.empty();
+}
+
 // Function to check tank stability
 BBPrune::Reason BBConstraints::check_stability(Project &p, int verbose)
 {
@@ -417,6 +444,7 @@ BBPrune::Reason BBConstraints::check_feasibility(Project &p, int dt, const int h
   ProfileScope scope("check_feasibility");
   poll_sync();
   (void)h;
+  if (!check_tank_saturation(p, verbose)) return BBPrune::Reason::TANK_SATURATION;
   if (!check_levels(p, verbose)) return BBPrune::Reason::LEVELS;
   if (enable_timestep_check && !check_timestep(dt, verbose)) return BBPrune::Reason::TIMESTEP;
   if (!check_cost(p, cost, verbose)) return BBPrune::Reason::COST;
@@ -424,7 +452,7 @@ BBPrune::Reason BBConstraints::check_feasibility(Project &p, int dt, const int h
   return BBPrune::Reason::NONE;
 }
 
-void BBConstraints::to_json(char *fn) const
+void BBConstraints::to_json(char *fn, bool search_conclusive) const
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -434,10 +462,21 @@ void BBConstraints::to_json(char *fn) const
     Console::printf(Console::Color::BRIGHT_GREEN, "💾 Writing best solution to file: %s\n", fn);
   }
 
+  const nlohmann::json j = to_json_value(search_conclusive);
+  std::ofstream f(fn);
+  f << j.dump(2);
+}
+
+nlohmann::json BBConstraints::to_json_value(
+    bool search_conclusive) const
+{
   nlohmann::json j;
   j["best_cost"] = best_cost_local / 100.0; // convert from cents to dollars
   j["best_x"] = best_x;
+  j["best_canonical_x"] = best_canonical_x;
   j["best_y"] = best_y;
-  std::ofstream f(fn);
-  f << j.dump(2);
+  j["search_status"] = search_conclusive
+                           ? "CONCLUSIVE"
+                           : "INCONCLUSIVE_HYDRAULIC_NONCONVERGENCE";
+  return j;
 }

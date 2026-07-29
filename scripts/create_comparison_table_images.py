@@ -1,3 +1,4 @@
+import argparse
 import csv
 import json
 import re
@@ -6,9 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from pathlib import Path
 
-DATA_DIR = Path("paper/data")
-OUTPUT_DIR = Path("paper/figures")
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+PROJECT_ROOT = Path(__file__).absolute().parents[1]
 
 # Source display configuration (key -> label, grayscale fill, hatch)
 SOURCE_CONFIG = {
@@ -19,12 +18,12 @@ SOURCE_CONFIG = {
 }
 
 
-def discover_sources():
+def discover_sources(data_directory: Path):
     """Discover available sources and actuation levels from JSON files."""
     data = {1: [], 2: [], 3: []}
     pattern = re.compile(r"run_(.+)_a_(\d+)\.json")
 
-    for filepath in sorted(DATA_DIR.glob("run_*_a_*.json")):
+    for filepath in sorted(data_directory.glob("run_*_a_*.json")):
         match = pattern.match(filepath.name)
         if not match:
             continue
@@ -39,11 +38,18 @@ def discover_sources():
             content = json.load(f)
 
         label, shade, hatch = SOURCE_CONFIG[source_key]
+        validation = content.get("revised_validation", {})
+        feasible = bool(validation.get("feasible", True))
         x_full = np.array(content["best_x"], dtype=int).reshape(-1, 3)
         x_24h = x_full[1:, :]  # Drop hour 0
 
-        # Calculate switches per pump
-        switches = [np.sum(x_full[1:, p] != x_full[:-1, p]) for p in range(3)]
+        # Count periodic transitions over the 24 optimized decisions. Row zero
+        # is a hydraulic initial-state placeholder, not an operational period.
+        switches = [
+            int(np.sum(x_24h[1:, pump] != x_24h[:-1, pump]))
+            + int(x_24h[-1, pump] != x_24h[0, pump])
+            for pump in range(3)
+        ]
 
         data[na_max].append(
             {
@@ -55,6 +61,11 @@ def discover_sources():
                 "time": content.get("duration", 0.0),
                 "schedule": x_24h,
                 "switches": switches,
+                "feasible": feasible,
+                "prune_reason": validation.get("prune_reason", "NONE"),
+                "reevaluated_cost": validation.get(
+                    "reevaluated_cost", content["best_cost"]
+                ),
             }
         )
 
@@ -64,15 +75,39 @@ def discover_sources():
         data[na_max].sort(key=lambda e: order.index(e["key"]))
 
         if data[na_max]:
-            best_cost = min(e["cost"] for e in data[na_max])
+            feasible_entries = [e for e in data[na_max] if e["feasible"]]
+            if not feasible_entries:
+                raise ValueError(
+                    f"no feasible comparison schedule for NA_max={na_max}"
+                )
+            best_cost = min(e["reevaluated_cost"] for e in feasible_entries)
             best_time = min(
-                (e["time"] for e in data[na_max] if e["time"] > 0), default=float("inf")
+                (
+                    e["time"]
+                    for e in feasible_entries
+                    if e["time"] > 0
+                ),
+                default=float("inf"),
             )
             for e in data[na_max]:
-                e["is_best"] = abs(e["cost"] - best_cost) < 1e-6
-                e["is_fastest"] = e["time"] > 0 and abs(e["time"] - best_time) < 1e-6
+                e["is_best"] = (
+                    e["feasible"]
+                    and abs(e["reevaluated_cost"] - best_cost) < 1e-6
+                )
+                e["is_fastest"] = (
+                    e["feasible"]
+                    and e["time"] > 0
+                    and abs(e["time"] - best_time) < 1e-6
+                )
 
     return data
+
+
+def displayed_cost(entry: dict) -> str:
+    """Format a complete cost while retaining explicit feasibility status."""
+    if entry["feasible"]:
+        return f"{entry['reevaluated_cost']:.2f}"
+    return f"{entry['cost']:.2f}\nInfeasible"
 
 
 def draw_table(na_max, entries, output_path):
@@ -157,7 +192,15 @@ def draw_table(na_max, entries, output_path):
                 lw=0.8,
             )
         )
-        cell(x_cost, y, W_COST, H_SOURCE, f"{entry['cost']:.2f}", bg_cost, bold=True)
+        cell(
+            x_cost,
+            y,
+            W_COST,
+            H_SOURCE,
+            displayed_cost(entry),
+            bg_cost,
+            bold=True,
+        )
         cell(x_time, y, W_TIME, H_SOURCE, f"{entry['time']:.2f}", bg_time)
 
         for p in range(3):
@@ -208,9 +251,20 @@ def draw_table(na_max, entries, output_path):
 
 def export_csv(data, output_path):
     """Export comparison data to CSV file."""
-    with open(output_path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Source", "Cost", "Time", "Pump", "SW"])
+    with open(output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(
+            [
+                "Source",
+                "PublishedCost",
+                "ReevaluatedCost",
+                "Feasible",
+                "Reason",
+                "Time",
+                "Pump",
+                "SW",
+            ]
+        )
 
         for na_max in [1, 2, 3]:
             for entry in data[na_max]:
@@ -218,6 +272,9 @@ def export_csv(data, output_path):
                     writer.writerow([
                         entry["label"],
                         f"{entry['cost']:.2f}",
+                        f"{entry['reevaluated_cost']:.6f}",
+                        entry["feasible"],
+                        entry["prune_reason"],
                         f"{entry['time']:.2f}",
                         f"P{p+1}",
                         entry["switches"][p],
@@ -226,14 +283,36 @@ def export_csv(data, output_path):
     print(f"Generated: {output_path}")
 
 
-def main():
-    data = discover_sources()
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--data-dir", type=Path, default=PROJECT_ROOT / "paper" / "data"
+    )
+    parser.add_argument(
+        "--output-dir", type=Path, default=PROJECT_ROOT / "paper" / "figures"
+    )
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        default=PROJECT_ROOT / "paper" / "data" / "comparison_table.csv",
+    )
+    arguments = parser.parse_args()
+    data_directory = arguments.data_dir.expanduser().absolute()
+    output_directory = arguments.output_dir.expanduser().absolute()
+    csv_path = arguments.csv.expanduser().absolute()
+    output_directory.mkdir(parents=True, exist_ok=True)
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    data = discover_sources(data_directory)
     for na_max in [1, 2, 3]:
         if data[na_max]:
             draw_table(
-                na_max, data[na_max], OUTPUT_DIR / f"Figure_{na_max + 6}_comparison_table_a{na_max}.pdf"
+                na_max,
+                data[na_max],
+                output_directory
+                / f"Figure_{na_max + 6}_comparison_table_a{na_max}.pdf",
             )
-    export_csv(data, DATA_DIR / "comparison_table.csv")
+    export_csv(data, csv_path)
     print("Done.")
 
 

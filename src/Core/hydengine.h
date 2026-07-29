@@ -26,6 +26,8 @@ public:
   int hydStep;
   int currentTime;
   int timeOfDay;
+  int lastSolveStatus;
+  int lastSolveTrials;
   double peakKwatts;
   HydSolverData hydSolver;
   MatrixSolverData matrixSolver;
@@ -54,6 +56,8 @@ public:
   void close();
 
   int getElapsedTime() { return currentTime; }
+  int getLastSolveStatus() const { return lastSolveStatus; }
+  int getLastSolveTrials() const { return lastSolveTrials; }
   double getPeakKwatts() { return peakKwatts; }
 
   //! Serialize to JSON for HydEngine
@@ -66,6 +70,8 @@ public:
             {"hydStep", hydStep},
             {"currentTime", currentTime},
             {"timeOfDay", timeOfDay},
+            {"lastSolveStatus", lastSolveStatus},
+            {"lastSolveTrials", lastSolveTrials},
             {"peakKwatts", peakKwatts}};
   }
 
@@ -81,6 +87,9 @@ public:
     hydStep = j.at("hydStep").get<int>();
     currentTime = j.at("currentTime").get<int>();
     timeOfDay = j.at("timeOfDay").get<int>();
+    lastSolveStatus =
+        j.value("lastSolveStatus", static_cast<int>(HydSolver::SUCCESSFUL));
+    lastSolveTrials = j.value("lastSolveTrials", 0);
     peakKwatts = j.at("peakKwatts").get<double>();
   }
 
@@ -91,6 +100,8 @@ public:
     data.hydStep = hydStep;
     data.currentTime = currentTime;
     data.timeOfDay = timeOfDay;
+    data.lastSolveStatus = lastSolveStatus;
+    data.lastSolveTrials = lastSolveTrials;
     data.peakKwatts = peakKwatts;
     hydSolver->copy_to(data.hydSolver);
     matrixSolver->copy_to(data.matrixSolver);
@@ -103,6 +114,8 @@ public:
     hydStep = data.hydStep;
     currentTime = data.currentTime;
     timeOfDay = data.timeOfDay;
+    lastSolveStatus = data.lastSolveStatus;
+    lastSolveTrials = data.lastSolveTrials;
     peakKwatts = data.peakKwatts;
     hydSolver->copy_from(data.hydSolver);
     matrixSolver->copy_from(data.matrixSolver);
@@ -130,6 +143,8 @@ private:
   int hydStep;                //!< hydraulic time step (sec)
   int currentTime;            //!< current simulation time (sec)
   int timeOfDay;              //!< current time of day (sec)
+  int lastSolveStatus;        //!< status returned by the latest hydraulic solve
+  int lastSolveTrials;        //!< trials used by the latest hydraulic solve
   double peakKwatts;          //!< peak energy usage (kwatts)
   std::string timeStepReason; //!< reason for taking next time step
 

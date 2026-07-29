@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "campaign_tasks": [
+    {
+      "id": "tuning",
+      "kind": "tuning",
+      "requires_mpi": true,
+      "requires_hpc": true,
+      "final_config": "{repo_root}/experiments/tuning-anytown-24h-a2.json",
+      "smoke_config": "{repo_root}/experiments/tuning-smoke.json"
+    },
+    {
+      "id": "final-cases",
+      "kind": "solver-matrix",
+      "requires_mpi": true,
+      "requires_hpc": true,
+      "process_counts": "selected",
+      "actuations": [1, 2, 3],
+      "hours": 24,
+      "level": 8,
+      "sync_interval": 32768
+    },
+    {
+      "id": "scalability",
+      "kind": "solver-matrix",
+      "requires_mpi": true,
+      "requires_hpc": true,
+      "process_counts": [1, 2, 4, 8, 16, 32, 64],
+      "actuations": [2],
+      "hours": 24,
+      "level": 8,
+      "sync_interval": 32768
+    },
+    {
+      "id": "ablation",
+      "kind": "solver-variants",
+      "requires_mpi": true,
+      "requires_hpc": true,
+      "process_counts": "selected",
+      "actuations": [3],
+      "hours": 24,
+      "level": 8,
+      "sync_interval": 32768,
+      "variants": [
+        {
+          "id": "no-snapshots",
+          "environment": {"BB_ENABLE_SNAPSHOTS": "0"}
+        },
+        {"id": "baseline", "environment": {}},
+        {
+          "id": "no-cost-pruning",
+          "environment": {"BB_ENABLE_COST_PRUNING": "0"}
+        },
+        {
+          "id": "no-pump-sorting",
+          "environment": {"BB_ENABLE_PUMP_SORTING": "0"}
+        },
+        {
+          "id": "no-task-shuffle",
+          "environment": {"BB_ENABLE_TASK_SHUFFLE": "0"}
+        },
+        {
+          "id": "no-global-sync",
+          "environment": {"BB_ENABLE_GLOBAL_SYNC": "0"}
+        }
+      ]
+    },
+    {
+      "id": "accuracy-sensitivity",
+      "kind": "accuracy-sensitivity",
+      "requires_mpi": true,
+      "requires_hpc": true,
+      "config": "{repo_root}/experiments/accuracy-sensitivity-anytown-24h.json"
+    }
+  ],
+  "rebuild_tasks": [
+    {
+      "id": "manuscript-data",
+      "requires_hpc": false,
+      "inputs": [
+        "{repo_root}/experiments/results/ablation-anytown-24h-a3-summary.json",
+        "{repo_root}/experiments/results/scalability-anytown-24h-a2-summary.json",
+        "{repo_root}/experiments/results/final-cases-anytown-24h-summary.json",
+        "{repo_root}/experiments/results/comparison-feasibility-summary.json",
+        "{repo_root}/experiments/results/accuracy-sensitivity-anytown-24h-audit.json",
+        "{repo_root}/experiments/results/accuracy-sensitivity-anytown-24h-fixed.csv",
+        "{repo_root}/experiments/results/accuracy-sensitivity-anytown-24h-optimization.csv",
+        "{repo_root}/experiments/comparison-schedules/run_Cimorelli2020_a_01.json",
+        "{repo_root}/experiments/comparison-schedules/run_Cimorelli2020_a_02.json",
+        "{repo_root}/experiments/comparison-schedules/run_Cimorelli2020_a_03.json",
+        "{repo_root}/experiments/comparison-schedules/run_Costa2016_a_01.json",
+        "{repo_root}/experiments/comparison-schedules/run_Costa2016_a_02.json",
+        "{repo_root}/experiments/comparison-schedules/run_Costa2016_a_03.json",
+        "{repo_root}/experiments/comparison-schedules/run_Paola2025_a_01.json",
+        "{repo_root}/experiments/comparison-schedules/run_Paola2025_a_02.json",
+        "{repo_root}/experiments/comparison-schedules/run_Paola2025_a_03.json"
+      ],
+      "outputs": [
+        "{output_dir}/artifact-manifest.json",
+        "{output_dir}/data/ablation.csv",
+        "{output_dir}/data/scalability.csv",
+        "{output_dir}/data/final_cases.csv",
+        "{output_dir}/data/pruning.csv",
+        "{output_dir}/data/comparison_feasibility.csv",
+        "{output_dir}/data/accuracy_audit.json",
+        "{output_dir}/data/accuracy_fixed.csv",
+        "{output_dir}/data/accuracy_optimization.csv",
+        "{output_dir}/data/run_Cimorelli2020_a_01.json",
+        "{output_dir}/data/run_Cimorelli2020_a_02.json",
+        "{output_dir}/data/run_Cimorelli2020_a_03.json",
+        "{output_dir}/data/run_Costa2016_a_01.json",
+        "{output_dir}/data/run_Costa2016_a_02.json",
+        "{output_dir}/data/run_Costa2016_a_03.json",
+        "{output_dir}/data/run_Paola2025_a_01.json",
+        "{output_dir}/data/run_Paola2025_a_02.json",
+        "{output_dir}/data/run_Paola2025_a_03.json",
+        "{output_dir}/data/run_Souza2026_a_01.json",
+        "{output_dir}/data/run_Souza2026_a_02.json",
+        "{output_dir}/data/run_Souza2026_a_03.json",
+        "{output_dir}/tables/ablation.tex",
+        "{output_dir}/tables/scalability.tex",
+        "{output_dir}/tables/final_cases.tex",
+        "{output_dir}/tables/pruning.tex",
+        "{output_dir}/tables/comparison_feasibility.tex",
+        "{output_dir}/tables/accuracy_fixed.tex",
+        "{output_dir}/tables/accuracy_optimization.tex"
+      ],
+      "commands": [
+        [
+          "{python}",
+          "{repo_root}/scripts/prepare_manuscript_artifacts.py",
+          "--comparison-data-dir",
+          "{repo_root}/experiments/comparison-schedules",
+          "--output-dir",
+          "{output_dir}"
+        ]
+      ]
+    },
+    {
+      "id": "diagrams",
+      "requires_hpc": false,
+      "inputs": [],
+      "outputs": [
+        "{output_dir}/figures/Figure_1_two_level_diagram.pdf",
+        "{output_dir}/figures/Figure_2_tree_decomposition.pdf"
+      ],
+      "commands": [
+        [
+          "{python}",
+          "{repo_root}/scripts/plot_two_level_diagram.py",
+          "--output",
+          "{output_dir}/figures/Figure_1_two_level_diagram.pdf"
+        ],
+        [
+          "{python}",
+          "{repo_root}/scripts/plot_tree_decomposition_diagram.py",
+          "--output",
+          "{output_dir}/figures/Figure_2_tree_decomposition.pdf"
+        ]
+      ]
+    },
+    {
+      "id": "case-study",
+      "requires_hpc": false,
+      "inputs": [
+        "{repo_root}/networks/any-town.inp"
+      ],
+      "outputs": [
+        "{output_dir}/figures/Figure_3_anytown_network.pdf",
+        "{output_dir}/figures/Figure_4_anytown_energy_cost.pdf"
+      ],
+      "commands": [
+        [
+          "{python}",
+          "{repo_root}/scripts/plot_network.py",
+          "--input",
+          "{repo_root}/networks/any-town.inp",
+          "--network-output",
+          "{output_dir}/figures/Figure_3_anytown_network.pdf",
+          "--energy-output",
+          "{output_dir}/figures/Figure_4_anytown_energy_cost.pdf"
+        ]
+      ]
+    },
+    {
+      "id": "scalability",
+      "requires_hpc": false,
+      "inputs": [
+        "{output_dir}/data/scalability.csv"
+      ],
+      "outputs": [
+        "{output_dir}/figures/Figure_5_scalability.pdf"
+      ],
+      "commands": [
+        [
+          "{python}",
+          "{repo_root}/scripts/plot_scalability.py",
+          "--data",
+          "{output_dir}/data/scalability.csv",
+          "--output",
+          "{output_dir}/figures/Figure_5_scalability.pdf"
+        ]
+      ]
+    },
+    {
+      "id": "hydraulics",
+      "requires_hpc": false,
+      "inputs": [
+        "{repo_root}/networks/any-town.inp",
+        "{output_dir}/data/run_Souza2026_a_01.json",
+        "{output_dir}/data/run_Souza2026_a_02.json",
+        "{output_dir}/data/run_Souza2026_a_03.json"
+      ],
+      "outputs": [
+        "{output_dir}/figures/Figure_6_tank_levels_24h.pdf"
+      ],
+      "commands": [
+        [
+          "{python}",
+          "{repo_root}/scripts/plot_tanks.py",
+          "--data-dir",
+          "{output_dir}/data",
+          "--input",
+          "{repo_root}/networks/any-town.inp",
+          "--output",
+          "{output_dir}/figures/Figure_6_tank_levels_24h.pdf"
+        ]
+      ]
+    },
+    {
+      "id": "comparisons",
+      "requires_hpc": false,
+      "inputs": [
+        "{output_dir}/data/run_Cimorelli2020_a_01.json",
+        "{output_dir}/data/run_Cimorelli2020_a_02.json",
+        "{output_dir}/data/run_Cimorelli2020_a_03.json",
+        "{output_dir}/data/run_Costa2016_a_01.json",
+        "{output_dir}/data/run_Costa2016_a_02.json",
+        "{output_dir}/data/run_Costa2016_a_03.json",
+        "{output_dir}/data/run_Paola2025_a_01.json",
+        "{output_dir}/data/run_Paola2025_a_02.json",
+        "{output_dir}/data/run_Paola2025_a_03.json",
+        "{output_dir}/data/run_Souza2026_a_01.json",
+        "{output_dir}/data/run_Souza2026_a_02.json",
+        "{output_dir}/data/run_Souza2026_a_03.json"
+      ],
+      "outputs": [
+        "{output_dir}/figures/Figure_7_comparison_table_a1.pdf",
+        "{output_dir}/figures/Figure_8_comparison_table_a2.pdf",
+        "{output_dir}/figures/Figure_9_comparison_table_a3.pdf",
+        "{output_dir}/data/comparison_table.csv"
+      ],
+      "commands": [
+        [
+          "{python}",
+          "{repo_root}/scripts/create_comparison_table_images.py",
+          "--data-dir",
+          "{output_dir}/data",
+          "--output-dir",
+          "{output_dir}/figures",
+          "--csv",
+          "{output_dir}/data/comparison_table.csv"
+        ]
+      ]
+    }
+  ]
+}

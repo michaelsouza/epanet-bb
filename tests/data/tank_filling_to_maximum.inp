@@ -1,0 +1,28 @@
+[TITLE]
+Tank saturation test: filling to the maximum level
+
+[JUNCTIONS]
+
+[RESERVOIRS]
+SOURCE 20
+
+[TANKS]
+TANK 0 5 0 10 10 0
+
+[PIPES]
+FILL SOURCE TANK 1000 12 100 0 OPEN
+
+[TIMES]
+Duration 2:00
+Hydraulic Timestep 1:00
+Report Timestep 1:00
+
+[OPTIONS]
+Units GPM
+Headloss H-W
+
+[REPORT]
+Status No
+Summary No
+
+[END]

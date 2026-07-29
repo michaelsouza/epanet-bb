@@ -1,0 +1,238 @@
+{
+  "evaluator_sha256": "dd8fe41a209be8cfe53a8a5fead2bca1373cd2d5a61eecca5ecaa02fd317388b",
+  "final_summary_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd",
+  "network_sha256": "c6104ab9283c9b7eb06bd3ace44bca2a4dcf4776f86886fd7508a35ce2dad9c3",
+  "periodic_horizon": "hours 1-24 with closure from hour 24 to hour 1",
+  "records": [
+    {
+      "actuations": 1,
+      "feasible": false,
+      "hour_failed": 24,
+      "log": "logs/Cimorelli2020-a1.log",
+      "periodic_switch_counts": [
+        4,
+        0,
+        0
+      ],
+      "prune_reason": "ACTUATIONS",
+      "published_cost": 3634.67,
+      "reevaluated_cost": 0.0,
+      "request": "requests/Cimorelli2020-a1.json",
+      "result": "results/Cimorelli2020-a1.json",
+      "source": "Cimorelli2020",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Cimorelli2020_a_01.json",
+      "source_artifact_sha256": "e5edfd8430970ed4e627747074c35dc0419c5022ed79da7a7bb2a5b1d96bceff"
+    },
+    {
+      "actuations": 2,
+      "feasible": false,
+      "hour_failed": 24,
+      "log": "logs/Cimorelli2020-a2.log",
+      "periodic_switch_counts": [
+        6,
+        0,
+        0
+      ],
+      "prune_reason": "ACTUATIONS",
+      "published_cost": 3580.11,
+      "reevaluated_cost": 0.0,
+      "request": "requests/Cimorelli2020-a2.json",
+      "result": "results/Cimorelli2020-a2.json",
+      "source": "Cimorelli2020",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Cimorelli2020_a_02.json",
+      "source_artifact_sha256": "f840f9bcca2c343145727cf898d584412d6c1b806f823238f68a756e99f40706"
+    },
+    {
+      "actuations": 3,
+      "feasible": false,
+      "hour_failed": 24,
+      "log": "logs/Cimorelli2020-a3.log",
+      "periodic_switch_counts": [
+        8,
+        0,
+        0
+      ],
+      "prune_reason": "ACTUATIONS",
+      "published_cost": 3575.54,
+      "reevaluated_cost": 0.0,
+      "request": "requests/Cimorelli2020-a3.json",
+      "result": "results/Cimorelli2020-a3.json",
+      "source": "Cimorelli2020",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Cimorelli2020_a_03.json",
+      "source_artifact_sha256": "3ee0e9deda85af6ea91557a64d7da6bfaa3b6f34a576a839cc4fd1548601dfed"
+    },
+    {
+      "actuations": 1,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Costa2016-a1.log",
+      "periodic_switch_counts": [
+        2,
+        2,
+        2
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3916.98,
+      "reevaluated_cost": 3916.9839049600055,
+      "request": "requests/Costa2016-a1.json",
+      "result": "results/Costa2016-a1.json",
+      "source": "Costa2016",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Costa2016_a_01.json",
+      "source_artifact_sha256": "e8fceabe1330f1c64f7bc7313047cd111598f05e210e748ec834bca89d81fd84"
+    },
+    {
+      "actuations": 2,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Costa2016-a2.log",
+      "periodic_switch_counts": [
+        4,
+        4,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3618.59,
+      "reevaluated_cost": 3618.595780163883,
+      "request": "requests/Costa2016-a2.json",
+      "result": "results/Costa2016-a2.json",
+      "source": "Costa2016",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Costa2016_a_02.json",
+      "source_artifact_sha256": "48558b5008289aacfee62c383c49b745b51ed398bb20ab0a98e6a0245dc0ce0e"
+    },
+    {
+      "actuations": 3,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Costa2016-a3.log",
+      "periodic_switch_counts": [
+        6,
+        6,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3578.67,
+      "reevaluated_cost": 3578.6717566591865,
+      "request": "requests/Costa2016-a3.json",
+      "result": "results/Costa2016-a3.json",
+      "source": "Costa2016",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Costa2016_a_03.json",
+      "source_artifact_sha256": "bc11b92bd2fd7f576b49ee5a8040dc35cbfe16ba7bcf9e9162d3f08c86cb32f0"
+    },
+    {
+      "actuations": 1,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Paola2025-a1.log",
+      "periodic_switch_counts": [
+        2,
+        2,
+        2
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3911.52,
+      "reevaluated_cost": 3911.4825435681696,
+      "request": "requests/Paola2025-a1.json",
+      "result": "results/Paola2025-a1.json",
+      "source": "Paola2025",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Paola2025_a_01.json",
+      "source_artifact_sha256": "28a1b740c3da62d3a5651d08a64ebac8bccaa2dd5ccea774343db00d4bbbd693"
+    },
+    {
+      "actuations": 2,
+      "feasible": false,
+      "hour_failed": 21,
+      "log": "logs/Paola2025-a2.log",
+      "periodic_switch_counts": [
+        4,
+        4,
+        2
+      ],
+      "prune_reason": "TANK_SATURATION",
+      "published_cost": 3606.22,
+      "reevaluated_cost": 3325.8453105067665,
+      "request": "requests/Paola2025-a2.json",
+      "result": "results/Paola2025-a2.json",
+      "source": "Paola2025",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Paola2025_a_02.json",
+      "source_artifact_sha256": "f7ffc1a259c395f89fdbd2ee52700cf07fbf148a0f81c6a27c3375d54a123ae4"
+    },
+    {
+      "actuations": 3,
+      "feasible": false,
+      "hour_failed": 21,
+      "log": "logs/Paola2025-a3.log",
+      "periodic_switch_counts": [
+        6,
+        6,
+        4
+      ],
+      "prune_reason": "TANK_SATURATION",
+      "published_cost": 3577.4,
+      "reevaluated_cost": 3325.1120960017665,
+      "request": "requests/Paola2025-a3.json",
+      "result": "results/Paola2025-a3.json",
+      "source": "Paola2025",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/paper/data/run_Paola2025_a_03.json",
+      "source_artifact_sha256": "985d3c282186b6650974fe3790cf6025edddff97be42decef796a1ee42a1f69e"
+    },
+    {
+      "actuations": 1,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Souza2026-a1.log",
+      "periodic_switch_counts": [
+        2,
+        2,
+        2
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3900.2474978417204,
+      "reevaluated_cost": 3900.2474978416194,
+      "request": "requests/Souza2026-a1.json",
+      "result": "results/Souza2026-a1.json",
+      "source": "Souza2026",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/experiments/results/final-cases-anytown-24h-summary.json",
+      "source_artifact_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd"
+    },
+    {
+      "actuations": 2,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Souza2026-a2.log",
+      "periodic_switch_counts": [
+        4,
+        4,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3606.828628872831,
+      "reevaluated_cost": 3606.8286288728636,
+      "request": "requests/Souza2026-a2.json",
+      "result": "results/Souza2026-a2.json",
+      "source": "Souza2026",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/experiments/results/final-cases-anytown-24h-summary.json",
+      "source_artifact_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd"
+    },
+    {
+      "actuations": 3,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Souza2026-a3.log",
+      "periodic_switch_counts": [
+        6,
+        6,
+        6
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3575.5380640403023,
+      "reevaluated_cost": 3575.5380640403705,
+      "request": "requests/Souza2026-a3.json",
+      "result": "results/Souza2026-a3.json",
+      "source": "Souza2026",
+      "source_artifact": "/home/michael/gitrepos/epanet-bb/experiments/results/final-cases-anytown-24h-summary.json",
+      "source_artifact_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd"
+    }
+  ],
+  "schedule_mode": "binary",
+  "schema_version": 1
+}

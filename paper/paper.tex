@@ -31,253 +31,289 @@
 \author[1,3]{Michael Ferreira de Souza}
 
 \affil[1]{Dept.\ of Statistics and Applied Mathematics, Federal University of Ceará,
-  Campus do Pici, Fortaleza, CE 60455-760, Brazil.
-  Corresponding author. Email: michael@ufc.br}
+	Campus do Pici, Fortaleza, CE 60455-760, Brazil.
+	Corresponding author. Email: michael@ufc.br}
 \affil[2]{Dept.\ of Physics, Federal University of Ceará,
-  Campus do Pici, Fortaleza, CE 60455-760, Brazil.}
+	Campus do Pici, Fortaleza, CE 60455-760, Brazil.}
 \affil[3]{IMECC, University of Campinas,
-  Rua Sérgio Buarque de Holanda, 651, Campinas, SP 13083-859, Brazil.}
+	Rua Sérgio Buarque de Holanda, 651, Campinas, SP 13083-859, Brazil.}
 
 \maketitle
 
 \begin{abstract}
-  Water utilities can reduce operating costs by choosing when pumps should run, but finding the best daily schedule is difficult because pump decisions, tank levels, and pressure limits are tightly coupled. This study examines whether exact optimization is now practical for realistic pump scheduling rather than relying only on heuristic search. We developed a parallel Branch-and-Bound framework for 24-hour pump scheduling in water distribution networks. The method splits the search tree across MPI processes, stores hydraulic snapshots so the solver can backtrack without repeating full simulations, and uses EPANET~3 to test feasibility for each candidate schedule. We evaluated the framework on the modified AnyTown benchmark with three pumps, three tanks, and several limits on the number of daily pump actuations. The solver reduced runtime by 29 to 115 times compared with a previous sequential exact method, depending on the operating constraint, and solved cases that previously required hours or days within minutes to a few hours on standard server hardware. In the least constrained case, it also found a lower-cost schedule than the best published heuristic result, improving energy cost by 3.7\%. These findings show that exact day-ahead pump scheduling is now practical for benchmark networks of realistic size when parallel computing and careful state management are used together. The proposed framework gives utilities and researchers a way to obtain provably optimal schedules, measure the quality of faster approximate methods, and study how operating constraints affect both cost and computational effort. The source code and benchmark data are publicly available.
+	Exact pump scheduling is computationally difficult because the number of binary schedules grows exponentially and each candidate requires hydraulic simulation. We present a distributed-memory parallel Branch-and-Bound framework for hourly scheduling of interchangeable fixed-speed pumps. The method searches over aggregate pump counts, enforces individual actuation limits through dynamic programming, and uses hydraulic snapshots to avoid repeated prefix simulation. Experiments on a benchmark network show that the framework completes the exact search under different actuation limits and benefits substantially from cost pruning, state persistence, and parallel execution. Relaxing actuation limits reduces operating cost but increases the computational effort required for certification.
 \end{abstract}
 
 \section{Practical Applications}
-Operating pumps is one of the largest daily energy costs in water utilities, so better schedules can lower expenses without changing physical infrastructure. In practice, many pump schedules are still based on operator experience or heuristic optimization tools that return a good answer but do not show whether it is the best feasible answer. This study shows that exact 24-hour pump scheduling can now be solved fast enough to support day-ahead decisions on a realistic benchmark network. Using a parallel Branch-and-Bound solver linked to EPANET~3, we cut solution times by 29 to 115 times compared with an earlier exact approach and improved the best published heuristic schedule by 3.7\% in the least constrained case. For utilities and consultants, the main value is practical confidence: the method checks hydraulic limits directly, returns a provably optimal schedule for the modeled system, and reveals how much money may be left on the table by faster approximate methods. It can therefore support operational planning, benchmarking of commercial or in-house schedulers, and studies on how switching limits affect energy cost and system performance.
+Water utilities must decide when to run pumps so that storage tanks remain available, customers receive adequate pressure, and energy costs stay under control. The proposed method can help operators and consultants compare daily pumping strategies under these competing requirements and identify the lowest-cost schedule under the modeled conditions. It can also show the cost of limiting pump starts and stops, check whether a proposed schedule respects pressure and tank-level requirements, and provide a reliable reference for evaluating faster scheduling tools. These capabilities are useful for day-ahead planning, operational policy studies, and investment analyses that consider whether additional storage or pumping flexibility would be valuable. The proposed formulation is intended for pump groups that can be treated as interchangeable and does not directly cover stations with different pump characteristics. The results presented here come from one small benchmark network, so they do not establish how quickly the method will perform on larger or real-world networks. The method is therefore best viewed as a decision-support and benchmarking tool.
 
 \section{Introduction}
 
-Pump operations represent the dominant cost driver in water distribution networks (WDNs), with energy consumption for pumping comprising the largest share of operational expenses \cite{Paola2024}. As energy prices rise and environmental concerns intensify \cite{Reis2023}, developing efficient pump scheduling strategies has become both an economic and environmental imperative. Beyond cost minimization, effective scheduling influences system reliability, equipment longevity through controlled switching operations \cite{Lansey1994,Costa2016}, and service quality via consistent pressure maintenance and storage management \cite{Reis2023}.
+Pumping operations constitute the primary energy expenditure in water distribution networks (WDNs). Storage tanks provide temporal flexibility by decoupling water supply from real-time consumer demand, enabling operators to shift pumping schedules toward hours with lower electricity tariffs while maintaining required junction pressures and service availability \cite{Reis2023,Paola2024}. Operational schedules must also constrain the frequency of pump starts and stops to prevent excessive mechanical wear and reduce equipment degradation \cite{Lansey1994,Costa2016}.
 
-The pump scheduling problem poses significant computational challenges. Decision variables are inherently discrete (pump on/off states), hydraulic constraints are nonlinear (pressure losses, pump curves), and operational requirements impose additional restrictions (tank level bounds, minimum pressures, maximum actuations). For a network with $N_p$ pumps over a 24-hour horizon, the solution space encompasses $2^{24 N_p}$ possible configurations. This combinatorial explosion, coupled with nonlinear hydraulic equations governing feasible solutions, places the problem firmly within the class of NP-hard mixed-integer nonlinear programs (MINLP) \cite{Fooladivanda2018,Verleye2016}.
+Exploiting this operational flexibility requires solving a challenging combinatorial optimization problem. For a system with $N_p$ fixed-speed pumps and $T$ discrete scheduling intervals, the decision space contains $2^{N_p \times T}$ possible binary operation schedules. Each schedule induces a complex non-linear hydraulic trajectory governed by pipe friction head losses, pump performance curves, time-varying consumer demands, and dynamic tank storage. Furthermore, pressure limits, tank operating bounds, daily volume recovery, and actuation constraints couple decisions across the planning horizon. When formulated with explicit hydraulic constraints, the problem constitutes a non-convex mixed-integer non-linear program (MINLP) that is NP-hard in general \cite{Fooladivanda2018,Verleye2016,Bonvin2021}.
 
-Early research employed classical mathematical programming methods such as Linear Programming, Dynamic Programming, and Nonlinear Programming \cite{Brion1991,Jowitt1992}. While these methods yielded foundational insights, they struggled with the high dimensionality and non-convexity inherent to realistic networks \cite{Candelieri2018,Reis2023}. Dynamic programming, though theoretically elegant, remained confined to small networks lacking switching constraints \cite{Lansey1994}.
+To address this computational complexity, much of the literature combines hydraulic simulation with metaheuristic search algorithms. Genetic algorithms, ant colony optimization, particle swarm methods, and harmony search variants accommodate discrete binary decisions and non-linear constraint evaluations directly through simulation \cite{Mackle1995,Savic1997,LpezIbez2008,AlAni2012,Paola2024}. Alternative scheduling paradigms include continuous-time formulations, such as the Smart Dynamic Local Search of \citeN{Bras2025}, which optimizes the continuous start times and duty-cycle durations of pump operations. Although these heuristic and surrogate-assisted methods \cite{Broad2010,Rao2007,Ashraf2024} efficiently discover high-quality schedules without exhaustive enumeration, they cannot provide a mathematical certificate of global optimality.
 
-These computational barriers precipitated a paradigm shift toward meta-heuristics. Genetic Algorithms \cite{Savic1997,Mackle1995}, Ant Colony Optimization \cite{LpezIbez2008}, and Particle Swarm Optimization \cite{AlAni2012} emerged as dominant approaches \cite{Reis2023}, valued for their flexibility with discrete variables and complex constraint landscapes. However, all meta-heuristics share a fundamental limitation: they cannot guarantee optimality or quantify the gap to the global optimum \cite{Costa2016,Reis2023}. Recent innovations include Digital Harmony Search (DHS) \cite{Paola2024}, which incorporates real-time data with strict switching limits, and Smart Dynamic Local Search \cite{Bras2025}, employing duty-cycle formulations and perturbation mechanisms to escape local optima. Surrogate-based methods have also emerged to improve computational efficiency: Bayesian Optimization \cite{Candelieri2018,Bagloee2018} for reduced simulation calls, artificial neural network metamodels \cite{Broad2010,Rao2007} for accelerating hydraulic evaluations during optimization, and physics-informed graph neural networks \cite{Ashraf2024} for fast emulation of hydraulic simulators. Nevertheless, meta-heuristics require extensive parameter tuning and exhibit sensitivity to initial conditions \cite{Reis2023}.
+Exact methods make a different trade-off by retaining a certificate for the discrete problem. \citeN{Costa2016} coupled hydraulic simulation with an enumerative Branch-and-Bound (B\&B) procedure that branches on the number of active pumps and rejects hydraulically infeasible prefixes. \citeN{Bonvin2021} instead developed an LP/NLP B\&B framework whose tailored MILP relaxation retains demand, storage, and hydraulic information to provide more informative lower bounds. The former is a specialized simulation-driven enumeration, whereas the latter supports a broader class of network components through a more elaborate mathematical relaxation. Neither approach removes the combinatorial growth of the scheduling problem, and both incur substantial work when the horizon or the surviving search tree grows.
 
-The computational tractability of exact methods for realistic pump scheduling was an open question until \citeN{Costa2016} demonstrated that Branch-and-Bound (B\&B) \cite{Land1960} could solve the problem for small-to-medium networks when appropriately constrained. Their key insight, which runs counter to typical assumptions, was that tighter operational constraints actually improve solver performance by enabling effective pruning of infeasible branches. In particular, limits on pump actuation frequency proved especially effective. However, their sequential implementation required hours or days of computation, limiting practical applicability. Recent efforts have also focused on developing tighter mathematical relaxations to improve B\&B performance. For instance, \citeN{Bonvin2021} proposed a tailored Mixed-Integer Linear Programming (MILP) relaxation using Outer Approximation (OA) to handle the non-convex hydraulic laws, providing an exact method applicable to both fixed and variable-speed pumps. While they focus on mathematical tightness to prune the search space, scalability remains a primary bottleneck for exact methods \cite{Reis2023,MalaJetmarova2018}.
+Because exact methods must still explore potentially large search trees, parallel B\&B architectures offer a principled approach to reducing wall-clock execution time by exploring search subtrees concurrently across distributed computing ranks \cite{Gendron1994,Li1986,Hrga2021}. For simulation-driven optimization, however, tree parallelization addresses only part of the computational bottleneck; accelerating the search also requires eliminating redundant hydraulic simulations during backtracking.
 
-The increasing accessibility of computing clusters and mature distributed-memory frameworks has renewed interest in exact approaches. Parallel B\&B has proven successful in other combinatorial domains \cite{Gendron1994,Li1986,Hrga2021}, and decomposition methods like Generalized Benders Decomposition show promise for large networks with continuous relaxations \cite{Verleye2016}. Yet parallel B\&B for pump scheduling has remained limited \cite{Reis2023}, largely due to the computational overhead of repeated hydraulic simulations during tree traversal.
+We address a focused research question: can exact enumeration of hourly schedules for interchangeable parallel pumps be accelerated without weakening individual binary actuation constraints? To answer this, we use \texttt{epanet-bb}, our open-source fork of the Open Water Analytics EPANET repository, which integrates the distributed-memory B\&B solver with a customized EPANET hydraulic engine \cite{owaepanet}.
 
-This work extends the foundational approach of \citeN{Costa2016} with distributed-memory parallelism via MPI. We present a distributed-memory parallel B\&B solver combining MPI-based task parallelism, hydraulic state persistence for $O(1)$ backtracking, and a two-level schedule representation that reduces branching factors. Integrated with EPANET~3's improved computational engine, our framework delivers four principal contributions:
+The principal contributions of this work are:
+
 \begin{enumerate}
-	\item A parallel task decomposition strategy with deterministic load balancing;
-	\item A snapshot-based state management system eliminating redundant hydraulic simulations during backtracking;
-	\item Cooperative pruning through non-blocking global bound synchronization;
-	\item Empirical validation demonstrates that exact 24-hour solutions become computationally tractable, with runtimes reduced from days to hours.
+	\item an exact symmetry reduction that searches aggregate pump counts while a periodic dynamic-programming layer enforces individual pump actuation limits;
+	\item a distributed-memory parallel search that explores statically partitioned subtrees while asynchronously sharing incumbent upper bounds; and
+	\item a hierarchical snapshot mechanism that enables state restoration in time independent of search prefix length.
 \end{enumerate}
 
+The proposed framework is evaluated through systematic parallel scaling, component ablation, and numerical accuracy analyses. The remainder of this paper is structured as follows. Section~\ref{sec:problem_formulation} defines the pump scheduling optimization model. Section~\ref{sec:algorithm} presents the proposed parallel B\&B framework. Section~\ref{sec:numerical_experiments} reports the numerical experiments and comparative analysis. Finally, Section~\ref{sec:conclusion} provides concluding remarks.
+
 \section{Problem Formulation}
+\label{sec:problem_formulation}
 
-The pump scheduling problem is formulated as a mixed-integer nonlinear program (MINLP). The goal is to determine optimal ON/OFF schedules for all pumps over a fixed planning horizon, minimizing total energy costs while satisfying hydraulic and operational constraints.
+Consider a WDN over a horizon divided into equal scheduling periods $\mathcal{H}=\{1,\ldots,T\}$. Let $\mathcal{P}$ be the set of $N_p$ fixed-speed pumps, $\mathcal{J}$ the set of demand junctions, $\mathcal{K}$ the set of storage tanks, and $\mathcal{L}$ the set of network pipes. The underlying optimization problem is stated in terms of the binary status of each pump.  To enable exact symmetry reduction, we assume that the pumps in $\mathcal{P}$ operate in parallel as an interchangeable group sharing identical hydraulic connections, performance curves, efficiency profiles, and energy tariffs, with no identity-specific start-up costs or dynamic states.
 
-\subsection{Objective Function}
+\subsection{Decision Space and Objective}
 
-The objective minimizes total energy cost over the planning horizon:
+For pump $j\in\mathcal{P}$ and period $h\in\mathcal{H}$, let
+\[
+	x_{j,h}=
+	\begin{cases}
+		1, & \text{if pump $j$ is on during period $h$}, \\
+		0, & \text{otherwise}.
+	\end{cases}
+\]
+The objective is to minimize the total electricity cost over the horizon:
 \begin{equation}
-	\min_{\mathbf{x}} \quad z = \sum_{h=1}^{T} \sum_{j \in \mathcal{P}} C_{j,h} \cdot E_{j,h}(\mathbf{x})
+	\min_{\mathbf{x}\in\{0,1\}^{N_p\times T}}
+	\quad z(\mathbf{x}) = \sum_{h=1}^{T} \sum_{j \in \mathcal{P}}
+	C_{j,h} E_{j,h}(\mathbf{x}_{1:h}),
+	\label{eq:objective}
 \end{equation}
-where $E_{j,h}(\mathbf{x})$ denotes the energy consumed by pump $j$ during hour $h$, obtained from hydraulic simulation based on the full schedule $\mathbf{x}$.
+where $C_{j,h}\geq 0$ is the electricity tariff and $E_{j,h}(\mathbf{x}_{1:h})\geq 0$ is the energy consumed during period $h$. The dependence on the prefix $\mathbf{x}_{1:h}$ reflects the effect of earlier decisions on tank storage and on the hydraulic state at the beginning of the period. Energy consumption and cost are returned by the extended-period hydraulic simulation rather than approximated algebraically within the search.
 
-\subsection{Constraints}
+\subsection{Operational Constraints}
 
-\textbf{Nodal Pressure Limits.} Pressures must remain within bounds to ensure adequate service without risking pipe damage:
+Let $\mathcal{J}_P\subseteq\mathcal{J}$ denote the junctions with prescribed service-pressure requirements. At every scheduling boundary,
 \begin{equation}
-	P_{i}^{\min} \le P_{i,h}(\mathbf{x}) \le P_{i}^{\max} \quad \forall i \in \mathcal{I}, \; \forall h \in \mathcal{H}
+	P_{i,h}(\mathbf{x}_{1:h}) \geq P_{i}^{\min}
+	\quad \forall i \in \mathcal{J}_P, \; \forall h \in \mathcal{H}.
 	\label{eq:pressure_limits}
 \end{equation}
 
-\textbf{Tank Storage Bounds.} Water levels must stay within operational limits to prevent overflow or depletion:
+Tank levels must remain within their operating bounds,
 \begin{equation}
-	L_{k}^{\min} \le L_{k,h}(\mathbf{x}) \le L_{k}^{\max} \quad \forall k \in \mathcal{K}, \; \forall h \in \mathcal{H}
+	L_{k}^{\min} \le L_{k,h}(\mathbf{x}_{1:h}) \le L_{k}^{\max}
+	\quad \forall k \in \mathcal{K}, \; \forall h \in \mathcal{H},
 	\label{eq:tank_bounds}
 \end{equation}
-
-\textbf{Tank Recovery.} To ensure day-to-day sustainability, final tank levels must meet or exceed initial levels:
+and the terminal storage must recover its initial level:
 \begin{equation}
-	L_{k,T}(\mathbf{x}) \ge L_{k,0} \quad \forall k \in \mathcal{K}
+	L_{k,T}(\mathbf{x}) \geq L_{k,0}
+	\quad \forall k \in \mathcal{K}.
 	\label{eq:tank_recovery}
 \end{equation}
 
-\textbf{Actuation Limits.} To reduce mechanical wear and maintenance costs, pump switching is restricted:
+To limit mechanical wear, each pump may complete at most $NA_{\max}$ on--off cycles over the periodic horizon:
 \begin{equation}
-	\sum_{h=2}^{T} |x_{j,h} - x_{j,h-1}| \le NA_{\max} \quad \forall j \in \mathcal{P}
+	\frac{1}{2}\sum_{h=1}^{T} |x_{j,h} - x_{j,h-1}| \le NA_{\max},
+	\qquad x_{j,0}=x_{j,T},
+	\qquad \forall j \in \mathcal{P}.
 	\label{eq:actuation_limits}
 \end{equation}
+The sum counts both off-to-on and on-to-off transitions, including the transition between periods $T$ and 1. Because the boundary is periodic, every complete cycle contributes two transitions, whereas a pump that remains in the same state across the boundary incurs none.
 
-\textbf{Hydraulic Model.} The hydraulic state is governed by physical laws governing flow conservation, head losses, and pump characteristics \cite{Bonvin2021}. Let $q_{a,h} \in \mathbb{R}$ denote the flow rate (m$^3$/s) through arc $a$ at time step $h$, and $H_{i,h} \geq 0$ denote the hydraulic head (m) at node $i$, defined as the sum of elevation and pressure head.
+\subsection{Hydraulic Feasibility}
 
-Flow conservation at each internal node requires:
-\begin{multline}
-	\sum_{a \in \delta^-(j)} q_{a,h} - \sum_{a \in \delta^+(j)} q_{a,h} = D_{j,h}, \\
-	\quad \forall j \in \mathcal{I} \setminus \mathcal{K}, \; \forall h \in \mathcal{H}
-	\label{eq:flow_conservation}
-\end{multline}
-where $\delta^-(j)$ and $\delta^+(j)$ denote arcs entering and leaving node $j$, respectively, and $D_{j,h} \geq 0$ is the water demand rate at node $j$ during time step $h$.
+For a fixed schedule, the hydraulic state is defined by flow conservation, energy conservation, pump characteristics, and tank storage dynamics \cite{Bonvin2021}. Let $q_{a,h}\in\mathbb{R}$ denote the flow through pipe or pump arc $a\in\mathcal{L}\cup\mathcal{P}$ during period $h$, and let $H_{i,h}$ denote the hydraulic head at node $i$ at the end of that period. For each junction $i\in\mathcal{J}$,
 
-For each pipe $\ell = (i,j) \in \mathcal{L}$, head loss follows the Hazen-Williams or Darcy-Weisbach relationship \cite{Brown2002,Burgschweiger2009a}:
 \begin{equation}
-	H_{i,h} - H_{j,h} = \Phi_\ell(q_{\ell,h}), \quad \forall \ell \in \mathcal{L}, \; \forall h \in \mathcal{H}
+	\sum_{a \in \delta^-(i)} q_{a,h}
+	- \sum_{a \in \delta^+(i)} q_{a,h}
+	= D_{i,h},
+	\quad \forall i \in \mathcal{J}, \; \forall h \in \mathcal{H},
+	\label{eq:flow_conservation}
+\end{equation}
+where $\delta^-(i)$ and $\delta^+(i)$ are the arcs entering and leaving node $i$, and $D_{i,h}\geq 0$ is its demand rate.
+
+For each pipe $\ell=(u,v)\in\mathcal{L}$, the head difference follows the selected nonlinear loss relation \cite{Brown2002,Burgschweiger2009a}:
+\begin{equation}
+	H_{u,h}-H_{v,h}=\Phi_\ell(q_{\ell,h}),
+	\quad \forall \ell\in\mathcal{L}, \; \forall h\in\mathcal{H},
 	\label{eq:pipe_head_loss}
 \end{equation}
-where $\Phi_\ell(\cdot)$ is a nonlinear function with $\Phi_\ell(0) = 0$ and $\text{sgn}(\Phi_\ell(q)) = \text{sgn}(q)$ for all $q$.
+where $\Phi_\ell(0)=0$ and the sign of $\Phi_\ell(q)$ follows the flow direction.
 
-For each pump $p = (i,j) \in \mathcal{P}$, the head increase across the pump depends on its status and flow \cite{Burgschweiger2009b,Morsi2012}:
-\begin{multline}
-	H_{j,h} - H_{i,h} = \Psi_p(q_{p,h}) \cdot x_{p,h}, \\
-	\quad \forall p \in \mathcal{P}, \; \forall h \in \mathcal{H}
+For each pump $p=(u,v)\in\mathcal{P}$, its binary status defines the following disjunction \cite{Burgschweiger2009b,Morsi2012}:
+\begin{equation}
+	\begin{aligned}
+		x_{p,h}=0 & \;\Longrightarrow\; q_{p,h}=0, \\
+		x_{p,h}=1 & \;\Longrightarrow\;
+		H_{v,h}-H_{u,h}=\Psi_p(q_{p,h}),
+	\end{aligned}
+	\quad \forall p\in\mathcal{P}, \; \forall h\in\mathcal{H},
 	\label{eq:pump_head}
-\end{multline}
-where $\Psi_p(\cdot)$ is the pump curve derived from manufacturer data, and $x_{p,h} \in \{0,1\}$ is the binary pump status.
+\end{equation}
+where $\Psi_p(\cdot)$ is the fixed-speed pump curve. In particular, an inactive pump imposes zero flow rather than zero head difference across its end nodes.
 
-Tank dynamics relate net inflow to water level change:
-\begin{multline}
-	\sum_{a \in \delta^-(k)} q_{a,h} - \sum_{a \in \delta^+(k)} q_{a,h} = \frac{S_k}{\Delta t} (L_{k,h} - L_{k,h-1}), \\
-	\forall k \in \mathcal{K}, \; \forall h \in \mathcal{H}
+For the constant-area tanks considered here, net inflow changes the stored level according to
+\begin{equation}
+	\sum_{a \in \delta^-(k)} q_{a,h} - \sum_{a \in \delta^+(k)} q_{a,h} = \frac{A_k}{\Delta t} (L_{k,h} - L_{k,h-1}), \forall k \in \mathcal{K}, \; \forall h \in \mathcal{H},
 	\label{eq:tank_dynamics}
-\end{multline}
-where $S_k$ is the tank cross-sectional area (m$^2$) and $\Delta t = 3600$~s.
+\end{equation}
+where $A_k$ is the cross-sectional area and $\Delta t$ is the scheduling-period duration.
 
-Rather than explicitly encoding the nonlinear constraints \eqref{eq:flow_conservation}--\eqref{eq:tank_dynamics} in the optimization, our approach evaluates feasibility through hydraulic simulation. For each candidate schedule $\mathbf{x}$ visited during Branch-and-Bound traversal, EPANET~3 computes the hydraulic state (flows, heads, tank levels) by solving the full system \eqref{eq:flow_conservation}--\eqref{eq:tank_dynamics} using the Global Gradient Algorithm \cite{Todini1988}. We then enforce constraints \eqref{eq:pressure_limits}, \eqref{eq:tank_bounds}, and \eqref{eq:tank_recovery} based on these simulated values. The actuation constraint \eqref{eq:actuation_limits} is enforced directly during schedule construction.
-
-While this simulation-based approach ensures hydraulic accuracy, it introduces a computational bottleneck: each node in the Branch-and-Bound search tree requires a complete hydraulic simulation, and the number of nodes grows exponentially with the planning horizon. For a 24-hour schedule with $NA_{\max}=3$, the search tree may contain billions of nodes, making sequential enumeration impractical. The following section addresses this challenge through parallelization and algorithmic optimizations that reduce both the number of nodes explored and the cost per node.
+Rather than explicitly encoding the nonlinear constraints \eqref{eq:flow_conservation}--\eqref{eq:tank_dynamics} in the optimization, our approach evaluates feasibility through hydraulic simulation. For each candidate schedule $\mathbf{x}$ visited during Branch-and-Bound traversal, the simulator computes the hydraulic state (flows, heads, tank levels) by solving the full system \eqref{eq:flow_conservation}--\eqref{eq:tank_dynamics} using the Global Gradient Algorithm \cite{Todini1988}. We then enforce constraints \eqref{eq:pressure_limits}, \eqref{eq:tank_bounds}, and \eqref{eq:tank_recovery} based on these simulated values. The actuation constraint \eqref{eq:actuation_limits} is enforced directly during schedule construction.
 
 \section{Enhanced Branch-and-Bound}
+\label{sec:algorithm}
 
-We present a distributed-memory parallel Branch-and-Bound (B\&B) algorithm integrated with the EPANET~3 hydraulic engine. We adopt the two-level schedule representation proposed by \citeN{Costa2016}, minimizing the branching factor, but enhance it with a Least Used Selection (LUS) strategy. To address scalability limitations of prior exact methods, we introduce three architectural innovations: cost-based pruning (which was not utilized in \citeA{Costa2016}), MPI-based static load balancing with cooperative pruning, and a hydraulic snapshot mechanism for $O(1)$ state restoration.
+We present a distributed-memory parallel Branch-and-Bound (B\&B) framework implemented in \texttt{epanet-bb} \cite{epanetbb}. The framework integrates the combinatorial search and the customized EPANET hydraulic engine within the same implementation. The parallel architecture builds a unified search tree across MPI ranks, which concurrently explore statically allocated top-level subtrees and asynchronously exchange global incumbent upper bounds to accelerate pruning, without migrating search nodes during execution \cite{Gendron1994}. Within this architecture, the algorithm combines aggregate pump-count branching, exact periodic
+disaggregation, cost-based pruning, and prefix-independent hydraulic snapshots.
 
 \subsection{Two-Level Schedule Representation}
 
-To mitigate the $2^{N_p \times T}$ combinatorial explosion, we adopt the variable separation strategy of \citeN{Costa2016}. A high-level decision variable $y_h \in \{0, 1, \dots, N_p\}$ represents the number of active pumps at hour $h$. The low-level binary configuration $\mathbf{x}_h = \{x_{1,h}, \dots, x_{N_p,h}\}$ is derived from $y_h$ via a deterministic greedy mapping:
+To reduce the exponential $2^{N_p \times T}$ search space, we define the aggregate decision at each time step $h \in \{1, \ldots, T\}$ as
 \[
-	\mathcal{M}: (y_h, \mathbf{x}_{h-1}, \mathcal{R}) \to \mathbf{x}_h
+	y_h = \sum_{j=1}^{N_p} x_{j,h},
+	\qquad y_h \in \{0, 1, \ldots, N_p\},
 \]
-where $\mathcal{R}$ denotes the remaining actuation budget for each pump. Fig.~\ref{fig:two_level} illustrates this representation: the high-level schedule $y_h$ specifies that 2, 3, 3, 2, 1, and 0 pumps should be active over six hours, which the mapping $\mathcal{M}$ converts into explicit binary pump states $x_{j,h}$.
+where the B\&B tree branches on the total number $y_h$ of active pumps rather than on individual binary pump identities. This space reduction is exact for groups of interchangeable parallel pumps that share identical hydraulic connections, performance curves, efficiency profiles, and energy tariffs, with no identity-specific start-up costs or dynamic states. Under these conditions, permuting pump identities leaves both hydraulic feasibility and operational cost invariant.
+
+Because the embedded hydraulic engine requires individual binary statuses to construct and solve the network equations, each aggregate decision $y_h$ must be mapped to a binary state for simulation. We construct a canonical binary representative $\mathbf{x}_h^{\mathrm{can}} = (x_{1,h}^{\mathrm{can}}, \ldots, x_{N_p,h}^{\mathrm{can}})$, which simply activates the first $y_h$ pumps:
+\[
+	x_{j,h}^{\mathrm{can}} =
+	\begin{cases}
+		1, & j \le y_h, \\
+		0, & j > y_h.
+	\end{cases}
+\]
+Due to pump interchangeability, simulating $\mathbf{x}_h^{\mathrm{can}}$ yields the exact hydraulic state transition for any binary allocation of $y_h$ active pumps. As illustrated in Fig.~\ref{fig:two_level} for a six-hour sequence, these canonical binary identities serve solely as a standardized input to the hydraulic engine and are not required to satisfy individual actuation limits.
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.5\columnwidth]{figures/Figure_1_two_level_diagram.pdf}
-	\caption{Two-level schedule representation. The high-level variable $y_h$ indicates how many pumps are active at each hour (here: 2, 3, 3, 2, 1, 0 over six hours for three pumps). The mapping $\mathcal{M}$ derives binary configurations $x_{j,h}$ respecting actuation constraints.}
+	\caption{Two-level schedule representation. The aggregate variable specifies 2, 3, 3, 2, 1, and 0 active pumps over six hours, while $\mathbf{x}_h^{\mathrm{can}}$ supplies the fixed canonical representative simulated hydraulically. Exact disaggregation tracks feasible identity assignments separately and reconstructs the binary actuation schedule.}
 	\label{fig:two_level}
 \end{figure}
 
-The mapping $\mathcal{M}$ selects pumps to satisfy the target count $y_h$ while respecting actuation constraints $NA_{\max}$. \citeN{Costa2016} employ a \emph{sequential exhaustion} strategy: pump $j$ is used exclusively until it exhausts its actuation budget, at which point the algorithm switches to pump $j+1$. For instance, with one active pump, the sequence proceeds as $(1,0,0) \to (0,1,0) \to (0,0,1)$. Each pump operates until depleted before ceding to the next.
+To enforce individual actuation limits, feasibility is maintained via a dynamic programming layer $\mathcal{D}_h$. For an aggregate prefix $\mathbf{y}_{1:h}$, layer $\mathcal{D}_h$ stores one canonical representative for every reachable permutation class of binary prefixes satisfying $y_t = \sum_{j=1}^{N_p} x_{j,t}$ for $t=1,\ldots,h$. For each pump $j$, the state tuple $(x_{j,1}, x_{j,h}, s_{j,h})$ tracks its initial status at hour 1, its current status at hour $h$, and the cumulative number $s_{j,h}$ of state switches ($0 \leftrightarrow 1$) accumulated up to hour $h$. To construct $\mathcal{D}_{h+1}$, the layer transition enumerates binary assignments with exactly $y_{h+1}$ active pumps, updates switch counts, rejects assignments exceeding the $2 NA_{\max}$ limit, and canonicalizes the resulting states under pump identity permutations. An aggregate prefix is pruned for actuation infeasibility if and only if its layer $\mathcal{D}_h$ becomes empty. At the terminal step $h=T$, the transition from the final status back to the initial status ($T \to 1$) is evaluated before accepting a state, thereby enforcing the periodic boundary condition in \eqref{eq:actuation_limits}.
 
-We propose \emph{Least Used Selection} (LUS), which instead sorts pumps dynamically at each decision point by their remaining actuation budget. When switching pumps on, the algorithm prioritizes those with the most remaining on-switches; when switching off, it favors those with the most remaining off-switches. This greedy reordering serves a dual purpose: extending equipment life through balanced utilization across the pump station, while increasing the probability of finding feasible schedule extensions deeper in the search tree by preserving actuation flexibility.
+To enable full schedule reconstruction, each state retained in layer $\mathcal{D}_h$ stores a pointer to its predecessor state in $\mathcal{D}_{h-1}$ and the permutation applied during canonicalization. Once the optimal aggregate schedule $\mathbf{y}^*$ is identified at the terminal step $h=T$, traversing these predecessor links backward reconstructs an explicit binary schedule $\mathbf{x}^* \in \{0,1\}^{N_p \times T}$ that realizes the aggregate decisions while satisfying every individual pump actuation limit. Consequently, each search node carries two paired components: the hydraulic snapshot generated by the canonical prefix $\mathbf{x}_{1:h}^{\mathrm{can}}$ and the reachable actuation classes $\mathcal{D}_h$.
+
+\noindent\textbf{Proposition (Exact periodic disaggregation).}
+For any aggregate schedule $\mathbf{y}$, the final dynamic-programming layer $\mathcal{D}_T$ (evaluated after the periodic closure transition $T \to 1$) is nonempty if and only if $\mathbf{y}$ admits a binary disaggregation satisfying the individual periodic actuation limits in \eqref{eq:actuation_limits}. Moreover, the predecessor links reconstruct one such binary schedule.
+
+\emph{Proof.}
+The result follows by induction on the prefix length. At $h=1$, the layer $\mathcal{D}_1$ represents every permutation class of binary assignments containing exactly $y_1$ active pumps. Suppose that $\mathcal{D}_h$ represents all binary prefixes compatible with $\mathbf{y}_{1:h}$ and the accumulated switch limits. The transition to $\mathcal{D}_{h+1}$ considers every assignment containing $y_{h+1}$ active pumps, updates the corresponding switch counts, and rejects only states that already exceed the prescribed limit. Canonicalization merges states that differ solely by a permutation of pump identities. Because their initial status, current status, and switch count coincide up to permutation, they have the same possible successor classes. Thus, $\mathcal{D}_{h+1}$ represents all and only the feasible extensions. At $h=T$, adding the transition from the final to the initial status ($T \to 1$) enforces the periodic limit. Consequently, the final layer $\mathcal{D}_T$ is nonempty exactly when a feasible binary disaggregation exists, and following its predecessor links reconstructs one. \hfill\(\square\)
+
+By searching over aggregate pump decisions, the framework leverages the permutation invariance of interchangeable pumps. Together with exact periodic disaggregation, this structure guarantees that, for any conclusive execution, the global optimum of the original binary formulation under the specified hydraulic engine configuration is preserved.
 
 \subsection{Task Decomposition and Parallel Execution}
 
-We decompose the search tree into independent sub-problems to exploit distributed-memory parallelism. Each \emph{task} is defined by a fixed prefix of the high-level schedule, $\mathbf{y}_{1:L} = \{y_1, \dots, y_L\}$, where $L$ denotes the decomposition level (typically $L=8$). This yields $(N_p + 1)^L$ total tasks. Fig.~\ref{fig:tree_decomposition} illustrates this decomposition: prefixes are enumerated at level $L$, and each resulting subtree is assigned to an MPI rank for independent exploration.
+We decompose the search tree into independent subproblems to exploit distributed-memory parallelism. Each \emph{task} is defined by a fixed prefix tuple of the aggregate schedule, $\mathbf{y}_{1:d} = (y_1, \dots, y_d)$, where $d$ denotes the decomposition depth (typically $d=8$). This yields $(N_p + 1)^d$ tasks. Fig.~\ref{fig:tree_decomposition} illustrates the decomposition: prefixes are enumerated at depth $d$, and each resulting subtree is assigned to an MPI rank for independent exploration.
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.9\columnwidth]{figures/Figure_2_tree_decomposition.pdf}
-	\caption{Task decomposition by prefix. The search tree is partitioned at level $L$, yielding $(N_p+1)^L$ independent subtrees distributed across MPI ranks. In this example, $L=2$ and $N_p=3$ generate 16 tasks assigned to 3 ranks via round-robin.}
+	\caption{Task decomposition by prefix. The search tree is partitioned at depth $d$, yielding $(N_p+1)^d$ independent subtrees distributed across MPI ranks. In this example, $d=2$ and $N_p=3$ generate 16 tasks assigned to 3 ranks via round-robin.}
 	\label{fig:tree_decomposition}
 \end{figure}
 
-To achieve load balancing without the overhead of dynamic work stealing, we employ deterministic hashing: tasks are enumerated and assigned round-robin based on a hash of their prefix:
+Before assignment, the enumerated tasks are placed in a deterministic fixed-seed permutation and then distributed round-robin:
 \begin{equation}
-	\text{Rank}(task_i) = \text{hash}(i) \mod N_{\text{procs}}
+	\text{Rank}(\text{task}_i) = i \bmod N_{\text{procs}}.
 \end{equation}
-This approach mitigates the irregular structure of B\&B trees, where some branches prune early while others require deep exploration.
+This task shuffling disperses structurally adjacent prefixes across ranks, mitigating the load imbalance inherent to irregular branch-and-bound trees. However, because static allocation cannot adapt to unequal subtree workloads during search, load imbalance may persist on hard instances.
 
-Cooperative pruning leverages non-blocking global bound synchronization. Each process maintains a local upper bound $UB_{\text{local}}$ and periodically exchanges information via MPI collective operations to compute the global minimum $UB_{\text{global}}$. This enables processes to prune sub-optimal branches based on solutions discovered by remote peers.
+To enable cooperative pruning without dynamic task migration, MPI ranks explore their assigned subtrees while periodically synchronizing incumbent bounds via non-blocking collective operations. All ranks traverse a shared permuted task sequence, initiating collective bound exchanges at fixed task-index intervals $I_{\mathrm{sync}}$. Between synchronizations, search nodes are pruned whenever their lower bound meets or exceeds $\min\{UB_{\mathrm{local}}, UB_{\mathrm{global}}\}$, where $UB_{\mathrm{global}}$ is the most recently received global minimum. This synchronized task-indexing scheme preserves collective call alignment across ranks while allowing independent subtree exploration.
 
 \subsection{Hydraulic Snapshot Persistence}
 
-A critical bottleneck in simulation-based optimization is constraint evaluation cost. Standard Extended Period Simulation (EPS) requires simulating from $t=0$ to $t=h$ to determine the hydraulic state at hour $h$. In depth-first traversal, backtracking from hour $h$ to $h-1$ traditionally necessitates complete re-simulation---an expensive operation repeated potentially billions of times during tree exploration.
+A primary bottleneck in simulation-driven optimization is the computational cost of evaluating hydraulic constraints. Standard Extended Period Simulation (EPS) computes network states sequentially from $t=0$ to $t=h$. Consequently, during depth-first tree traversal, backtracking from hour $h$ to $h-1$ traditionally requires re-simulating the entire hydraulic prefix from $t=0$---an expensive operation repeated across millions of tree nodes.
 
-EPANET~3 does not natively support state persistence for mid-simulation restoration. We therefore extended the hydraulic engine with a hierarchical snapshot mechanism that captures the minimal state required to resume simulation from any hour boundary. A \emph{snapshot} $S_h$ is a lightweight data structure storing:
+Because standard EPANET hydraulic engines do not natively support mid-simulation state restoration, we equipped the embedded engine with a snapshot mechanism that captures the state required to resume simulation at any hourly boundary. A \emph{snapshot} $S_h$ stores the following components:
 \begin{description}
-	\item[Node states:] hydraulic heads, demands, and outflows at all junctions;
-	\item[Tank states:] water volumes and surface areas;
-	\item[Link states:] flow rates, head losses, and valve/pump settings;
-	\item[Pump energy accumulators:] cumulative kWh consumption and operating costs;
-	\item[Solver state:] current simulation time, time pattern indices, and iterative solver variables.
+	\item[Node states:] hydraulic heads, nodal demands, and junction outflows;
+	\item[Tank states:] water levels, volumes, and surface areas;
+	\item[Link states:] flow rates, head losses, and valve or pump operating statuses;
+	\item[Energy accumulators:] cumulative energy consumption (kWh) and operating costs;
+	\item[Solver state:] simulation timestamp, time-pattern indices, and convergence variables.
 \end{description}
-Structural data (network topology, curves, control rules) remain in memory and are not duplicated. This design keeps snapshots compact while enabling complete state restoration.
+Network topology, performance curves, and control rules remain in the rank-local hydraulic model and are not duplicated in each snapshot. Copying a snapshot scales with the stored hydraulic state, but its cost is independent of prefix length $h$.
 
-During tree traversal, a snapshot is saved after each feasible hour:
-\begin{equation}
-	S_h = \textsc{Save}(\textsc{Simulate}(S_{h-1}, \mathbf{x}_h))
-\end{equation}
-Backtracking to explore alternative branches at hour $h-1$ reduces to a memory copy, $S_{h-1} \to \text{CurrentState}$, which executes in $O(1)$ relative to simulation time. The \textsc{Save} and \textsc{Load} operations in Algorithm~\ref{alg:bb_solver} (lines 17 and 20) implement this mechanism. Table~\ref{tab:ablation} shows that snapshot persistence delivers a 10.1$\times$ speedup by eliminating redundant hydraulic computations.
+During depth-first traversal, a snapshot is retained after each feasible scheduling period. Backtracking restores $S_{h-1}$ before simulating an alternative decision for period $h$, so restoration is $O(1)$ with respect to prefix length rather than requiring simulation again from $t=0$. Algorithm~\ref{alg:bb_solver} makes this dependence explicit by passing $S_{h-1}$ to \textsc{Simulate} when advancing one period.
 
-However, snapshot-based backtracking alone is insufficient for exact optimization if the hydraulic solver introduces path-dependent variability. EPANET's Global Gradient Algorithm uses an iterative Newton-Raphson method whose initial guess depends on the preceding hydraulic state. With the default convergence tolerance of $\epsilon = 10^{-3}$, identical pump configurations $y_h$ reached via different search trajectories can produce energy discrepancies of up to 0.03~kWh. Such numerical noise violates the requirement that costs depend solely on the current configuration, undermining pruning guarantees.
-
-To eliminate path-dependency, we tighten the solver tolerance to $\epsilon = 10^{-7}$ for all experiments. This ensures that the hourly cost $\sum_j C_{j,h} \cdot E_{j,h}(S_{h-1}, \mathbf{x}_h)$ is numerically consistent across all search paths reaching the same state, restoring strict cost determinism necessary for provable optimality.
+Empirically, disabling snapshot persistence incurs a 9.60$\times$ slowdown (Table~\ref{tab:ablation}) because hydraulic states must otherwise be reconstructed through repeated simulation from $t=0$. Snapshots also preserve internal iterative variables alongside physical tank and link states. Under the same numerical configuration, a resumed nonlinear solve therefore starts from the saved hydraulic and solver state.
 
 \subsection{Algorithm and Pruning Strategies}
 
-A key property enabling effective pruning is the \emph{monotonicity} of the objective function. Because energy consumption $E_{j,h} \ge 0$ and electricity tariffs $C_{j,h} \ge 0$, each hourly cost contribution is non-negative. Consequently, the accumulated cost up to hour $h$, $z_h$,
+A fundamental property enabling effective branch-and-bound pruning is the monotonicity of the objective function. Because hourly energy consumption $E_{j,t} \ge 0$ and electricity tariffs $C_{j,t} \ge 0$ are non-negative, the accumulated operating cost up to hour $h$,
 \[
 	z_h = \sum_{t=1}^{h} \sum_{j=1}^{N_p} C_{j,t} \cdot E_{j,t},
 \]
-is monotonically non-decreasing as the search progresses: $z_h \le z_{h+1} \le \cdots \le z_T$. This guarantees that if a partial solution's cost already meets or exceeds the best known complete solution, no extension of that partial solution can improve upon it. The branch can therefore be safely pruned without loss of optimality.
+serves as a monotonic lower bound $LB(\mathbf{y}_{1:h}) = z_h$ along any search trajectory by effectively assigning zero cost to unsimulated future hours $h+1 \dots T$: $z_1 \le z_2 \le \cdots \le z_T$. This non-decreasing property guarantees that if a partial schedule's cost satisfies $z_h \ge \min\{UB_{\mathrm{local}}, UB_{\mathrm{global}}\}$, no further extension of that prefix can yield a cheaper complete schedule. The corresponding subtree can therefore be safely pruned without compromising global optimality.
 
-Our solver employs Depth-First Search (DFS), applying the following pruning criteria at each node (hour $h$) in order of computational cost:
+Our solver employs Depth-First Search (DFS) and applies the following pruning criteria at each node (hour \(h\)):
 \begin{enumerate}
-	\item \textbf{Actuation Viability:} Prune if $y_h \to \mathbf{x}_h$ mapping is infeasible within remaining budgets.
+	\item \textbf{Actuation Viability:} Prune if the exact disaggregation layer is empty ($\mathcal{D}_h = \emptyset$), including periodic boundary closure at $h=T$.
+	\item \textbf{Tank Saturation:} Prune if engine instrumentation reports corrective blocking of inflow or outflow at tank bounds, rejecting trajectories that depend on artificial saturation.
 	\item \textbf{Tank Bounds:} Prune if $L_{k,h} \notin [L_{k}^{\min}, L_{k}^{\max}]$ for any tank $k$.
-	\item \textbf{Cost Bound:} Prune if $z_h \ge UB_{\text{global}}$, since monotonicity ensures no feasible extension can yield a lower total cost.
-	\item \textbf{Pressure Limits:} Prune if $P_{i,h} < P_{i}^{\min}$ for any node $i$.
-	\item \textbf{Tank Recovery} (at $h=T$ only): Prune if $L_{k,T} < L_{k,0}$ for any tank $k$. Intermediate schedules are not pruned on this criterion because tank levels may still recover through subsequent pump operations.
+	\item \textbf{Cost Bound:} Prune if $z_h \ge \min\{UB_{\mathrm{local}}, UB_{\mathrm{global}}\}$, as monotonicity ensures no feasible extension can yield a lower total cost.
+	\item \textbf{Pressure Limits:} Prune if $P_{i,h} < P_{i}^{\min}$ for any junction $i\in\mathcal{J}_P$.
+	\item \textbf{Tank Recovery} (at $h=T$ only): Prune if $L_{k,T} < L_{k,0}$ for any tank $k$. Intermediate steps are not pruned on this criterion because tank storage can recover during subsequent hours.
 \end{enumerate}
-This ordering prioritizes inexpensive checks (actuation, bounds) before hydraulic simulation, maximizing pruning efficiency. Algorithm~\ref{alg:bb_solver} outlines the complete parallel procedure, which consists of two phases: a static distribution of search space prefixes to MPI ranks (Lines 1--8), followed by a recursive Depth-First Search (DFS) for each assigned task. Here, $z^*$ denotes the global upper bound shared across processes (i.e., $z^* \equiv UB_{\text{global}}$), $S_h$ represents the hydraulic snapshot at hour $h$, and $c$ is the accumulated cost. The auxiliary function \textsc{Map} handles the greedy variable separation $\mathcal{M}$, while \textsc{Sim} performs hydraulic simulation to verify constraints: \textsc{Sim}($\mathbf{y}_{1:L}$) simulates the entire prefix to initialize a task, and \textsc{Sim}($h, \mathbf{x}_h$) advances simulation by one hour. State management is handled by \textsc{Save} and \textsc{Load}, which enable $O(1)$ backtracking by storing and restoring hydraulic snapshots.
+Evaluating these pruning criteria in order ensures that the inexpensive combinatorial check ($\mathcal{D}_h = \emptyset$) is executed prior to hydraulic simulation, while the remaining constraints are applied as soon as their required state variables become available. In Algorithm~\ref{alg:bb_solver}, $S_h$, $\mathcal{D}_h$, and $z_h$ denote the hydraulic snapshot, reachable actuation classes, and accumulated cost after period $h$, respectively. Hydraulic evaluation determines whether a candidate step is feasible or pruned based on physical constraints and tank saturation instrumentation.
 
-Our choice of DFS over the Breadth-First Search (BFS) strategy employed by \citeN{Costa2016} is deliberate: DFS discovers complete feasible solutions more rapidly, establishing an upper bound sooner for effective cost-based pruning. Furthermore, DFS requires only $O(\text{depth})$ memory compared to $O(\text{width})$ for BFS, which is essential for parallel scalability across distributed-memory systems.
+Algorithm~\ref{alg:bb_solver} outlines the local search kernel executed by each MPI rank on its assigned subtrees, while task distribution and bound synchronization follow the task-indexing protocol described above. In the pseudocode, \textsc{Next} computes the disaggregation layer transition $\mathcal{D}_h$, \textsc{Close} enforces periodic boundary closure at $h=T$, and \textsc{Canonical} constructs the binary representative $\mathbf{x}_h^{\mathrm{can}}$ evaluated by \textsc{Simulate}.
 
-\begin{algorithm}
+We adopt Depth-First Search (DFS) rather than the Breadth-First Search (BFS) strategy used by \citeN{Costa2016} for two methodological reasons. First, DFS reaches full 24-hour horizons rapidly, establishing an incumbent upper bound early in the search to accelerate cost-based pruning. Second, DFS requires active search frontier memory proportional to the tree depth $O(T)$ rather than the exponential tree width $O((N_p+1)^T)$, which is essential for parallel scalability across distributed-memory nodes.
+
+\begin{algorithm}[H]
 	\footnotesize
-	\caption{Parallel Branch-and-Bound}
+	\caption{Local Branch-and-Bound Search of an Assigned Subtree}
 	\label{alg:bb_solver}
 	\begin{algorithmic}[1]
-		\Require Horizon $T$, Decomposition level $L$, MPI rank $r$
-		\State $\mathcal{T} \gets \{t \in \text{Prefixes}(L) \mid \text{hash}(t) \mod N_{\text{procs}} = r\}$
-		\State $z^* \gets \infty$
-		\For{each prefix $\mathbf{y}_{1:L}$ in $\mathcal{T}$}
-		\State $S_L, c_L \gets \Call{Sim}{\mathbf{y}_{1:L}}$
-		\If{$S_L$ feasible} \Call{DFS}{$L+1, S_L, c_L$} \EndIf
-		\State \Call{Sync}{} \Comment{Non-blocking MPI bound exchange}
-		\EndFor
+		\Require Assigned prefix tuple $\mathbf{y}_{1:d}$
+		\State $S_d, \mathcal{D}_d, z_d, \text{feasible} \gets \Call{AdvancePrefix}{\mathbf{y}_{1:d}}$ \Comment{Evaluate task prefix}
+		\If{\textbf{not} \text{feasible}} \Return \EndIf
+		\State \Call{DFS}{$d+1, S_d, \mathcal{D}_d, z_d$}
 
-		\Procedure{DFS}{$h, S, c$}
-		\If{$c \ge z^*$} \Return \EndIf
-		\If{$h > T$}
-		\If{tanks recovered} $z^* \gets c$; \Call{Sync}{} \EndIf
-		\Return
+		\Procedure{DFS}{$h, S_{h-1}, \mathcal{D}_{h-1}, z_{h-1}$}
+		\If{$z_{h-1} \ge \min(UB_{\mathrm{local}},UB_{\mathrm{global}})$} \State \Return \Comment{Cost bound pruning} \EndIf
+		\For{$y = 0$ to $N_p$}
+		\State $\mathcal{D}_h \gets \Call{Next}{\mathcal{D}_{h-1}, y}$ \Comment{Update actuation DP layer}
+		\If{$h = T$ and $\mathcal{D}_h \neq \emptyset$} \State $\mathcal{D}_h \gets \Call{Close}{\mathcal{D}_h}$ \EndIf \Comment{Enforce periodic closure}
+		\If{$\mathcal{D}_h = \emptyset$} \State \textbf{continue} \EndIf \Comment{Prune if actuation layer empty}
+		\State $\mathbf{x}_h^{\mathrm{can}} \gets \Call{Canonical}{y}$
+		\State $S_h, z_h, \text{feasible} \gets \Call{Simulate}{S_{h-1}, \mathbf{x}_h^{\mathrm{can}}}$ \Comment{EPANET hydraulic step}
+		\If{\textbf{not} \text{feasible}} \State \textbf{continue} \EndIf \Comment{Prune if hydraulics infeasible}
+		\If{$h < T$}
+		\State \Call{DFS}{$h+1,S_h,\mathcal{D}_h,z_h$}
+		\ElsIf{\Call{TanksRecovered}{$S_h$}}
+		\State $UB_{\mathrm{local}} \gets z_h$; \ $\mathbf{y}^* \gets \mathbf{y}_{1:T}$; \ $\mathbf{x}^* \gets \Call{Witness}{\mathcal{D}_h}$ \Comment{Update incumbent solution}
 		\EndIf
-		\For{$y = 0$ to $N_p$} \Comment{$y$ = target active pump count}
-		\State $\mathbf{x}_h \gets \Call{Map}{y}$
-		\If{$\mathbf{x}_h$ invalid} \textbf{continue} \EndIf
-		\State $S_h, f \gets \Call{Sim}{h, \mathbf{x}_h}$
-		\If{$f$}
-		\State \Call{Save}{$S_h$}
-		\State \Call{DFS}{$h{+}1, S_h, c{+}c_h$}
-		\EndIf
-		\State \Call{Load}{$S$}
 		\EndFor
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}
 
-Having described our parallel B\&B framework, we now validate its performance through systematic experiments on a standard benchmark network, examining scalability, ablation effects, and comparison with prior methods.
-
 \section{Numerical Experiments}
+\label{sec:numerical_experiments}
 
-The solver was implemented in C++17 with MPI for distributed computation. All experiments ran on a Linux server with an AMD EPYC 9554 64-Core Processor (128 logical cores with SMT enabled) and 384~GB RAM. Code was compiled using Intel oneAPI DPC++/C++ Compiler 2025.3.1 with \texttt{-O3 -march=native -flto} optimization flags. Hydraulic simulations used a customized EPANET~3.0 library.
+We implemented the proposed framework as a C++17 solver using MPI for distributed computation. All performance experiments were conducted on a Linux server equipped with a 64-core AMD EPYC 9554 processor and 384~GB of RAM, utilizing up to 64 MPI ranks (one rank per physical core). Unless noted otherwise, hydraulic simulations used the baseline relative accuracy of $10^{-4}$ explicitly specified in the network input file.
 
 \subsection{Case Study Network}
 
-To evaluate solver performance, we employ the AnyTown Modified network, a well-established benchmark in pump scheduling research. This network was originally proposed by \citeN{Walski1987} and subsequently modified by \citeN{Rao2006} to increase optimization complexity. The modified network comprises 44 pipes, 25 nodes, and three storage tanks located at nodes 65, 165, and 265. Water is supplied from a source at node 10 through three identical fixed-speed pumps operating in parallel (111, 222, and 333). All demand nodes follow the same temporal pattern, scaled by individual demand multipliers. Storage tanks operate within level bounds of 66.53 m (minimum) and 71.53 m (maximum). Fig.~\ref{fig:anytown_network} shows the network topology used in our experiments, and Fig.~\ref{fig:anytown_energy_cost} shows the hourly energy price pattern used for pump operating costs. This benchmark is particularly valuable for benchmarking because it captures the essential features of real-world systems (multiple pumps, storage facilities, and time-varying demands) while remaining tractable for comprehensive optimization studies.
+We evaluate our framework on the AnyTown Modified network, a widely adopted benchmark originally proposed by \citeN{Walski1987} and later modified by \citeN{Rao2006} to increase optimization complexity. The network topology (Fig.~\ref{fig:anytown_network}) consists of 23 nodes---19 demand junctions, three storage tanks, and one reservoir---connected by 41 pipes and three pump links. The tanks at nodes 65, 165, and 265 have operating level bounds between 66.53~m and 71.53~m. Water is supplied from the reservoir at node 10 by three identical, fixed-speed pumps operating in parallel (Pumps 111, 222, and 333), while demand nodes share a single temporal profile scaled by individual multipliers. Under the model used here, the pumps have identical hydraulic connections, curves, efficiencies, and energy prices, with no identity-specific start-up cost or dynamic state; they therefore form one interchangeable group. Operating costs are computed using the hourly energy tariff pattern shown in Fig.~\ref{fig:anytown_energy_cost}. Although small, this benchmark captures parallel pumping, storage constraints, and time-varying electricity tariffs, making it useful for controlled pump-scheduling experiments.
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.9\columnwidth]{figures/Figure_3_anytown_network.pdf}
-	\caption{Topology of the AnyTown Modified network. The network includes a reservoir (node 10), three storage tanks (nodes 65, 165, 265), and 19 demand nodes connected by 44 pipes. Three parallel pumps supply water from the reservoir.}
+	\caption{Topology of the AnyTown Modified network. The network includes a reservoir (node 10), three storage tanks (nodes 65, 165, 265), and 19 demand junctions connected by 41 pipes and three pump links.}
 	\label{fig:anytown_network}
 \end{figure}
 
@@ -290,69 +326,46 @@ To evaluate solver performance, we employ the AnyTown Modified network, a well-e
 
 \subsection{Parameter Tuning}
 
-We tuned solver hyperparameters with Optuna \cite{Akiba2019} by sweeping the number of MPI processes ($N_{\text{procs}}$), decomposition level ($L$), and synchronization interval ($S$, the number of simulation steps between global bound exchanges) on a 16-hour instance ($NA_{\max}=2$). The best configuration was $N_{\text{procs}}=128$, $L=8$, and $S=32768$ simulation steps, and we use it for all subsequent experiments.
+To identify the most efficient execution parameters, we conducted an exhaustive grid search using Optuna 4.6 with a serial \texttt{GridSampler} \cite{Akiba2019}. We tuned three key parameters---the number of MPI ranks ($N_{\text{procs}} \in \{8,16,32,64\}$), the tree decomposition depth ($d \in \{8,9,10\}$), and the synchronization interval ($I_{\mathrm{sync}} \in \{1024, 2048, 4096, 8192, 16384, 32768, 65536\}$, defined as the number of top-level task indices between global bound exchanges)---on the 24-hour benchmark instance under $NA_{\max}=2$. The best performance was achieved by $N_{\text{procs}}=64$, $d=8$, and $I_{\mathrm{sync}}=32768$, with median runtimes of 24.502~s.
 
 \subsection{Ablation Study}
 
-We evaluated each algorithmic component by selectively disabling features on a reduced instance ($T=24$ hours, $NA_{\max}=1$) using 128 MPI processes. Table~\ref{tab:ablation} summarizes the results.
+To assess the individual contribution of each active algorithmic component, we performed an ablation study on the 24-hour benchmark problem ($NA_{\max}=3$) using 64 MPI ranks. Starting from the tuned baseline configuration ($d=8$, $I_{\mathrm{sync}}=32768$), four variants each disabled exactly one feature. Across three sequential repetitions, all 15 executions---the baseline and four ablated variants---completed conclusively and converged to the same global optimum. Table~\ref{tab:ablation} summarizes the results, reporting the median wall-clock time and the relative range, defined as $100(t_{\max}-t_{\min})/t_{\mathrm{median}}$, where $t_{\min}$, $t_{\mathrm{median}}$, and $t_{\max}$ are the minimum, median, and maximum times across the three repetitions. The table also reports the median slowdown relative to the baseline and the median, across repetitions, of the load imbalance among ranks. Load imbalance is expressed as the percentage by which the maximum rank execution time exceeds the mean.
 
 \begin{table}[htbp]
 	\centering
-	\caption{Ablation study results ($T=24$, $NA_{\max}=1$, $N_{\text{procs}}=128$). Slowdown shows how much slower each configuration runs compared to ``All Features'' (higher = slower).}
+	\caption{Ablation study on the 24-hour problem ($NA_{\max}=3$, $N_{\mathrm{procs}}=64$).}
 	\label{tab:ablation}
 	\small
-	\begin{tabular}{@{}lrrr@{}}
-		\hline
-		Configuration   & Time (s) & Slowdown     & Cost (\$) \\
-		\hline
-		All Features    & 5.47     & 1.0$\times$  & 3567.99   \\
-		No Snapshots    & 55.47    & 10.1$\times$ & 3567.99   \\
-		No Cost Pruning & 31.86    & 5.8$\times$  & 3567.99   \\
-		No Pump Sorting & 3.11     & 0.6$\times$  & 3582.98   \\
-		No Task Shuffle & 16.95    & 3.1$\times$  & 3567.99   \\
-		\hline
-	\end{tabular}
+	\input{tables/ablation.tex}
 \end{table}
 
-The snapshot mechanism is the largest contributor in our ablation, delivering a 10.1$\times$ speedup by eliminating redundant hydraulic computations during backtracking. Cost-based pruning contributes a 5.8$\times$ improvement by cutting sub-optimal branches early. Task shuffling provides a 3.1$\times$ speedup by improving load balance across processes.
-
-Notably, disabling pump sorting yields the \emph{fastest} runtime (3.11s) because strict pruning quickly eliminates branches violating actuation constraints. This reverts to the sequential exhaustion strategy of Costa et al. However, this configuration fails to find the true optimum (\$3582.98 vs \$3567.99). LUS finds better solutions by dynamically reordering pump selection based on remaining actuation budgets, which explores regions of the search space that sequential exhaustion prunes prematurely. By preserving flexibility across all pumps, LUS maintains access to combinations that may yield lower costs later in the horizon, albeit at the expense of exploring more branches.
+Cost pruning had the largest measured effect: the no-cost-pruning variant was 26.86$\times$ slower than the baseline. Without snapshots, median runtime increased by a factor of 9.60, indicating that hydraulic-state restoration avoids substantial repeated work during backtracking. The no-task-shuffling variant was 5.84$\times$ slower than the baseline and increased median load imbalance from 49.3\% to 701.2\% (Table~\ref{tab:ablation}). This result is consistent with the role of task shuffling in distributing static top-level tasks more evenly across ranks. By contrast, the variant without global synchronization was only 2.8\% slower. Although small for this network, process count, and tuned configuration, this effect does not preclude benefits in other settings; we therefore retain global synchronization to support timely incumbent sharing across ranks.
 
 \subsection{Parallel Scalability}
 
 \begin{table}[H]
 	\centering
-	\caption{Parallel scaling metrics ($T=24$, $NA_{\max}=1$).}
+	\caption{Strong-scaling results for the 24-hour problem ($NA_{\max}=2$).}
 	\label{tab:scalability}
 	\small
-	\begin{tabular}{@{}rrrr@{}}
-		\hline
-		$N_{\text{procs}}$ & Time (s) & Speedup & Eff.\ (\%) \\
-		\hline
-		1                  & 85.08    & 1.00    & 100.0      \\
-		2                  & 46.13    & 1.84    & 92.2       \\
-		4                  & 23.19    & 3.67    & 91.7       \\
-		8                  & 12.35    & 6.89    & 86.1       \\
-		16                 & 7.47     & 11.39   & 71.2       \\
-		32                 & 4.26     & 20.00   & 62.5       \\
-		64                 & 3.18     & 26.76   & 41.8       \\
-		128                & 3.59     & 23.69   & 18.5       \\
-		\hline
-	\end{tabular}
+	\input{tables/scalability.tex}
 \end{table}
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.9\columnwidth]{figures/Figure_5_scalability.pdf}
-	\caption{Parallel scalability on AnyTown Modified ($T=24$, $NA_{\max}=1$).}
+	\caption{Strong scaling on AnyTown Modified ($T=24$, $NA_{\max}=2$).}
 	\label{fig:scalability}
 \end{figure}
 
-Fig.~\ref{fig:scalability} and Table~\ref{tab:scalability} present scaling results for a 24-hour instance ($NA_{\max}=1$), varying MPI processes from 1 to 128. The solver achieves 26.76$\times$ speedup with 64 processes, reducing wall-clock time from 85.08s (sequential) to 3.18s. Near-linear scaling is observed up to 8 processes (86.1\% efficiency), after which efficiency drops due to load imbalance inherent to B\&B tree pruning. The load imbalance factor, defined as $(t_{\max} - t_{\text{avg}})/t_{\text{avg}}$, grows from 8.3\% at 4 processes to 102.6\% at 64 processes. At 128 processes, performance decreases by 13\% (wall time 3.59s vs 3.18s at 64 processes) due to severe load imbalance (165.2\%), where coordination overhead exceeds the benefit of additional parallelism for this problem size. Despite this, we retain $N_{\text{procs}}=128$ for subsequent experiments because larger problem instances ($NA_{\max}=2, 3$) exhibit substantially better load balance (see Table~\ref{tab:results_24h}), where the additional processes provide meaningful speedup.
+As illustrated in Fig.~\ref{fig:scalability} and detailed in Table~\ref{tab:scalability}, the solver exhibits monotonic runtime reductions up to 64 physical cores. Median wall-clock time drops from 700.85~s on a single rank to 24.44~s on 64 ranks, achieving a paired median speedup of 28.68$\times$ with a parallel efficiency of 44.8\%. Thus, speedup remains substantial, while strong-scaling efficiency declines at higher process counts.
+
+This decline is consistent with a limitation of parallel B\&B identified by \citeN{Gendron1994}. Static allocation cannot react to the realized sizes of the assigned subtrees; correspondingly, median load imbalance increases from 0.0\% to 87.7\% between 1 and 64 ranks.
 
 \subsection{24-Hour Optimization}
 
-We solved the complete 24-hour problem under varying actuation constraints with $N_{\text{procs}}=128$ ($L=8$, $S=32768$). Table~\ref{tab:results_24h} presents the results, and Fig.~\ref{fig:tank_levels} shows the corresponding tank level and nodal pressure trajectories over the 24-hour horizon. The figure displays tank water levels (top panel) for tanks 65, 165, and 265 with operational bounds $L_{\min}=66.53$~m and $L_{\max}=71.53$~m, and nodal pressures (bottom panel) at representative nodes 55, 90, and 170 with their respective minimum thresholds (42, 51, and 30~m). Shaded regions indicate infeasible operating ranges.
+We solved the complete 24-hour problem for $NA_{\max}=1,2,3$ with 64 ranks, $d=8$, and $I_{\mathrm{sync}}=32768$. Table~\ref{tab:results_24h} presents the conclusive search results, and Fig.~\ref{fig:tank_levels} shows the corresponding tank levels and nodal pressures. The upper panels include the initial levels and the operational bounds $L_{\min}=66.53$~m and $L_{\max}=71.53$~m for tanks 65, 165, and 265. The lower panels show pressures at nodes 55, 90, and 170 and their respective minimum thresholds of 42, 51, and 30~m.
 
 \begin{figure}[htbp]
 	\centering
@@ -363,117 +376,126 @@ We solved the complete 24-hour problem under varying actuation constraints with 
 
 \begin{table}[htbp]
 	\centering
-	\caption{Results for 24-hour optimization ($T=24$) on AnyTown Modified. Load imbalance is defined as $(t_{\max} - t_{\text{avg}})/t_{\text{avg}}$ across MPI ranks.}
+	\caption{Conclusive 24-hour searches on AnyTown Modified with 64 MPI ranks. Load imbalance is the percentage by which the maximum rank execution time exceeds the mean.}
 	\label{tab:results_24h}
-	\begin{tabular}{cccc}
-		\hline
-		$NA_{\max}$ & Cost (\$) & Time (s) & Load Imb.\ (\%) \\
-		\hline
-		1           & 3,567.99  & 3.69     & 172.0           \\
-		2           & 3,472.89  & 493.11   & 23.6            \\
-		3           & 3,443.46  & 10011.23 & 12.9            \\
-		\hline
-	\end{tabular}
+	\input{tables/final_cases.tex}
 \end{table}
 
-The results reveal a clear trade-off between operational flexibility and computational cost. Restricting actuations to $NA_{\max}=1$ reduces the search space substantially, enabling solution in under 4 seconds, but at a 3.6\% higher cost (\$3,567.99) relative to the 3-actuation case. However, this configuration exhibits severe load imbalance (172.0\%), indicating that most of the search space is pruned early by actuation constraints, leaving few tasks with deep exploration. Allowing $NA_{\max}=3$ yields the lowest cost of \$3,443.46, but requires 10,011s ($\approx$2.8h). Interestingly, this configuration achieves the best load balance (12.9\% imbalance) because the larger search space distributes work more evenly across processes. The $NA_{\max}=2$ case achieves 99.1\% of the optimal cost in 4.9\% of the time required for $NA_{\max}=3$, reaching \$3,472.89 in 493s ($\approx$8.2min) with moderate imbalance (23.6\%).
+For this benchmark, relaxing the actuation limit illustrates a trade-off between operational flexibility and computational effort. Moving from $NA_{\max}=1$ to $NA_{\max}=2$ reduces the optimal operating cost from \$3,900.25 to \$3,606.83, but extends wall-clock time from 1.6 to 25.1~s. At $NA_{\max}=3$, the lowest cost among the three hourly cases is \$3,575.54, obtained in 408.9~s. Load imbalance also falls from 227.5\% to 46.0\%, which is consistent with deeper surviving subtrees distributing work more uniformly across the static MPI tasks. Relative to $NA_{\max}=2$, the final relaxation yields less than 1\% in additional savings but requires approximately 16 times more wall-clock time.
 
 \subsection{Pruning Effectiveness}
 
-Table~\ref{tab:pruning} details the contribution of each pruning criterion to the search space reduction. The multi-criteria pruning strategy proves highly effective, eliminating 60--72\% of explored nodes before reaching terminal states.
+Table~\ref{tab:pruning} classifies every explored node by its outcome. The total number of nodes grows from 247,695 at $NA_{\max}=1$ to 350.8 million at $NA_{\max}=3$, with 66--69\% being pruned before branching further into valid partial schedules.
 
 \begin{table}[htbp]
 	\centering
-	\caption{Pruning statistics (\% of nodes) by constraint.}
+	\caption{Node classifications and explored-node counts for the final 24-hour searches.}
 	\label{tab:pruning}
-	\footnotesize
-	\begin{tabular}{@{}l*{3}{>{\centering\arraybackslash}p{1.2cm}}@{}}
-		\hline
-		                        & \multicolumn{3}{c}{$NA_{\max}$}  \\
-		Criterion               & 1      & 2      & 3              \\
-		\hline
-		Actuation               & 61.9   & 43.9   & 23.7           \\
-		Cost bound              & 9.1    & 19.9   & 30.0           \\
-		Tank levels$^{\dagger}$ & 0.0    & 0.0    & 0.0            \\
-		Pressure                & 0.8    & 3.8    & 9.0            \\
-		\hline
-		Total pruned            & 71.8   & 67.6   & 62.7           \\
-		Feasible                & 28.2   & 32.4   & 37.3           \\
-		\hline
-		Nodes (total)           & 7.9M   & 1.4B   & 22.4B          \\
-		\hline
-		\multicolumn{4}{@{}l@{}}{\footnotesize $^{\dagger}$EPANET enforces tank bounds via head clamping; see text.}
-	\end{tabular}
+	\small
+	\input{tables/pruning.tex}
 \end{table}
 
-Actuation constraints dominate pruning for $NA_{\max}=1$ and $NA_{\max}=2$, accounting for up to 62\% of all explored nodes. This validates the insight of \citeA{Costa2016} that tighter operational constraints improve solver performance. As actuation limits relax ($NA_{\max}=3$), cost-based pruning becomes increasingly important (30.0\%), reflecting more opportunities for the global bound to eliminate sub-optimal branches. Pressure violations also become more prominent as the search depth increases, reaching 9.0\% for $NA_{\max}=3$.
+The breakdown of pruning criteria highlights how search dynamics evolve as actuation limits relax. At $NA_{\max}=1$, actuation constraints dominate the search, accounting for 52.6\% of all explored nodes; as $NA_{\max}$ increases to 3, this share declines to 27.3\%. Conversely, cost-bound pruning grows from 4.4\% to 22.2\%, and pressure violations rise from 1.5\% to 4.7\%, reflecting deeper search depth before sub-optimal or hydraulically infeasible branches are pruned. Tank-level pruning accounts for 7.8\%--11.8\% of explored nodes. Because the embedded hydraulic engine may close incident links when continued inflow or outflow would drive a tank beyond its operating bound, standard post-simulation level checks cannot identify every physical overfill or depletion event. We therefore instrumented the engine to capture these internal link-closure events directly, pruning any schedule that relies on automatic simulator intervention to remain within bounds.
 
-The lack of ``tank levels'' pruning is expected for this case study. In EPANET, tank levels are enforced as hydraulic boundary conditions: when a tank reaches its maximum level, its head is clamped at $L_k^{\max}$ and any additional net inflow is blocked by temporarily closing incident links, so the simulated level remains exactly at the limit rather than exceeding it. As a result, schedules that ``appear'' to keep tanks full while pumps operate do not violate the bound; the hydraulic solution simply redistributes flow and/or reduces pump flow under the higher head. Because this behavior is intrinsically handled by the simulator, an explicit pre-simulation pruning rule based on anticipated tank overfill would be both unreliable (risking false pruning) and redundant (the constraint cannot be violated in the hydraulic state). Consequently, pruning is driven primarily by actuation feasibility, cost bounds, and pressure violations.
+\subsection{Hydraulic Accuracy Sensitivity}
+\label{sec:accuracy_sensitivity}
+
+To assess numerical sensitivity, we varied the hydraulic convergence tolerance across $10^{-3}$, $10^{-4}$, and $10^{-7}$. The study comprised two complementary experiments. First, each of the three optimal pump schedules was replayed five times at every tolerance while holding all pump decisions fixed, thereby isolating hydraulic solver behavior. Second, the complete problem was reoptimized three times for every combination of $NA_{\max}\in\{1,2,3\}$ and tolerance, capturing possible effects on the search tree, selected schedule, and runtime. Both schedule replays and full re-optimizations converged successfully, producing feasible schedules across all tested solver tolerances.
+
+\begin{table*}[htbp]
+	\centering
+	\caption{Hydraulic sensitivity of fixed schedules across convergence tolerances.}
+	\label{tab:accuracy_fixed}
+	\small
+	\input{tables/accuracy_fixed.tex}
+\end{table*}
+
+\begin{table*}[htbp]
+	\centering
+	\caption{End-to-end optimization sensitivity across convergence tolerances.}
+	\label{tab:accuracy_optimization}
+	\small
+	\input{tables/accuracy_optimization.tex}
+\end{table*}
+
+The results of the sensitivity analysis are summarized in Tables~\ref{tab:accuracy_fixed} and~\ref{tab:accuracy_optimization}. For fixed schedules (Table~\ref{tab:accuracy_fixed}), relative to the $10^{-4}$ baseline, median hydraulic execution time decreases by approximately 7\% at $10^{-3}$ and increases by 13--15\% at $10^{-7}$. The median cumulative number of hydraulic iterations (\emph{trials}) decreases by 8--9\% at $10^{-3}$ and increases by 17--18\% at $10^{-7}$. Because these sub-millisecond measurements isolate the hydraulic kernel, Table~\ref{tab:accuracy_optimization} evaluates the end-to-end optimization impact. Tightening the accuracy to $10^{-7}$ increases total wall-clock time by roughly 8\% for $NA_{\max}=2$ and $3$, where solver computation dominates MPI launch overhead. Although tree-traversal node counts exhibit minor floating-point variations, all nine optimizations for each $NA_{\max}$ select the same optimal schedule. Accuracy-dependent costs differ by at most $3.36\times10^{-4}$ and therefore agree at the reported cent precision. We retain $10^{-4}$ as the reference used in the main experiments.
 
 \subsection{Comparative Analysis}
 
-We compare our framework with the sequential B\&B of \citeN{Costa2016}, the Genetic Algorithm of \citeN{Cimorelli2020}, and the Digital Harmony Search (DHS) of \citeN{Paola2024} on AnyTown Modified. All reference solutions were re-evaluated using EPANET~3.0 to ensure consistency; each remained hydraulically feasible with costs matching original reports within 0.1\% (differences attributable to minor variations between EPANET~2 and EPANET~3 hydraulic engines).
+To contextualize solver performance within the literature, we evaluate published approaches at two distinct levels: a direct replay of binary schedules under a unified physical protocol, and a methodological assessment of approaches based on alternative optimization formulations.
 
-Figs.~\ref{fig:comparison_a1}--\ref{fig:comparison_a3} present detailed pump schedules for all methods at each actuation limit. These visualizations show that our schedules differ from prior approaches in pump timing and activation sequences while achieving superior cost performance.
+For the binary schedule evaluation, we replayed the 24-hour pump decisions reported by \citeN{Costa2016} (sequential B\&B), \citeN{Cimorelli2020} (Genetic Algorithm), and \citeN{Paola2024} (Digital Harmony Search). Each schedule was re-simulated using the embedded hydraulic engine with the same 24-hour periodic boundary check and physical tank-saturation policy, allowing physical feasibility and operating costs to be assessed under identical hydraulic conditions.
 
-Our EPANET-BB framework achieves the lowest cost across all actuation limits tested, improving upon both exact and meta-heuristic methods. For $NA_{\max}=1$, EPANET-BB finds \$3,567.99, reducing costs by 1.8\% compared to Cimorelli et al.'s GA (\$3,634.67). For $NA_{\max}=2$, our solution (\$3,472.89) improves by 3.0\% over Cimorelli et al. (\$3,580.11). For $NA_{\max}=3$, EPANET-BB achieves \$3,443.46, a 3.7\% improvement over Cimorelli et al.'s best-reported result (\$3,575.54). These improvements demonstrate the value of exhaustive search with effective pruning.
+\begin{table*}[htbp]
+	\centering
+	\caption{Evaluation of nine published pump schedules under the common physical feasibility policy.}
+	\label{tab:comparison_feasibility}
+	\small
+	\input{tables/comparison_feasibility.tex}
+\end{table*}
 
-Computational performance shows substantial improvement over sequential B\&B: speedups of 29 to 115 times were observed compared to the sequential implementation of \citeA{Costa2016}. The most constrained case ($NA_{\max}=1$) reduced computation time from 425 seconds to 3.69 seconds (115$\times$ speedup). The moderately constrained case ($NA_{\max}=2$) decreased from 10.3 hours to 8.2 minutes (75$\times$ speedup). The least constrained case ($NA_{\max}=3$) reduced computation from 81 hours to 2.8 hours (29$\times$ speedup). These performance enhancements demonstrate that exact optimization can be applied within sub-hour to few-hour timeframes suitable for day-ahead operational planning, offering theoretical guarantees that are not inherent to meta-heuristic approaches.
+The evaluation outcomes are summarized in Table~\ref{tab:comparison_feasibility} and illustrated in Figs.~\ref{fig:comparison_a1}--\ref{fig:comparison_a3}. All three Costa et al. schedules and all three schedules produced by the proposed solver satisfy the physical and operational constraints. In contrast, the schedules of \citeN{Cimorelli2020} exceed the periodic actuation limit during the closing transition from hour 24 to hour 1. The schedule of \citeN{Paola2024} is feasible for $NA_{\max}=1$, but the schedules for $NA_{\max}=2$ and $3$ require tank-saturation interventions at hour 21 and are therefore infeasible under the common physical policy. Within the feasible subset, the proposed solver produced operating costs 0.287\%, 0.325\%, and 0.088\% lower than the lowest feasible external schedule for $NA_{\max}=1,2,3$, respectively. Infeasible published schedules are retained in the figures for identification, labeled with their reported costs, but are excluded from the cost comparison among feasible schedules. This schedule audit does not rank the original optimization algorithms, which were not rerun under a common computational protocol.
 
-
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/Figure_7_comparison_table_a1.pdf}
-	\caption{Pump schedule comparison for $NA_{\max}=1$. EPANET-BB achieves the lowest cost (\$3,567.99), improving upon Cimorelli et al.'s GA (\$3,634.67) by 1.8\%.}
+	\caption{Published schedules and exact replay status for $NA_{\max}=1$. Costs are comparable only among schedules marked feasible.}
 	\label{fig:comparison_a1}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/Figure_8_comparison_table_a2.pdf}
-	\caption{Pump schedule comparison for $NA_{\max}=2$. EPANET-BB achieves the lowest cost (\$3,472.89), improving upon Cimorelli et al.'s GA (\$3,580.11) by 3.0\%.}
+	\caption{Published schedules and exact replay status for $NA_{\max}=2$. Infeasible schedules retain their published costs for identification, not comparison.}
 	\label{fig:comparison_a2}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/Figure_9_comparison_table_a3.pdf}
-	\caption{Pump schedule comparison for $NA_{\max}=3$. EPANET-BB achieves the lowest cost (\$3,443.46), improving upon Cimorelli et al.'s GA (\$3,575.54) by 3.7\%.}
+	\caption{Published schedules and exact replay status for $NA_{\max}=3$. Infeasible schedules retain their published costs for identification, not comparison.}
 	\label{fig:comparison_a3}
-\end{figure}
+\end{figure*}
+
+Beyond uniform binary schedule replays, alternative optimization formulations provide a broader methodological context. \citeN{Bonvin2021} developed an exact LP/NLP branch-and-bound framework that uses a tailored MILP relaxation based on convex linear outer approximations to obtain lower bounds and evaluates integer candidates through restricted nonlinear subproblems. For binary-setting networks such as AnyTown Modified, this candidate evaluation is specialized to an extended-period hydraulic feasibility check. In their historical comparison with the sequential enumeration of \citeN{Costa2016}, the LP/NLP method was slightly slower in the most restricted case and retained optimality gaps of 1.6\% and 1.9\% in the two less restricted cases after the corresponding comparison times. These results show that more informative lower bounds do not ensure faster solution on every instance. They do not constitute a direct comparison with the present implementation because the hardware, hydraulic models, formulations, and switching conventions differ.
+
+A complementary methodological direction replaces the hourly binary representation with continuous pump-operation intervals. \citeN{Bras2025} considered a time-position-unrestricted duty-cycle formulation in which each pump operation is described by a real-valued starting time and duration and optimized it using the hybrid Smart Dynamic Local Search (Smart-DLS) heuristic. For AnyTown Modified, the authors reported a best operating cost of \$3,416.18 and an estimated optimization time of approximately 5.14 minutes. The numerically lower published cost is consistent with greater temporal flexibility, but it cannot be attributed to that flexibility alone or interpreted as algorithmic dominance because the number and distribution of pump starts, the feasible space, and the hydraulic verification protocol differ from those of the hourly cases considered here. Smart-DLS provides no certificate of global optimality.
+
+In summary, the direct schedule replay provides a controlled comparison of discrete hourly schedules under common physical rules. The contextual comparisons with \citeN{Bonvin2021} and \citeN{Bras2025} instead illustrate how temporal representation, bounding information, and search strategy lead to different balances among flexibility, computational effort, and optimality guarantees.
 
 \subsection{Discussion}
 
-Our results reveal several noteworthy findings and limitations that merit discussion.
+\textbf{Ablation Scope.} Cost pruning, snapshots, and task shuffling have clear effects in the tested configuration, whereas global synchronization has only a small measured effect. Because the experiment changes one active feature at a time on one network, these results characterize the tested setting and do not establish the same relative contributions elsewhere.
 
-\textbf{LUS Trade-off.} The ablation study uncovered an unexpected trade-off: disabling pump sorting (LUS) produces the fastest runtime but yields suboptimal solutions. This occurs because sequential exhaustion aggressively prunes the search space by depleting each pump's actuation budget before considering alternatives, which happens to align well with the pruning criteria but misses better configurations that require distributing actuations across pumps. LUS sacrifices some pruning efficiency to maintain flexibility, ultimately finding the global optimum at modest computational cost.
+\textbf{Scalability Considerations.} The AnyTown Modified network has three pumps, yielding $4^{24} \approx 2.8 \times 10^{14}$ unconstrained high-level action sequences over 24 hours. Networks with more pumps will face exponentially larger search spaces. In the AnyTown experiments, the actuation constraint $NA_{\max}$ provides the largest individual share of pruning. For networks where operational constraints are looser, additional strategies such as bound tightening, symmetry breaking, or hierarchical decomposition may be necessary.
 
-\textbf{Scalability Considerations.} The AnyTown Modified network has three pumps, yielding a search space of $4^{24} \approx 2.8 \times 10^{14}$ high-level configurations for the full 24-hour problem. Networks with more pumps will face exponentially larger search spaces. Our framework's effectiveness depends critically on the actuation constraint $NA_{\max}$, which provides the dominant pruning mechanism. For networks where operational constraints are looser, additional strategies such as bound tightening, symmetry breaking, or hierarchical decomposition may be necessary.
+\textbf{Parallel Efficiency.} For $NA_{\max}=2$, efficiency declines from 98.7\% at two ranks to 44.8\% at 64 ranks while wall time continues to decrease. The accompanying growth in load imbalance and candidate work indicates that static decomposition, pruning, and incumbent timing interact. The parallel B\&B strategies surveyed by \citeN{Gendron1994} include dynamic redistribution on request and organizations combining local and global work pools. Such strategies, including work stealing, are natural extensions to evaluate, but they also introduce communication, incumbent-coordination, and termination-detection costs. Their net benefit therefore depends on task granularity and must be measured.
 
-\textbf{Parallel Efficiency.} Load imbalance remains the primary barrier to parallel efficiency, degrading from 86\% at 8 processes to 42\% at 64 processes for the $NA_{\max}=1$ case. Interestingly, larger problem instances ($NA_{\max}=3$) achieve better load balance (12.9\% imbalance) because the search space is more uniformly distributed. Dynamic work stealing could improve efficiency for highly constrained instances where static decomposition produces uneven subtrees.
+\textbf{Numerical and Comparative Limits.} The accuracy study supports the stability of the selected schedules on this instance over the tested tolerance range, but it is not a general conditioning analysis of the embedded hydraulic engine or of hydraulic simulators more broadly. The external comparison evaluates reported schedules under a common policy and does not rerun the original optimization methods. These distinctions limit the claims to the evidence actually reproduced.
 
-\textbf{Generalizability.} While our experiments focus on a single benchmark network, the algorithmic innovations---snapshot persistence, LUS, and cooperative pruning---are network-agnostic and should transfer to other fixed-speed pump scheduling problems. Variable-speed pumps introduce continuous decision variables that would require different solution approaches.
+\textbf{Generalizability.} The experiments use one benchmark with three interchangeable fixed-speed pumps. The implementation is not restricted to this particular topology, but search complexity remains exponential and performance on larger networks or groups with more pumps must be established empirically.
 
 \section{Conclusion}
+\label{sec:conclusion}
 
-We presented a high-performance Branch-and-Bound framework for pump scheduling in water distribution networks. Our three key innovations are MPI-based parallelism, hydraulic snapshot persistence, and balanced pump selection via LUS. These bridge the gap between theoretical optimality and practical applicability.
+We developed a distributed-memory B\&B framework for the hourly scheduling of interchangeable parallel fixed-speed pumps. The method searches aggregate pump-count sequences while periodic dynamic programming retains exactly those sequences that admit a binary disaggregation satisfying the individual actuation limits. An embedded hydraulic engine evaluates each branch incrementally, and hydraulic snapshots avoid prefix re-simulation during backtracking. Cost-based pruning and parallel exploration then reduce the work and wall-clock time of the search. Whenever all required hydraulic evaluations converge, the reconstructed schedule is a global optimum of the specified discrete problem under the fixed hydraulic model and numerical configuration.
 
-Our experiments demonstrate that exact optimization of 24-hour pump schedules is now feasible in operational timeframes. The solver achieves speedups of 29--115$\times$ over sequential implementations, reducing computation from hours to minutes while maintaining optimality guarantees. Notably, our results improve upon the best-known solutions from meta-heuristics, achieving \$3,443.46 for $NA_{\max}=3$---a 3.7\% improvement over Cimorelli et al.'s GA result (\$3,575.54). The ablation study confirms that snapshot persistence delivers the most significant performance gain (10.1$\times$), validating our focus on eliminating redundant hydraulic simulations.
+On the tested benchmark, the experiments show how these mechanisms affect both operating cost and computational effort. All three 24-hour cases completed conclusively with 64 MPI ranks. Relaxing the actuation limit reduced operating cost but increased the surviving search space and wall-clock time, showing that operational flexibility and the effort required to certify a schedule must be considered together. For the intermediate case, strong scaling reduced the median runtime from 700.85~s with one rank to 24.44~s with 64 ranks, although parallel efficiency declined as load imbalance and candidate work increased. The ablation study further identified cost pruning, hydraulic snapshots, and task shuffling as the main contributors to performance in the tested configuration.
 
-Two directions merit further investigation. First, dynamic work stealing could improve parallel efficiency beyond the 42\% observed at 64 processes by addressing load imbalance inherent to B\&B tree exploration. Second, extending the framework to larger networks with more pumps will require additional pruning strategies or hierarchical decomposition to manage the exponential growth in search space.
+Because the search space still grows exponentially, performance on larger or real networks, multiple pump groups, and variable-speed operation remains to be established. Future work should evaluate dynamic task redistribution, stronger bounds or hierarchical decomposition, extensions to multiple interchangeable groups, and additional networks. Within the scope demonstrated here, the framework provides an exact reference for studying actuation constraints, auditing published schedules, and measuring the quality of faster approximate methods.
 
 \section*{Data Availability Statement}
 
-Some or all data, models, or code generated or used during the study are available in a repository online in accordance with funder data retention policies. The EPANET-BB source code, benchmark network files, experiment configurations, and processed result tables used to support the findings of this study are available at \url{https://github.com/michaelsouza/epanet-bb} and archived at Zenodo, \url{https://doi.org/10.5281/zenodo.19363092}.
+Some or all data, models, or code generated or used during the study are available in a repository online in accordance with funder data retention policies. Versioned \texttt{epanet-bb} releases archive the source code, benchmark network files, experiment configurations, precomputed results, and reconstruction scripts under the project Zenodo record \cite{epanetbb}. The development repository is available at \url{https://github.com/michaelsouza/epanet-bb}.
 
 \section*{Reproducible Results}
 
-The computational results reported in this study were reproduced by Michael Ferreira de Souza and J\'essica Gomes Melo da Rocha, both affiliated with the Federal University of Cear\'a. Using the archived EPANET-BB repository and the benchmark input files, experiment configurations, and analysis scripts referenced in the Data Availability Statement, they regenerated the optimization outputs and reproduced the tables and figures derived from those outputs, including the ablation, scalability, and benchmark comparison results reported in the manuscript.
+The computational results reported in this study were reproduced by Michael Ferreira de Souza and J\'essica Gomes Melo da Rocha, both affiliated with the Federal University of Cear\'a. Using the archived \texttt{epanet-bb} repository and the benchmark input files, experiment configurations, and analysis scripts referenced in the Data Availability Statement, they regenerated the optimization outputs and reproduced the tables and figures derived from those outputs, including the ablation, scalability, and benchmark comparison results reported in the manuscript.
 
 \section*{Acknowledgments}
 
-This research was partially funded by the Brazilian research agencies FAPESP
-(Grant Nos.\ 2013/07375-0, 2023/08706-1, and 2024/00923-6) and CNPq
+This research was partially funded by FAPESP (Grant Nos.\ 2013/07375-0,
+2023/08706-1, and 2024/00923-6). Additional funding was provided by CNPq
 (Grant Nos.\ 305227/2022-0, 404616/2024-0, and 402609/2025-5).
 Michael Ferreira de Souza, Albert Einstein Fernandes Muritiba, and
 Asc\^anio Dias Ara\'ujo acknowledge financial support from CAPES
@@ -494,33 +516,46 @@ for publication.
 \emph{The following symbols are used in this paper:}
 \nopagebreak
 \par
-\begin{tabular}{r @{\hspace{1em}=\hspace{1em}} l}
-	$\mathcal{A}$                & set of network arcs; \\
-	$C_{j,h}$                    & electricity tariff for pump $j$ at time step $h$ (\$/kWh); \\
-	$D_{j,h}$                    & water demand at node $j$ and time step $h$ (m$^3$/s); \\
-	$E_{j,h}$                    & energy consumed by pump $j$ during time step $h$ (kWh); \\
-	$\mathcal{H}$                & set of time steps in the planning horizon; \\
-	$H_{i,h}$                    & hydraulic head at node $i$ and time step $h$ (m); \\
-	$\mathcal{I}$                & set of network nodes; \\
-	$\mathcal{K}$                & set of storage tanks; \\
-	$L$                          & decomposition level used for task partitioning; \\
-	$L_{k,h}$                    & water level in tank $k$ at time step $h$ (m); \\
-	$\mathcal{L}$                & set of pipes; \\
-	$NA_{\max}$                  & maximum number of pump state transitions over the planning horizon; \\
-	$N_p$                        & number of pumps; \\
-	$\mathcal{P}$                & set of pumps; \\
-	$P_{i,h}$                    & pressure at node $i$ and time step $h$ (m); \\
-	$S_k$                        & tank cross-sectional area (m$^2$); \\
-	$T$                          & number of time steps in the planning horizon; \\
-	$UB_{\text{global}}$         & global upper bound on total operating cost; \\
-	$UB_{\text{local}}$          & local upper bound on total operating cost; \\
-	$q_{a,h}$                    & flow rate through arc $a$ at time step $h$ (m$^3$/s); \\
-	$x_{j,h}$                    & binary status of pump $j$ at time step $h$; \\
-	$y_h$                        & number of active pumps at time step $h$; \\
-	$\Delta t$                   & simulation time-step duration (s); \\
-	$\Phi_\ell(\cdot)$           & head-loss relation for pipe $\ell$; \\
-	$\Psi_p(\cdot)$              & head-gain relation for pump $p$. \\
-\end{tabular}
+\begin{singlespace}
+	\small
+	\begin{tabular}{r @{\hspace{1em}=\hspace{1em}} l}
+		$A_k$                         & cross-sectional area of tank $k$ (m$^2$);                          \\
+		$C_{j,h}$                     & electricity tariff for pump $j$ in scheduling period $h$ (\$/kWh); \\
+		$d$                           & task-decomposition depth;                                          \\
+		$D_{i,h}$                     & water demand at node $i$ in scheduling period $h$ (m$^3$/s);       \\
+		$\mathcal{D}_h$               & reachable actuation-state classes after period $h$;                \\
+		$E_{j,h}$                     & energy consumed by pump $j$ during scheduling period $h$ (kWh);    \\
+		$\mathcal{H}$                 & set of scheduling periods in the planning horizon;                 \\
+		$H_{i,h}$                     & hydraulic head at node $i$ in scheduling period $h$ (m);           \\
+		$I_{\mathrm{sync}}$           & global task-index interval between incumbent exchanges;            \\
+		$\mathcal{J}$                 & set of demand junctions;                                           \\
+		$\mathcal{J}_P$               & set of junctions with minimum-pressure requirements;               \\
+		$\mathcal{K}$                 & set of storage tanks;                                              \\
+		$LB(\mathbf{y}_{1:h})$        & lower bound for aggregate prefix $\mathbf{y}_{1:h}$;               \\
+		$L_{k,h}$                     & water level in tank $k$ in scheduling period $h$ (m);              \\
+		$L_k^{\min},L_k^{\max}$       & minimum and maximum operating levels of tank $k$ (m);              \\
+		$\mathcal{L}$                 & set of pipes;                                                      \\
+		$NA_{\max}$                   & maximum number of periodic on--off cycles per pump;                \\
+		$N_p$                         & number of pumps;                                                   \\
+		$N_{\mathrm{procs}}$          & number of MPI ranks;                                               \\
+		$\mathcal{P}$                 & set of pumps;                                                      \\
+		$P_{i,h}$                     & pressure at node $i$ in scheduling period $h$ (m);                 \\
+		$P_i^{\min}$                  & minimum required pressure at junction $i$ (m);                     \\
+		$q_{a,h}$                     & flow rate through arc $a$ in scheduling period $h$ (m$^3$/s);      \\
+		$s_{j,h}$                     & cumulative state switches of pump $j$ through period $h$;          \\
+		$S_h$                         & hydraulic snapshot after scheduling period $h$;                    \\
+		$T$                           & number of scheduling periods in the planning horizon;              \\
+		$UB_{\text{global}}$          & global upper bound on total operating cost;                        \\
+		$UB_{\text{local}}$           & local upper bound on total operating cost;                         \\
+		$x_{j,h}$                     & binary status of pump $j$ in scheduling period $h$;                \\
+		$\mathbf{x}_h^{\mathrm{can}}$ & canonical binary representative in period $h$;                     \\
+		$y_h$                         & number of active pumps in scheduling period $h$;                   \\
+		$z_h$                         & accumulated operating cost through period $h$;                     \\
+		$\Delta t$                    & scheduling-period duration (s);                                    \\
+		$\Phi_\ell(\cdot)$            & head-loss relation for pipe $\ell$;                                \\
+		$\Psi_p(\cdot)$               & head-gain relation for pump $p$.                                   \\
+	\end{tabular}
+\end{singlespace}
 
 \bibliography{refs}
 

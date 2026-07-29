@@ -33,17 +33,21 @@ PRUNE_KEYS = (
     "NONE",
     "PRESSURES",
     "LEVELS",
+    "TANK_SATURATION",
     "STABILITY",
     "COST",
     "ACTUATIONS",
     "TIMESTEP",
 )
-# Mapping from internal keys to LaTeX table labels
-PRUNING_LABEL_MAP = {
-    "ACTUATIONS": "Actuation",
-    "COST": "Cost bound",
-    "LEVELS": "Tank levels",
-    "PRESSURES": "Pressure",
+# Groups raw, mutually exclusive solver reasons under manuscript table labels.
+# LEVELS is the legacy hydraulic bound check; TANK_SATURATION records the
+# revised physical intervention at a tank limit. Preserve both raw series and
+# combine them only in the editorial table.
+PRUNING_TABLE_GROUPS = {
+    "Actuation": ("ACTUATIONS",),
+    "Cost bound": ("COST",),
+    "Tank levels": ("LEVELS", "TANK_SATURATION"),
+    "Pressure": ("PRESSURES",),
 }
 # Order for the pruning table (matches article Table 4)
 PRUNING_TABLE_ORDER = ["Actuation", "Cost bound", "Tank levels", "Pressure"]
@@ -326,21 +330,25 @@ def export_pruning_csv(aggregated: dict, out_path: Path, quiet: bool = False):
         for key in PRUNE_KEYS:
             node_totals[a] += raw_counts[key][a]
 
-    # Calculate percentages for each criterion using the label mapping
+    # Calculate percentages for each editorial group. Raw reasons remain
+    # separate in the aggregate JSON for traceability.
     percentages = {label: {a: 0.0 for a in a_values} for label in PRUNING_TABLE_ORDER}
-    for internal_key, label in PRUNING_LABEL_MAP.items():
+    for label, internal_keys in PRUNING_TABLE_GROUPS.items():
         for a in a_values:
             total = node_totals[a]
             if total > 0:
-                pct = (raw_counts[internal_key][a] / total) * 100
+                grouped_count = sum(raw_counts[key][a] for key in internal_keys)
+                pct = (grouped_count / total) * 100
                 percentages[label][a] = round(pct, 1)
 
-    # Calculate total pruned (sum of Actuation + Cost bound + Tank levels + Pressure)
+    # Calculate the total from raw counts so minor reasons remain represented
+    # and independently rounded table rows cannot introduce drift.
     total_pruned = {a: 0.0 for a in a_values}
     for a in a_values:
-        for label in PRUNING_TABLE_ORDER:
-            total_pruned[a] += percentages[label][a]
-        total_pruned[a] = round(total_pruned[a], 1)
+        total = node_totals[a]
+        if total > 0:
+            pruned_count = total - raw_counts["NONE"][a]
+            total_pruned[a] = round((pruned_count / total) * 100, 1)
 
     # Calculate feasible percentage (NONE / total * 100)
     feasible = {a: 0.0 for a in a_values}

@@ -23,7 +23,8 @@ Tank::Tank(string name_)
     : Node(name_), initHead(0.0), minHead(0.0), maxHead(0.0), diameter(0.0),
       minVolume(0.0), bulkCoeff(MISSING), volCurve(nullptr), maxVolume(0.0),
       volume(0.0), area(0.0), ucfLength(1.0), pastHead(0.0), pastVolume(0.0),
-      pastOutflow(0.0) {
+      pastOutflow(0.0),
+      saturationIntervention(TankSaturationInterventionType::NONE) {
   fullDemand = 0.0;
   fixedGrade = true;
 }
@@ -89,6 +90,7 @@ void Tank::initialize(Network *nw) {
   pastHead = initHead;
   outflow = 0.0;
   pastOutflow = 0.0;
+  beginSaturationEvaluation();
   quality = initQual;
   updateArea();
   if (volCurve)
@@ -230,10 +232,16 @@ int Tank::timeToVolume(double v) {
 bool Tank::isClosed(double flow) {
   if (!fixedGrade)
     return false;
-  if (head >= maxHead && flow < 0.0)
+  if (head >= maxHead && flow < 0.0) {
+    saturationIntervention =
+        TankSaturationInterventionType::BLOCKED_INFLOW_AT_MAXIMUM;
     return true;
-  if (head <= minHead && flow > 0.0)
+  }
+  if (head <= minHead && flow > 0.0) {
+    saturationIntervention =
+        TankSaturationInterventionType::BLOCKED_OUTFLOW_AT_MINIMUM;
     return true;
+  }
   return false;
 }
 

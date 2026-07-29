@@ -3,6 +3,8 @@
 #include "Elements/pattern.h"
 #include "Elements/pump.h"
 
+#include <chrono>
+
 // --- BBTask Implementation ---
 
 double BBTask::priority() const
@@ -18,6 +20,12 @@ BBTask::BBTask(int uid, const BBConfig &config, const BBConstraints &constraints
   y.resize(config.h_max + 1, 0);
   num_pumps = constraints.get_num_pumps();
   this->uid = uid;
+  h = 0;
+  tid = 0;
+  p = nullptr;
+  cost = std::numeric_limits<double>::max();
+  is_feasible = true;
+  hydraulic_nonconvergence = false;
 }
 
 bool BBTask::operator<(const BBTask &other) const
@@ -144,15 +152,49 @@ BBSolver::BBSolver(BBConfig &configRef, BBConstraints &constraintsRef, BBStatist
 {
 }
 
+namespace
+{
+
+std::size_t estimate_resident_disaggregation_bytes(
+    const std::vector<std::optional<ExactDisaggregation>> &snapshots)
+{
+  std::size_t bytes =
+      sizeof(snapshots) +
+      snapshots.capacity() *
+          sizeof(std::optional<ExactDisaggregation>);
+  for (const auto &snapshot : snapshots)
+  {
+    if (!snapshot.has_value())
+      continue;
+    const std::size_t object_bytes = snapshot->estimated_state_bytes();
+    bytes += object_bytes - sizeof(ExactDisaggregation);
+  }
+  return bytes;
+}
+
+} // namespace
+
 void BBSolver::solveTask(BBTask &task)
 {
   Project p;
   task.p = &p;
   task.cost = std::numeric_limits<double>::max();
   task.x.resize((config.h_max + 1) * task.num_pumps, 0);
+  task.disaggregation_snapshots.clear();
+  task.disaggregation_snapshots.resize(
+      static_cast<std::size_t>(config.h_max + 1));
+  if (config.enable_exact_disaggregation)
+  {
+    task.disaggregation_snapshots[0].emplace(
+        task.num_pumps, config.max_actuations);
+  }
+  task.periodic_witness.reset();
   task.is_feasible = true;
+  task.hydraulic_nonconvergence = false;
 
   BBPrune::Reason prune_reason = initSnapshots(task);
+  if (task.hydraulic_nonconvergence)
+    return;
   if (prune_reason != BBPrune::Reason::NONE)
   {
     if (config.verbose > 1) stats.show();
@@ -168,6 +210,13 @@ void BBSolver::solveTask(BBTask &task)
     if (!task.is_feasible)
     {
       stats.add_stats(BBPrune::Reason::ACTUATIONS, task.h);      
+      stats.record_branch_evaluation(
+          task.uid, task.h,
+          std::vector<int>(task.y.begin(), task.y.begin() + task.h + 1),
+          std::vector<int>(
+              task.x.begin() + task.h * task.num_pumps,
+              task.x.begin() + (task.h + 1) * task.num_pumps),
+          BBPrune::Reason::ACTUATIONS);
       continue;
     }
     
@@ -178,7 +227,17 @@ void BBSolver::solveTask(BBTask &task)
       task.show_xy(true);
     }
 
-    stats.add_stats(processLevel(task), task.h);
+    const BBPrune::Reason reason = processLevel(task);
+    if (task.hydraulic_nonconvergence)
+      break;
+    stats.add_stats(reason, task.h);
+    stats.record_branch_evaluation(
+        task.uid, task.h,
+        std::vector<int>(task.y.begin(), task.y.begin() + task.h + 1),
+        std::vector<int>(
+            task.x.begin() + task.h * task.num_pumps,
+            task.x.begin() + (task.h + 1) * task.num_pumps),
+        reason, task.p->tankSaturationEvents());
     if (config.verbose > 1) stats.show();
   }
 }
@@ -196,6 +255,26 @@ BBPrune::Reason BBSolver::initSnapshots(BBTask &task)
   Network *nw = p.getNetwork();
   int t_max = 3600 * config.h_max;
   nw->options.setOption(Options::TimeOption::TOTAL_DURATION, t_max);
+  if (config.hydraulic_max_trials > 0)
+  {
+    nw->options.setOption(
+        Options::IndexOption::MAX_TRIALS, config.hydraulic_max_trials);
+  }
+  if (config.hydraulic_accuracy > 0.0)
+  {
+    nw->options.setOption(
+        Options::ValueOption::RELATIVE_ACCURACY,
+        config.hydraulic_accuracy);
+  }
+  stats.set_hydraulic_configuration(
+      {{"relative_accuracy",
+        nw->option(Options::ValueOption::RELATIVE_ACCURACY)},
+       {"relative_accuracy_origin",
+        config.hydraulic_accuracy > 0.0 ? "command_line" : "input_file"},
+       {"max_trials", nw->option(Options::IndexOption::MAX_TRIALS)},
+       {"if_unbalanced", nw->option(Options::IndexOption::IF_UNBALANCED)},
+       {"hydraulic_timestep_seconds",
+        nw->option(Options::TimeOption::HYD_STEP)}});
   p.initSolver(EN_INITFLOW);
 
   for (int i = 1; i < task.h_root; ++i)
@@ -214,7 +293,8 @@ BBPrune::Reason BBSolver::initSnapshots(BBTask &task)
   BBPrune::Reason prune_reason = BBPrune::Reason::NONE;
   do
   {
-    CHK(p.runSolver(&t), "Run solver");
+    if (!runHydraulicSolve(task, &t))
+      return BBPrune::Reason::NONE;
     CHK(p.advanceSolver(&dt), "Advance solver");
     t_new = t + dt;
 
@@ -308,6 +388,49 @@ void BBSolver::updateX(BBTask &task)
   const int *x_old = &task.x[task.num_pumps * (task.h - 1)];
   int *x_new = &task.x[task.num_pumps * task.h];
 
+  if (config.enable_exact_disaggregation)
+  {
+    const auto copied_at = std::chrono::steady_clock::now();
+    if (!task.disaggregation_snapshots[task.h - 1].has_value())
+      throw std::runtime_error(
+          "Missing exact disaggregation snapshot for parent level");
+    ExactDisaggregation disaggregation =
+        *task.disaggregation_snapshots[task.h - 1];
+    const auto copied = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                            std::chrono::steady_clock::now() - copied_at)
+                            .count();
+
+    const bool prefix_feasible = disaggregation.append(y_new);
+    task.is_feasible = prefix_feasible;
+    task.periodic_witness.reset();
+    if (task.is_feasible && task.h == config.h_max)
+    {
+      task.periodic_witness = disaggregation.finish_periodic();
+      task.is_feasible = task.periodic_witness.has_value();
+    }
+
+    std::fill(x_new, x_new + task.num_pumps, 0);
+    std::fill(x_new, x_new + y_new, 1);
+    const std::size_t resident_with_working_copy =
+        estimate_resident_disaggregation_bytes(
+            task.disaggregation_snapshots) +
+        disaggregation.estimated_state_bytes();
+    task.disaggregation_snapshots[task.h] = std::move(disaggregation);
+    const std::size_t resident_after_transition =
+        estimate_resident_disaggregation_bytes(
+            task.disaggregation_snapshots);
+    const std::size_t peak_resident_state_bytes =
+        std::max(resident_with_working_copy, resident_after_transition);
+    stats.record_disaggregation_transition(
+        task.uid, task.h, y_new,
+        std::vector<int>(x_new, x_new + task.num_pumps),
+        *task.disaggregation_snapshots[task.h],
+        peak_resident_state_bytes,
+        static_cast<std::uint64_t>(copied), prefix_feasible,
+        task.periodic_witness.has_value());
+    return;
+  }
+
   std::copy(x_old, x_old + task.num_pumps, x_new);
 
   if (y_new == y_old)
@@ -395,8 +518,14 @@ BBPrune::Reason BBSolver::processLevel(BBTask &task)
            // Simulate one hour
            int t_end_hour = step_h * 3600;
            do {
-               if(p.runSolver(&t) > 0) break; 
+               if (!runHydraulicSolve(task, &t))
+                   return BBPrune::Reason::NONE;
                if(p.advanceSolver(&dt) > 0) break;
+               if (!constraints.check_tank_saturation(p, config.verbose))
+               {
+                   task.is_feasible = false;
+                   return BBPrune::Reason::TANK_SATURATION;
+               }
                // t += dt; // advanced by advanceSolver? No, standard EPANET usage: step(t, &dt).
                // wrapper: runSolver gets current T. advanceSolver moves it.
            } while (t + dt < t_end_hour && dt > 0);
@@ -446,7 +575,8 @@ BBPrune::Reason BBSolver::epanetSolve(BBTask &task)
   int t = 0, dt = 0, t_new = t_min;
   do
   {
-    CHK(p.runSolver(&t), "Run solver");
+    if (!runHydraulicSolve(task, &t))
+      return BBPrune::Reason::NONE;
     CHK(p.advanceSolver(&dt), "Advance solver");
 
     t_new = t + dt;
@@ -486,11 +616,47 @@ BBPrune::Reason BBSolver::epanetSolve(BBTask &task)
           snprintf(fmt_cost_ub, sizeof(fmt_cost_ub), "%.2f", constraints.best_cost_local);
         Console::printf(Console::Color::BRIGHT_GREEN, "TID[%d]: cost update: 💰 cost=%.2f, cost_ub=%s\n", task.tid, task.cost, fmt_cost_ub);
       }
-      constraints.update_best(task.cost, task.x, task.y);
+      std::vector<int> witness_x(task.x.size(), 0);
+      if (config.enable_exact_disaggregation &&
+          task.periodic_witness.has_value())
+      {
+        for (std::size_t period = 0;
+             period < task.periodic_witness->size(); ++period)
+        {
+          std::copy(
+              task.periodic_witness->at(period).begin(),
+              task.periodic_witness->at(period).end(),
+              witness_x.begin() +
+                  static_cast<std::ptrdiff_t>(
+                      (period + 1) * task.num_pumps));
+        }
+      }
+      else
+      {
+        witness_x = task.x;
+      }
+      constraints.update_best(
+          task.cost, std::move(witness_x), task.y, task.x);
     }
   }
 
   return prune_reason;
+}
+
+bool BBSolver::runHydraulicSolve(BBTask &task, int *simulation_time)
+{
+  const int result = task.p->runSolver(simulation_time);
+  const int solver_status = task.p->lastHydraulicStatus();
+  if (solver_status == HydSolver::FAILED_NO_CONVERGENCE)
+  {
+    task.hydraulic_nonconvergence = true;
+    task.is_feasible = false;
+    stats.record_hydraulic_nonconvergence(
+        task.uid, task.tid, task.h, *simulation_time, solver_status);
+    return false;
+  }
+  CHK(result, "Run solver");
+  return true;
 }
 
 // --- Free Function Implementation ---

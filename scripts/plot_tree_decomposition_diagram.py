@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate Figure 2 (tree decomposition diagram) as a vector PDF."""
 
+import argparse
 from pathlib import Path
 
 import matplotlib as mpl
@@ -39,7 +40,7 @@ def draw_node(
     ax.text(x, y, label, ha="center", va="center", fontsize=size, color="#333")
 
 
-def main() -> None:
+def main(output: Path = OUTPUT) -> None:
     width, height = 480, 260
     fig, ax = plt.subplots(figsize=(width / 72, height / 72))
     ax.set_xlim(0, width)
@@ -108,7 +109,7 @@ def main() -> None:
     ax.text(
         width - 25,
         level2_y,
-        "h=L",
+        "h=d",
         ha="center",
         va="center",
         fontsize=10,
@@ -177,11 +178,14 @@ def main() -> None:
             color="#333",
         )
 
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUTPUT, bbox_inches="tight", pad_inches=0.01)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, bbox_inches="tight", pad_inches=0.01)
     plt.close(fig)
-    print(OUTPUT)
+    print(output)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, default=OUTPUT)
+    arguments = parser.parse_args()
+    main(arguments.output.absolute())

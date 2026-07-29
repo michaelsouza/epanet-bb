@@ -10,8 +10,10 @@
 #include "Core/project.h"
 #include "Elements/node.h"
 #include "Elements/tank.h"
+#include "Optimization/ExactDisaggregation.h"
 
 #include <algorithm>
+#include <optional>
 #include <queue>
 #include <stdexcept>
 #include <vector>
@@ -36,8 +38,13 @@ public:
   std::vector<ProjectData> snapshots; ///< Stores hydraulic states at each hour to allow for fast resets.
   std::vector<int> y;           ///< High-level pump schedule: number of pumps active at each hour.
   std::vector<int> x;           ///< Low-level pump schedule: binary status (on/off) for each pump at each hour.
+  std::vector<std::optional<ExactDisaggregation>>
+      disaggregation_snapshots; ///< Exact actuation state associated with each DFS level.
+  std::optional<BinarySchedule>
+      periodic_witness;         ///< Binary witness for a complete periodic aggregate schedule.
   int h;                        ///< The current hour being processed in the search.
   bool is_feasible;             ///< Flag indicating if the current partial solution is still feasible.
+  bool hydraulic_nonconvergence; ///< True when this task cannot be certified.
   int num_pumps;                ///< The total number of pumps in the network.
   Project *p;                   ///< Pointer to the EPANET project object used for simulation.
   int tid;                      ///< The ID of the MPI process (thread) assigned to this task.
@@ -209,6 +216,8 @@ private:
    * @return A prune reason if the simulation is infeasible or the cost is too high, otherwise `NONE`.
    */
   BBPrune::Reason epanetSolve(BBTask &task);
+
+  bool runHydraulicSolve(BBTask &task, int *simulation_time);
 };
 
 /**

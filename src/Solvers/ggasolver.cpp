@@ -599,6 +599,11 @@ void GGASolver::setValveCoeffs() {
 
 bool GGASolver::linksChangedStatus() {
   bool result = false;
+  for (Node *node : network->nodes) {
+    if (node->type() == Node::TANK) {
+      static_cast<Tank *>(node)->beginSaturationEvaluation();
+    }
+  }
   for (Link *link : network->links) {
     // ... get head at each end of link
 

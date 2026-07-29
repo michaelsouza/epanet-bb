@@ -158,6 +158,26 @@ int Project::runSolver(int *t) {
 
 //-----------------------------------------------------------------------------
 
+//  Return corrective interventions made at tank boundaries in the latest
+//  hydraulic solve.
+
+std::vector<TankSaturationIntervention>
+Project::tankSaturationEvents() const {
+  std::vector<TankSaturationIntervention> events;
+  for (Node *node : network.nodes) {
+    if (node->type() != Node::TANK)
+      continue;
+    const Tank *tank = static_cast<const Tank *>(node);
+    const auto type = tank->getSaturationIntervention();
+    if (type != TankSaturationInterventionType::NONE) {
+      events.push_back({tank->name, type});
+    }
+  }
+  return events;
+}
+
+//-----------------------------------------------------------------------------
+
 //  Advance the hydraulic solver to the next point in time while updating
 //  water quality.
 

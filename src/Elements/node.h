@@ -3,6 +3,7 @@
 
 #include "Elements/element.h"
 #include "Elements/qualsource.h"
+#include "Elements/tanksaturationintervention.h"
 #include <nlohmann/json.hpp> // Include nlohmann/json header
 #include <string>
 
@@ -27,6 +28,8 @@ public:
   double pastHead;
   double pastVolume;
   double pastOutflow;
+  TankSaturationInterventionType tankSaturationIntervention =
+      TankSaturationInterventionType::NONE;
 };
 
 class Network;

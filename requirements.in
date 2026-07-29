@@ -1,0 +1,10 @@
+# Direct dependencies used by scripts in scripts/.
+# Python support: CPython 3.11 through 3.13.
+matplotlib==3.11.1
+networkx==3.6.1
+numpy==2.4.6
+optuna==4.6.0
+pandas==2.3.3
+pillow==12.3.0
+rich==14.2.0
+wntr==1.5.0

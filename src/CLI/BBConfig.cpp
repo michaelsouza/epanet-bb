@@ -82,6 +82,10 @@ BBConfig::BBConfig(int argc, char *argv[])
       level = std::stoi(argv[++i]);
     else if (arg == "-s" || arg == "--sync-interval")
       sync_interval = std::stoi(argv[++i]);
+    else if (arg == "--hydraulic-max-trials")
+      hydraulic_max_trials = std::stoi(argv[++i]);
+    else if (arg == "--hydraulic-accuracy")
+      hydraulic_accuracy = std::stod(argv[++i]);
   }
 
   // Parse environment variables
@@ -99,6 +103,9 @@ BBConfig::BBConfig(int argc, char *argv[])
   enable_task_shuffle = get_env_bool("BB_ENABLE_TASK_SHUFFLE", true);
   enable_global_sync = get_env_bool("BB_ENABLE_GLOBAL_SYNC", true);
   enable_timestep_check = get_env_bool("BB_ENABLE_TIMESTEP_CHECK", false);
+  enable_exact_disaggregation =
+      get_env_bool("BB_ENABLE_EXACT_DISAGGREGATION", true);
+  enable_search_trace = get_env_bool("BB_ENABLE_SEARCH_TRACE", false);
 
   // Buffers for filenames
   try
@@ -121,6 +128,14 @@ void BBConfig::show() const
   Console::printf(Console::Color::WHITE, "  Level:           %d\n", level);
   Console::printf(Console::Color::WHITE, "  Sync interval:   %d\n", sync_interval);
   Console::printf(Console::Color::WHITE, "  Verbose:         %d\n", verbose);
+  Console::printf(Console::Color::WHITE, "  Hydraulic trials:%s\n",
+                  hydraulic_max_trials > 0
+                      ? std::to_string(hydraulic_max_trials).c_str()
+                      : " input file");
+  Console::printf(Console::Color::WHITE, "  Hydraulic acc.:  %s\n",
+                  hydraulic_accuracy > 0.0
+                      ? std::to_string(hydraulic_accuracy).c_str()
+                      : "input file");
   Console::printf(Console::Color::WHITE, "  Stats file:      %s\n", fn_stats);
   Console::printf(Console::Color::WHITE, "  Best file:       %s\n", fn_best);
   Console::printf(Console::Color::WHITE, "  Profile file:    %s\n", fn_profile);
@@ -131,4 +146,6 @@ void BBConfig::show() const
   Console::printf(Console::Color::WHITE, "  Task Shuffle:    %s\n", enable_task_shuffle ? "ON" : "OFF");
   Console::printf(Console::Color::WHITE, "  Global Sync:     %s\n", enable_global_sync ? "ON" : "OFF");
   Console::printf(Console::Color::WHITE, "  Timestep Check:  %s\n", enable_timestep_check ? "ON" : "OFF");
+  Console::printf(Console::Color::WHITE, "  Exact Disagg.:   %s\n", enable_exact_disaggregation ? "ON" : "OFF");
+  Console::printf(Console::Color::WHITE, "  Search Trace:    %s\n", enable_search_trace ? "ON" : "OFF");
 }

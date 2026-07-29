@@ -1,0 +1,497 @@
+{
+  "campaigns": [
+    {
+      "campaign": "scalability-anytown-24h-a2-rep-01",
+      "compatibility_sha256": "4ea29e4d11f255b0289bb111ed69744b5a83bf5e690eb5aaa328b638d2c8db3d",
+      "duration_seconds": 1480.245209496934,
+      "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
+      "git": {
+        "commit": "5528efcdf1c511a2efaf490e7542a0c9d88e0760",
+        "dirty": false
+      }
+    },
+    {
+      "campaign": "scalability-anytown-24h-a2-rep-02",
+      "compatibility_sha256": "c1973537792cfc5d39469a293d49e72a3f59f1702e949674b998a0f466160229",
+      "duration_seconds": 1479.3840936291963,
+      "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
+      "git": {
+        "commit": "5528efcdf1c511a2efaf490e7542a0c9d88e0760",
+        "dirty": false
+      }
+    },
+    {
+      "campaign": "scalability-anytown-24h-a2-rep-03",
+      "compatibility_sha256": "4c719e580c129b578873f891c38a01469fc9fd58f13e3dd84b404075c94e5939",
+      "duration_seconds": 1481.9288433622569,
+      "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
+      "git": {
+        "commit": "5528efcdf1c511a2efaf490e7542a0c9d88e0760",
+        "dirty": false
+      }
+    }
+  ],
+  "configuration": {
+    "actuations": [
+      2
+    ],
+    "hours": 24,
+    "level": 8,
+    "sync_interval": 32768
+  },
+  "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
+  "global_best_cost": 3606.828628872831,
+  "points": [
+    {
+      "environment": {},
+      "process_count": 1,
+      "repetitions": [
+        {
+          "average_rank_seconds": 699.7368319999999,
+          "best_files": 1,
+          "campaign": "scalability-anytown-24h-a2-rep-01",
+          "candidate_assignments": 87153109,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.0,
+          "maximum_rank_seconds": 699.7368319999999,
+          "number": 1,
+          "paired_parallel_efficiency": 1.0,
+          "paired_speedup": 1.0,
+          "stats_files": 1,
+          "tasks_processed": 65536,
+          "wall_seconds": 701.1869825609028
+        },
+        {
+          "average_rank_seconds": 696.36768,
+          "best_files": 1,
+          "campaign": "scalability-anytown-24h-a2-rep-02",
+          "candidate_assignments": 87153109,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.0,
+          "maximum_rank_seconds": 696.36768,
+          "number": 2,
+          "paired_parallel_efficiency": 1.0,
+          "paired_speedup": 1.0,
+          "stats_files": 1,
+          "tasks_processed": 65536,
+          "wall_seconds": 697.8377122520469
+        },
+        {
+          "average_rank_seconds": 699.385214,
+          "best_files": 1,
+          "campaign": "scalability-anytown-24h-a2-rep-03",
+          "candidate_assignments": 87153109,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.0,
+          "maximum_rank_seconds": 699.385214,
+          "number": 3,
+          "paired_parallel_efficiency": 1.0,
+          "paired_speedup": 1.0,
+          "stats_files": 1,
+          "tasks_processed": 65536,
+          "wall_seconds": 700.8537980630063
+        }
+      ],
+      "summary": {
+        "average_rank_seconds_median": 699.385214,
+        "candidate_assignments_median": 87153109,
+        "load_imbalance_factor_median": 0.0,
+        "maximum_rank_seconds_median": 699.385214,
+        "paired_parallel_efficiency_median": 1.0,
+        "paired_speedup_maximum": 1.0,
+        "paired_speedup_median": 1.0,
+        "paired_speedup_minimum": 1.0,
+        "wall_seconds_maximum": 701.1869825609028,
+        "wall_seconds_median": 700.8537980630063,
+        "wall_seconds_minimum": 697.8377122520469
+      }
+    },
+    {
+      "environment": {},
+      "process_count": 2,
+      "repetitions": [
+        {
+          "average_rank_seconds": 349.56031099999996,
+          "best_files": 2,
+          "campaign": "scalability-anytown-24h-a2-rep-01",
+          "candidate_assignments": 87520112,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.00902912001357046,
+          "maximum_rank_seconds": 352.71653299999997,
+          "number": 1,
+          "paired_parallel_efficiency": 0.9912851866418012,
+          "paired_speedup": 1.9825703732836024,
+          "stats_files": 2,
+          "tasks_processed": 65536,
+          "wall_seconds": 353.6757090743631
+        },
+        {
+          "average_rank_seconds": 352.05074349999995,
+          "best_files": 2,
+          "campaign": "scalability-anytown-24h-a2-rep-02",
+          "candidate_assignments": 87521117,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.009984527983250814,
+          "maximum_rank_seconds": 355.56580399999996,
+          "number": 2,
+          "paired_parallel_efficiency": 0.9786437341920421,
+          "paired_speedup": 1.9572874683840842,
+          "stats_files": 2,
+          "tasks_processed": 65536,
+          "wall_seconds": 356.53307116311044
+        },
+        {
+          "average_rank_seconds": 351.5221415,
+          "best_files": 2,
+          "campaign": "scalability-anytown-24h-a2-rep-03",
+          "candidate_assignments": 87520112,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.007519041300560685,
+          "maximum_rank_seconds": 354.165251,
+          "number": 3,
+          "paired_parallel_efficiency": 0.9867974041795463,
+          "paired_speedup": 1.9735948083590926,
+          "stats_files": 2,
+          "tasks_processed": 65536,
+          "wall_seconds": 355.1153433797881
+        }
+      ],
+      "summary": {
+        "average_rank_seconds_median": 351.5221415,
+        "candidate_assignments_median": 87520112,
+        "load_imbalance_factor_median": 0.00902912001357046,
+        "maximum_rank_seconds_median": 354.165251,
+        "paired_parallel_efficiency_median": 0.9867974041795463,
+        "paired_speedup_maximum": 1.9825703732836024,
+        "paired_speedup_median": 1.9735948083590926,
+        "paired_speedup_minimum": 1.9572874683840842,
+        "wall_seconds_maximum": 356.53307116311044,
+        "wall_seconds_median": 355.1153433797881,
+        "wall_seconds_minimum": 353.6757090743631
+      }
+    },
+    {
+      "environment": {},
+      "process_count": 4,
+      "repetitions": [
+        {
+          "average_rank_seconds": 176.67152249999998,
+          "best_files": 4,
+          "campaign": "scalability-anytown-24h-a2-rep-01",
+          "candidate_assignments": 87915151,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.0878540484644321,
+          "maximum_rank_seconds": 192.19283099999998,
+          "number": 1,
+          "paired_parallel_efficiency": 0.9086864734856813,
+          "paired_speedup": 3.6347458939427253,
+          "stats_files": 4,
+          "tasks_processed": 65536,
+          "wall_seconds": 192.91224284190685
+        },
+        {
+          "average_rank_seconds": 176.34314874999998,
+          "best_files": 4,
+          "campaign": "scalability-anytown-24h-a2-rep-02",
+          "candidate_assignments": 87914786,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.08417598503383882,
+          "maximum_rank_seconds": 191.187007,
+          "number": 2,
+          "paired_parallel_efficiency": 0.9091410019843312,
+          "paired_speedup": 3.636564007937325,
+          "stats_files": 4,
+          "tasks_processed": 65536,
+          "wall_seconds": 191.8947970471345
+        },
+        {
+          "average_rank_seconds": 177.107856,
+          "best_files": 4,
+          "campaign": "scalability-anytown-24h-a2-rep-03",
+          "candidate_assignments": 87914301,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.0854715727573372,
+          "maximum_rank_seconds": 192.245543,
+          "number": 3,
+          "paired_parallel_efficiency": 0.9080601592557244,
+          "paired_speedup": 3.6322406370228975,
+          "stats_files": 4,
+          "tasks_processed": 65536,
+          "wall_seconds": 192.95357001386583
+        }
+      ],
+      "summary": {
+        "average_rank_seconds_median": 176.67152249999998,
+        "candidate_assignments_median": 87914786,
+        "load_imbalance_factor_median": 0.0854715727573372,
+        "maximum_rank_seconds_median": 192.19283099999998,
+        "paired_parallel_efficiency_median": 0.9086864734856813,
+        "paired_speedup_maximum": 3.636564007937325,
+        "paired_speedup_median": 3.6347458939427253,
+        "paired_speedup_minimum": 3.6322406370228975,
+        "wall_seconds_maximum": 192.95357001386583,
+        "wall_seconds_median": 192.91224284190685,
+        "wall_seconds_minimum": 191.8947970471345
+      }
+    },
+    {
+      "environment": {},
+      "process_count": 8,
+      "repetitions": [
+        {
+          "average_rank_seconds": 88.9829405,
+          "best_files": 8,
+          "campaign": "scalability-anytown-24h-a2-rep-01",
+          "candidate_assignments": 88419274,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.25093691413805325,
+          "maximum_rank_seconds": 111.312045,
+          "number": 1,
+          "paired_parallel_efficiency": 0.7832558132888906,
+          "paired_speedup": 6.266046506311125,
+          "stats_files": 8,
+          "tasks_processed": 65536,
+          "wall_seconds": 111.90261384984478
+        },
+        {
+          "average_rank_seconds": 88.88383512499999,
+          "best_files": 8,
+          "campaign": "scalability-anytown-24h-a2-rep-02",
+          "candidate_assignments": 88418018,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.2450066184067573,
+          "maximum_rank_seconds": 110.660963,
+          "number": 2,
+          "paired_parallel_efficiency": 0.7841087191688695,
+          "paired_speedup": 6.272869753350956,
+          "stats_files": 8,
+          "tasks_processed": 65536,
+          "wall_seconds": 111.24696346186101
+        },
+        {
+          "average_rank_seconds": 89.06960325,
+          "best_files": 8,
+          "campaign": "scalability-anytown-24h-a2-rep-03",
+          "candidate_assignments": 88421957,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.2485745971928981,
+          "maximum_rank_seconds": 111.210044,
+          "number": 3,
+          "paired_parallel_efficiency": 0.7834772594946615,
+          "paired_speedup": 6.267818075957292,
+          "stats_files": 8,
+          "tasks_processed": 65536,
+          "wall_seconds": 111.81782712414861
+        }
+      ],
+      "summary": {
+        "average_rank_seconds_median": 88.9829405,
+        "candidate_assignments_median": 88419274,
+        "load_imbalance_factor_median": 0.2485745971928981,
+        "maximum_rank_seconds_median": 111.210044,
+        "paired_parallel_efficiency_median": 0.7834772594946615,
+        "paired_speedup_maximum": 6.272869753350956,
+        "paired_speedup_median": 6.267818075957292,
+        "paired_speedup_minimum": 6.266046506311125,
+        "wall_seconds_maximum": 111.90261384984478,
+        "wall_seconds_median": 111.81782712414861,
+        "wall_seconds_minimum": 111.24696346186101
+      }
+    },
+    {
+      "environment": {},
+      "process_count": 16,
+      "repetitions": [
+        {
+          "average_rank_seconds": 45.2529504375,
+          "best_files": 16,
+          "campaign": "scalability-anytown-24h-a2-rep-01",
+          "candidate_assignments": 89782675,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.357912343966821,
+          "maximum_rank_seconds": 61.44954,
+          "number": 1,
+          "paired_parallel_efficiency": 0.7061332343891527,
+          "paired_speedup": 11.298131750226442,
+          "stats_files": 16,
+          "tasks_processed": 65536,
+          "wall_seconds": 62.06220621801913
+        },
+        {
+          "average_rank_seconds": 45.498227375,
+          "best_files": 16,
+          "campaign": "scalability-anytown-24h-a2-rep-02",
+          "candidate_assignments": 89807217,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.3763784352268954,
+          "maximum_rank_seconds": 62.622778999999994,
+          "number": 2,
+          "paired_parallel_efficiency": 0.6897473305817463,
+          "paired_speedup": 11.035957289307941,
+          "stats_files": 16,
+          "tasks_processed": 65536,
+          "wall_seconds": 63.233092876151204
+        },
+        {
+          "average_rank_seconds": 45.264153,
+          "best_files": 16,
+          "campaign": "scalability-anytown-24h-a2-rep-03",
+          "candidate_assignments": 89784485,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.36233268299530524,
+          "maximum_rank_seconds": 61.664835,
+          "number": 3,
+          "paired_parallel_efficiency": 0.7032443053658745,
+          "paired_speedup": 11.251908885853991,
+          "stats_files": 16,
+          "tasks_processed": 65536,
+          "wall_seconds": 62.28754651080817
+        }
+      ],
+      "summary": {
+        "average_rank_seconds_median": 45.264153,
+        "candidate_assignments_median": 89784485,
+        "load_imbalance_factor_median": 0.36233268299530524,
+        "maximum_rank_seconds_median": 61.664835,
+        "paired_parallel_efficiency_median": 0.7032443053658745,
+        "paired_speedup_maximum": 11.298131750226442,
+        "paired_speedup_median": 11.251908885853991,
+        "paired_speedup_minimum": 11.035957289307941,
+        "wall_seconds_maximum": 63.233092876151204,
+        "wall_seconds_median": 62.28754651080817,
+        "wall_seconds_minimum": 62.06220621801913
+      }
+    },
+    {
+      "environment": {},
+      "process_count": 32,
+      "repetitions": [
+        {
+          "average_rank_seconds": 23.11868871875,
+          "best_files": 32,
+          "campaign": "scalability-anytown-24h-a2-rep-01",
+          "candidate_assignments": 91065691,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.4340231577715766,
+          "maximum_rank_seconds": 33.152735,
+          "number": 1,
+          "paired_parallel_efficiency": 0.6470868848223403,
+          "paired_speedup": 20.70678031431489,
+          "stats_files": 32,
+          "tasks_processed": 65536,
+          "wall_seconds": 33.86267550615594
+        },
+        {
+          "average_rank_seconds": 23.08506646875,
+          "best_files": 32,
+          "campaign": "scalability-anytown-24h-a2-rep-02",
+          "candidate_assignments": 91067726,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.4458298417802773,
+          "maximum_rank_seconds": 33.377078,
+          "number": 2,
+          "paired_parallel_efficiency": 0.6405811718536744,
+          "paired_speedup": 20.49859749931758,
+          "stats_files": 32,
+          "tasks_processed": 65536,
+          "wall_seconds": 34.043193066027015
+        },
+        {
+          "average_rank_seconds": 23.084099312499998,
+          "best_files": 32,
+          "campaign": "scalability-anytown-24h-a2-rep-03",
+          "candidate_assignments": 91080893,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.4545754003847059,
+          "maximum_rank_seconds": 33.577563,
+          "number": 3,
+          "paired_parallel_efficiency": 0.6394132082328062,
+          "paired_speedup": 20.4612226634498,
+          "stats_files": 32,
+          "tasks_processed": 65536,
+          "wall_seconds": 34.25278193736449
+        }
+      ],
+      "summary": {
+        "average_rank_seconds_median": 23.08506646875,
+        "candidate_assignments_median": 91067726,
+        "load_imbalance_factor_median": 0.4458298417802773,
+        "maximum_rank_seconds_median": 33.377078,
+        "paired_parallel_efficiency_median": 0.6405811718536744,
+        "paired_speedup_maximum": 20.70678031431489,
+        "paired_speedup_median": 20.49859749931758,
+        "paired_speedup_minimum": 20.4612226634498,
+        "wall_seconds_maximum": 34.25278193736449,
+        "wall_seconds_median": 34.043193066027015,
+        "wall_seconds_minimum": 33.86267550615594
+      }
+    },
+    {
+      "environment": {},
+      "process_count": 64,
+      "repetitions": [
+        {
+          "average_rank_seconds": 12.53070421875,
+          "best_files": 64,
+          "campaign": "scalability-anytown-24h-a2-rep-01",
+          "candidate_assignments": 93628762,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.8773881012049566,
+          "maximum_rank_seconds": 23.524995,
+          "number": 1,
+          "paired_parallel_efficiency": 0.4483619398282064,
+          "paired_speedup": 28.69516414900521,
+          "stats_files": 64,
+          "tasks_processed": 65536,
+          "wall_seconds": 24.435719514265656
+        },
+        {
+          "average_rank_seconds": 12.550604640625,
+          "best_files": 64,
+          "campaign": "scalability-anytown-24h-a2-rep-02",
+          "candidate_assignments": 93633343,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.8735790564134138,
+          "maximum_rank_seconds": 23.51455,
+          "number": 2,
+          "paired_parallel_efficiency": 0.4471301323999082,
+          "paired_speedup": 28.616328473594123,
+          "stats_files": 64,
+          "tasks_processed": 65536,
+          "wall_seconds": 24.385997417382896
+        },
+        {
+          "average_rank_seconds": 12.51829034375,
+          "best_files": 64,
+          "campaign": "scalability-anytown-24h-a2-rep-03",
+          "candidate_assignments": 93629429,
+          "global_best_cost": 3606.828628872831,
+          "load_imbalance_factor": 0.8804085345210542,
+          "maximum_rank_seconds": 23.5395,
+          "number": 3,
+          "paired_parallel_efficiency": 0.44804768370996007,
+          "paired_speedup": 28.675051757437444,
+          "stats_files": 64,
+          "tasks_processed": 65536,
+          "wall_seconds": 24.441239164676517
+        }
+      ],
+      "summary": {
+        "average_rank_seconds_median": 12.53070421875,
+        "candidate_assignments_median": 93629429,
+        "load_imbalance_factor_median": 0.8773881012049566,
+        "maximum_rank_seconds_median": 23.524995,
+        "paired_parallel_efficiency_median": 0.44804768370996007,
+        "paired_speedup_maximum": 28.69516414900521,
+        "paired_speedup_median": 28.675051757437444,
+        "paired_speedup_minimum": 28.616328473594123,
+        "wall_seconds_maximum": 24.441239164676517,
+        "wall_seconds_median": 24.435719514265656,
+        "wall_seconds_minimum": 24.385997417382896
+      }
+    }
+  ],
+  "repetition_count": 3,
+  "schema_version": 1,
+  "tasks_processed_per_point": 65536
+}

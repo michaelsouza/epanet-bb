@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate Figure 1 (two-level schedule representation) as a vector PDF."""
 
+import argparse
 from pathlib import Path
 
 import matplotlib as mpl
@@ -20,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = PROJECT_ROOT / "paper/figures/Figure_1_two_level_diagram.pdf"
 
 
-def main() -> None:
+def main(output: Path = OUTPUT) -> None:
     fig_w, fig_h = 300, 160
     fig, ax = plt.subplots(figsize=(fig_w / 72, fig_h / 72))
     ax.set_xlim(0, fig_w)
@@ -95,10 +96,10 @@ def main() -> None:
     ax.text(
         arrow_x,
         78,
-        r"$M(y_h, x_{h-1}, R)$",
+        r"$\mathbf{x}^{\mathrm{can}}_h=(1,\ldots,1,0,\ldots,0)$",
         ha="center",
         va="center",
-        fontsize=12,
+        fontsize=10.5,
         color="#444",
     )
 
@@ -108,7 +109,11 @@ def main() -> None:
         [1, 1, 1, 1, 0, 0],
         [0, 1, 1, 0, 0, 0],
     ]
-    labels = [r"$x_{1,h}$", r"$x_{2,h}$", r"$x_{3,h}$"]
+    labels = [
+        r"$x^{\mathrm{can}}_{1,h}$",
+        r"$x^{\mathrm{can}}_{2,h}$",
+        r"$x^{\mathrm{can}}_{3,h}$",
+    ]
     for r, (label, row) in enumerate(zip(labels, rows)):
         y = row_top + r * (x_cell_h + gap)
         ax.text(
@@ -146,11 +151,14 @@ def main() -> None:
                 color=text,
             )
 
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUTPUT, bbox_inches="tight", pad_inches=0.01)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output, bbox_inches="tight", pad_inches=0.01)
     plt.close(fig)
-    print(OUTPUT)
+    print(output)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, default=OUTPUT)
+    arguments = parser.parse_args()
+    main(arguments.output.absolute())

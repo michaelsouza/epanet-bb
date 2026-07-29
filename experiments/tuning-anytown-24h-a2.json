@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "study_name": "phase4-anytown-24h-a2-racing-v1",
+  "binary": "build/run-epanet3-bb",
+  "input": "networks/any-town.inp",
+  "output_dir": "build/experiments/tuning-anytown-24h-a2-racing-v1",
+  "hours": 24,
+  "max_actuations": 2,
+  "search_space": {
+    "np": [8, 16, 32, 64],
+    "level": [8, 9, 10],
+    "sync_interval": [1024, 2048, 4096, 8192, 16384, 32768, 65536]
+  },
+  "timeout_seconds": 900,
+  "repetitions": 3,
+  "racing": {
+    "relative_cutoff_factor": 1.25,
+    "initial_incumbent": {
+      "np": 64,
+      "level": 8,
+      "sync_interval": 32768
+    },
+    "validation_repetitions": 3
+  },
+  "sampler_seed": 20260724,
+  "mpi_launcher": "/usr/bin/mpiexec",
+  "mpi_launcher_args": [
+    "--map-by",
+    "core",
+    "--bind-to",
+    "core"
+  ],
+  "environment": {
+    "HWLOC_COMPONENTS": "-gl"
+  },
+  "hydraulic_accuracy": null,
+  "hydraulic_max_trials": null
+}
