@@ -14,7 +14,7 @@
   "timeout_seconds": 30,
   "repetitions": 1,
   "sampler_seed": 20260724,
-  "mpi_launcher": "/usr/bin/mpiexec",
+  "mpi_launcher": "mpiexec",
   "mpi_launcher_args": [],
   "environment": {
     "HWLOC_COMPONENTS": "-gl"

@@ -154,6 +154,9 @@ class PrepareManuscriptArtifactsTests(unittest.TestCase):
             self.assertEqual(solution["max_actuations"], 3)
             self.assertEqual(len(solution["best_x"]), 75)
             self.assertEqual(receipt["manuscript_modified"], False)
+            self.assertTrue(
+                all(not Path(path).is_absolute() for path in receipt["inputs"])
+            )
             self.assertIn("tables/pruning.tex", receipt["outputs"])
             self.assertIn("tables/comparison_feasibility.tex", receipt["outputs"])
             self.assertIn("data/accuracy_audit.json", receipt["outputs"])

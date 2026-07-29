@@ -16,6 +16,7 @@ import time
 
 from run_experiments import (
     ConfigurationError,
+    executable_path,
     portable_path,
     process_count_record,
 )
@@ -26,7 +27,7 @@ DEFAULT_MANIFEST = REPO_ROOT / "experiments" / "reproducibility.json"
 DEFAULT_BINARY = REPO_ROOT / "build" / "run-epanet3-bb"
 DEFAULT_INPUT = REPO_ROOT / "networks" / "any-town.inp"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "build" / "experiments" / "campaign"
-DEFAULT_MPI_LAUNCHER = Path("/usr/bin/mpiexec")
+DEFAULT_MPI_LAUNCHER = "mpiexec"
 
 
 def sha256_file(path: Path) -> str:
@@ -338,7 +339,7 @@ def build_plan(
     manifest_path = portable_path(arguments.manifest)
     binary = portable_path(arguments.binary)
     input_path = portable_path(arguments.input)
-    launcher = portable_path(arguments.mpi_launcher)
+    launcher = executable_path(arguments.mpi_launcher)
     output_directory = portable_path(arguments.output_dir)
     for label, path in (
         ("manifest", manifest_path),

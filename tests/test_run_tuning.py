@@ -21,7 +21,7 @@ SPEC.loader.exec_module(run_tuning)
 class RunTuningTests(unittest.TestCase):
     def base_config(self):
         return {
-            "mpi_launcher": "/usr/bin/mpiexec",
+            "mpi_launcher": "/opt/mpi/bin/mpiexec",
             "mpi_launcher_args": [],
             "binary": "/tmp/solver",
             "input": "/tmp/network.inp",
@@ -39,7 +39,7 @@ class RunTuningTests(unittest.TestCase):
         self.assertEqual(
             command,
             [
-                "/usr/bin/mpiexec",
+                "/opt/mpi/bin/mpiexec",
                 "-n",
                 "2",
                 "/tmp/solver",

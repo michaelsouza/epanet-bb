@@ -798,7 +798,12 @@ def prepare_package(
     receipt = {
         "schema_version": 1,
         "inputs": {
-            str(path.absolute()): sha256(path) for path in sorted(input_paths)
+            (
+                path.resolve().relative_to(ROOT.resolve()).as_posix()
+                if path.resolve().is_relative_to(ROOT.resolve())
+                else path.name
+            ): sha256(path)
+            for path in sorted(input_paths)
         },
         "outputs": {
             str(path.relative_to(output_dir)): sha256(path) for path in output_paths

@@ -12,6 +12,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import shutil
 import signal
 import subprocess
 import sys
@@ -28,7 +29,7 @@ DEFAULT_NETWORK = ROOT / "networks" / "any-town.inp"
 DEFAULT_FINAL_SUMMARY = (
     ROOT / "experiments" / "results" / "final-cases-anytown-24h-summary.json"
 )
-DEFAULT_MPI = Path("/usr/bin/mpiexec")
+DEFAULT_MPI = "mpiexec"
 DEFAULT_OUTPUT = ROOT / "build" / "experiments" / "accuracy-sensitivity"
 PRUNE_REASONS = (
     "NONE",
@@ -51,6 +52,16 @@ def absolute_path(value: str | Path) -> Path:
     if not path.is_absolute():
         path = ROOT / path
     return path.absolute()
+
+
+def executable_path(value: str | Path) -> Path:
+    candidate = Path(value).expanduser()
+    if candidate.is_absolute() or candidate.parent != Path("."):
+        return absolute_path(candidate)
+    resolved = shutil.which(str(candidate))
+    if resolved is None:
+        raise ConfigurationError(f"executable was not found on PATH: {candidate}")
+    return Path(resolved).absolute()
 
 
 def load_json(path: Path) -> dict:
@@ -218,7 +229,7 @@ def build_plan(arguments: argparse.Namespace) -> dict:
         "evaluator": absolute_path(arguments.evaluator),
         "input": absolute_path(arguments.input),
         "final_summary": absolute_path(arguments.final_summary),
-        "mpi_launcher": absolute_path(arguments.mpi_launcher),
+        "mpi_launcher": executable_path(arguments.mpi_launcher),
         "output_dir": absolute_path(arguments.output_dir),
     }
     for name, path in paths.items():

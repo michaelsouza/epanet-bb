@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 
 
@@ -40,6 +41,25 @@ def load_json(path: Path) -> dict:
         raise EvaluationError(f"missing input: {path}")
     with path.open(encoding="utf-8") as stream:
         return json.load(stream)
+
+
+def executable_path(value: str | Path) -> Path:
+    candidate = Path(value).expanduser()
+    if candidate.is_absolute() or candidate.parent != Path("."):
+        return candidate.absolute()
+    resolved = shutil.which(str(candidate))
+    if resolved is None:
+        raise EvaluationError(f"executable was not found on PATH: {candidate}")
+    return Path(resolved).absolute()
+
+
+def repository_path(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError as exc:
+        raise EvaluationError(
+            f"source artifact is outside the repository: {path}"
+        ) from exc
 
 
 def revised_solutions(final_summary: dict) -> list[tuple[str, int, dict]]:
@@ -170,7 +190,7 @@ def evaluate_schedules(
             {
                 "source": source,
                 "actuations": actuations,
-                "source_artifact": str(source_path.absolute()),
+                "source_artifact": repository_path(source_path),
                 "source_artifact_sha256": sha256(source_path),
                 "published_cost": float(payload["best_cost"]),
                 "feasible": feasible,
@@ -235,7 +255,7 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=ROOT / "experiments" / "results" / "final-cases-anytown-24h-summary.json",
     )
-    parser.add_argument("--mpi-launcher", type=Path, default=Path("/usr/bin/mpiexec"))
+    parser.add_argument("--mpi-launcher", default="mpiexec")
     parser.add_argument("--output-dir", required=True, type=Path)
     return parser.parse_args()
 
@@ -248,7 +268,7 @@ def main() -> int:
             arguments.network.absolute(),
             arguments.comparison_data_dir.absolute(),
             arguments.final_summary.absolute(),
-            arguments.mpi_launcher.absolute(),
+            executable_path(arguments.mpi_launcher),
             arguments.output_dir.absolute(),
         )
     except (EvaluationError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:

@@ -248,7 +248,7 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/networks/any-town.inp"
             "${CMAKE_CURRENT_SOURCE_DIR}/experiments/results/final-cases-anytown-24h-summary.json"
             "${CMAKE_CURRENT_SOURCE_DIR}/experiments/comparison-schedules/run_Cimorelli2020_a_01.json"
-            /usr/bin/mpiexec
+            "${MPIEXEC_EXECUTABLE}"
     )
 
     add_test(
@@ -257,7 +257,7 @@ if(BUILD_TESTING)
             ${Python3_EXECUTABLE}
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_evaluate_comparison_schedules.py"
             $<TARGET_FILE:run-epanet3-bb-eval>
-            /usr/bin/mpiexec
+            "${MPIEXEC_EXECUTABLE}"
     )
 
     add_test(

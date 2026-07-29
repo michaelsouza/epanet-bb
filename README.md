@@ -231,7 +231,8 @@ evidence:
 
 Repeating a compatible invocation with `--resume` skips completed work. The
 `tuning`, `final-cases`, `scalability`, and `ablation` subsets require MPI;
-high-rank final runs belong on the synchronized `labma-sol` test host.
+high-rank final runs belong on a compatible HPC system with explicitly
+allocated resources.
 `run_scalability.py` and `run_ablation.py` remain as compatibility shortcuts
 that select their corresponding subsets.
 

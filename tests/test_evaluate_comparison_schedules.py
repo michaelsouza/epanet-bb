@@ -59,6 +59,12 @@ class EvaluateComparisonSchedulesTests(unittest.TestCase):
                     for record in revised
                 )
             )
+            self.assertTrue(
+                all(
+                    not Path(record["source_artifact"]).is_absolute()
+                    for record in summary["records"]
+                )
+            )
 
 
 if __name__ == "__main__":

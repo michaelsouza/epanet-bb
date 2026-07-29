@@ -42,6 +42,8 @@ class RunExperimentsTests(unittest.TestCase):
                     "3",
                     "--binary",
                     sys.executable,
+                    "--mpi-launcher",
+                    sys.executable,
                     "--input",
                     str(NETWORK),
                     "--output-dir",
@@ -98,7 +100,7 @@ class RunExperimentsTests(unittest.TestCase):
             self.assertEqual(
                 plan["experiments"][0]["command"][:7],
                 [
-                    "/usr/bin/mpiexec",
+                    sys.executable,
                     "--map-by",
                     "core",
                     "--bind-to",
@@ -138,6 +140,10 @@ output = Path("outputs")
 output.mkdir()
 (output / "solver-result.json").write_text(
     json.dumps({"arguments": sys.argv[1:]}),
+    encoding="utf-8",
+)
+(output / "rank_0_stats.json").write_text(
+    json.dumps({"search": {"status": "CONCLUSIVE"}}),
     encoding="utf-8",
 )
 """,
@@ -202,6 +208,77 @@ output.mkdir()
             self.assertEqual(execution_results["status"], "complete")
             self.assertEqual(
                 execution_results["experiments"][0]["return_code"], 0
+            )
+            self.assertEqual(
+                execution_results["experiments"][0]["search_statuses"],
+                ["CONCLUSIVE"],
+            )
+
+    def test_inconclusive_rank_artifact_fails_the_execution(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            working_directory = Path(temporary)
+            output_directory = working_directory / "campaign"
+            launcher = working_directory / "fake-mpiexec"
+            solver = working_directory / "fake-solver"
+            self.write_executable(
+                launcher,
+                """
+import subprocess
+import sys
+
+arguments = sys.argv[1:]
+rank_option = arguments.index("-n")
+command = arguments[rank_option + 2:]
+raise SystemExit(subprocess.run(command).returncode)
+""",
+            )
+            self.write_executable(
+                solver,
+                """
+import json
+from pathlib import Path
+
+output = Path("outputs")
+output.mkdir()
+(output / "rank_0_stats.json").write_text(
+    json.dumps({"search": {"status": "INCONCLUSIVE_HYDRAULIC_NONCONVERGENCE"}}),
+    encoding="utf-8",
+)
+""",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(RUNNER),
+                    "--np",
+                    "1",
+                    "--mpi-launcher",
+                    str(launcher),
+                    "--binary",
+                    str(solver),
+                    "--input",
+                    str(NETWORK),
+                    "--output-dir",
+                    str(output_directory),
+                    "--hours",
+                    "3",
+                    "--actuations",
+                    "1",
+                ],
+                cwd=working_directory,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 1)
+            receipt = json.loads(
+                (output_directory / "execution-results.json").read_text()
+            )
+            self.assertEqual(receipt["status"], "inconclusive")
+            self.assertEqual(
+                receipt["experiments"][0]["search_statuses"],
+                ["INCONCLUSIVE_HYDRAULIC_NONCONVERGENCE"],
             )
 
     def test_process_count_rejects_exceeding_64(self):

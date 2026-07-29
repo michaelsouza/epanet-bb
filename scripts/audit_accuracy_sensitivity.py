@@ -11,8 +11,19 @@ import math
 from pathlib import Path
 
 
+ROOT = Path(__file__).absolute().parents[1]
+
+
 class AuditError(RuntimeError):
     """Raised when a sensitivity campaign is incomplete or inconsistent."""
+
+
+def portable_path(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return resolved.name
 
 
 def load_json(path: Path) -> dict:
@@ -162,7 +173,7 @@ def audit_campaign(campaign: Path) -> dict:
     sources[receipt_path.name] = sha256_file(receipt_path)
     return {
         "schema_version": 1,
-        "campaign": str(campaign),
+        "campaign": portable_path(campaign),
         "commit": plan["metadata"]["git"]["commit"],
         "executable_sha256": plan["metadata"]["inputs"]["binary"]["sha256"],
         "network_sha256": plan["metadata"]["inputs"]["input"]["sha256"],

@@ -353,7 +353,7 @@
   ],
   "artifact_count": 3501,
   "artifact_manifest_sha256": "443db2c61f59272b93cac61b6ee7d297d09ad321e483ad639e362df89e35ac23",
-  "campaign": "/home/michael/gitrepos/epanet-bb/build/experiments/accuracy-sensitivity-final-e0e2cc3b",
+  "campaign": "build/experiments/accuracy-sensitivity-final-e0e2cc3b",
   "commit": "e0e2cc3b62703091061e18a1ff0f6fb6bdac6ccb",
   "compatibility_sha256": "36ff2652a413aef3b197a87ea4c16544dc6ca19f9885336e566b3c2079219c8e",
   "configuration_sha256": "cfba45c864674d02c4e053fef3cab74828a0f1bcb9ce3a2c85d16fdbb9a2193f",

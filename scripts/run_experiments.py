@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -16,7 +17,7 @@ REPO_ROOT = Path(__file__).absolute().parents[1]
 DEFAULT_BINARY = REPO_ROOT / "build" / "run-epanet3-bb"
 DEFAULT_INPUT = REPO_ROOT / "networks" / "any-town.inp"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "build" / "experiments" / "final-runs"
-DEFAULT_MPI_LAUNCHER = Path("/usr/bin/mpiexec")
+DEFAULT_MPI_LAUNCHER = "mpiexec"
 ALLOCATION_VARIABLES = (
     "SLURM_NTASKS",
     "PBS_NP",
@@ -34,6 +35,33 @@ def portable_path(value: str | Path, *, relative_to: Path = REPO_ROOT) -> Path:
     if not path.is_absolute():
         path = relative_to / path
     return path.absolute()
+
+
+def executable_path(value: str | Path) -> Path:
+    candidate = Path(value).expanduser()
+    if candidate.is_absolute() or candidate.parent != Path("."):
+        return portable_path(candidate)
+    resolved = shutil.which(str(candidate))
+    if resolved is None:
+        raise ConfigurationError(f"executable was not found on PATH: {candidate}")
+    return Path(resolved).absolute()
+
+
+def search_statuses(working_directory: Path) -> list[str]:
+    paths = sorted((working_directory / "outputs").glob("*_stats.json"))
+    if not paths:
+        raise ConfigurationError(
+            f"solver produced no rank statistics in {working_directory / 'outputs'}"
+        )
+    statuses = []
+    for path in paths:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            status = payload["search"]["status"]
+        except (json.JSONDecodeError, KeyError, TypeError) as exc:
+            raise ConfigurationError(f"invalid rank statistics: {path}") from exc
+        statuses.append(str(status))
+    return statuses
 
 
 def allocated_processes(environment: dict[str, str]) -> tuple[int | None, str | None]:
@@ -144,7 +172,7 @@ def execution_plan(
     binary = portable_path(arguments.binary)
     input_path = portable_path(arguments.input)
     output_directory = portable_path(arguments.output_dir)
-    launcher = portable_path(arguments.mpi_launcher)
+    launcher = executable_path(arguments.mpi_launcher)
     for label, path in (
         ("binary", binary),
         ("input", input_path),
@@ -275,6 +303,17 @@ def main(argv: list[str] | None = None) -> int:
         results["experiments"].append(record)
         if completed.returncode != 0:
             results["status"] = "failed"
+            break
+        try:
+            statuses = search_statuses(working_directory)
+        except ConfigurationError as exc:
+            record["search_statuses"] = []
+            record["validation_error"] = str(exc)
+            results["status"] = "inconclusive"
+            break
+        record["search_statuses"] = statuses
+        if set(statuses) != {"CONCLUSIVE"}:
+            results["status"] = "inconclusive"
             break
 
     (output_directory / "execution-results.json").write_text(

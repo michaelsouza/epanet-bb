@@ -23,7 +23,7 @@
     "validation_repetitions": 3
   },
   "sampler_seed": 20260724,
-  "mpi_launcher": "/usr/bin/mpiexec",
+  "mpi_launcher": "mpiexec",
   "mpi_launcher_args": [
     "--map-by",
     "core",

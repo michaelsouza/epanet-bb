@@ -125,6 +125,10 @@ output.mkdir()
     json.dumps({"arguments": sys.argv[1:]}),
     encoding="utf-8",
 )
+(output / "rank_0_stats.json").write_text(
+    json.dumps({"search": {"status": "CONCLUSIVE"}}),
+    encoding="utf-8",
+)
 """,
             )
 
@@ -237,7 +241,7 @@ raise SystemExit(subprocess.run(command).returncode)
             )
             self.write_executable(
                 solver,
-                "from pathlib import Path; output = Path('outputs'); output.mkdir(); (output / 'res.json').write_text('{}')",
+                "import json; from pathlib import Path; output = Path('outputs'); output.mkdir(); (output / 'res.json').write_text('{}'); (output / 'rank_0_stats.json').write_text(json.dumps({'search': {'status': 'CONCLUSIVE'}}))",
             )
 
             args = [
@@ -306,9 +310,14 @@ import time
 
 marker = Path({str(started_marker)!r})
 if marker.exists():
+    import json
     output = Path("outputs")
     output.mkdir()
     (output / "resumed.json").write_text("{{}}", encoding="utf-8")
+    (output / "rank_0_stats.json").write_text(
+        json.dumps({{"search": {{"status": "CONCLUSIVE"}}}}),
+        encoding="utf-8",
+    )
 else:
     marker.write_text("started", encoding="utf-8")
     time.sleep(60)
