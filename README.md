@@ -138,7 +138,7 @@ If you use this software, please cite the archived release:
     Muritiba, Albert Einstein Fernandes and
     Ara{\'u}jo, Asc{\^a}nio Dias and
     Lavor, Carlile Campos and
-    Souza, Michael Ferreira de
+    Souza, Michael
   },
   title = {EPANET-BB: Parallel Branch-and-Bound Pump Scheduling Optimizer},
   year = {2026},
