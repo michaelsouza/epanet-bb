@@ -22,6 +22,3 @@ or focused provenance utilities:
   and `plot_two_level_diagram.py`.
 - Environment validation: `validate_python_environment.py`.
 
-The reproducibility inventory is the authoritative source for commands,
-inputs, and outputs. Internal components need not be invoked directly during a
-standard reconstruction.
