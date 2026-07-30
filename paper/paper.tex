@@ -22,7 +22,7 @@
 \begin{document}
 
 % ASCE requires the title in ALL CAPS
-\title{PARALLEL BRANCH-AND-BOUND FOR EXACT PUMP SCHEDULING WITH CONSTANT-TIME HYDRAULIC BACKTRACKING}
+\title{PARALLEL BRANCH-AND-BOUND FOR PUMP SCHEDULING WITH CONSTANT-TIME HYDRAULIC BACKTRACKING}
 
 \author[1]{Jéssica Gomes Melo da Rocha}
 \author[1]{Albert Einstein Fernandes Muritiba}
@@ -41,7 +41,7 @@
 \maketitle
 
 \begin{abstract}
-	Exact pump scheduling is computationally difficult because the number of binary schedules grows exponentially and each candidate requires hydraulic simulation. We present a distributed-memory parallel Branch-and-Bound framework for hourly scheduling of interchangeable fixed-speed pumps. The method searches over aggregate pump counts, enforces individual actuation limits through dynamic programming, and uses hydraulic snapshots to avoid repeated prefix simulation. Experiments on a benchmark network show that the framework completes the exact search under different actuation limits and benefits substantially from cost pruning, state persistence, and parallel execution. Relaxing actuation limits reduces operating cost but increases the computational effort required for certification.
+	Water utilities can reduce operating costs by choosing when pumps should run, but finding the best daily schedule is difficult because pump decisions, tank levels, and pressure limits are tightly coupled. We present a distributed-memory parallel Branch-and-Bound framework for hourly scheduling of interchangeable fixed-speed pumps. The method searches over aggregate pump counts, enforces individual actuation limits through dynamic programming, and uses hydraulic snapshots to avoid repeated prefix simulation. Experiments on a benchmark network show that the framework finds globally optimal solutions under different actuation limits and benefits substantially from cost pruning, state persistence, and parallel execution. Relaxing actuation limits reduces operating cost but increases the computational effort required for certification.
 \end{abstract}
 
 \section{Practical Applications}
@@ -55,16 +55,16 @@ Exploiting this operational flexibility requires solving a challenging combinato
 
 To address this computational complexity, much of the literature combines hydraulic simulation with metaheuristic search algorithms. Genetic algorithms, ant colony optimization, particle swarm methods, and harmony search variants accommodate discrete binary decisions and non-linear constraint evaluations directly through simulation \cite{Mackle1995,Savic1997,LpezIbez2008,AlAni2012,Paola2024}. Alternative scheduling paradigms include continuous-time formulations, such as the Smart Dynamic Local Search of \citeN{Bras2025}, which optimizes the continuous start times and duty-cycle durations of pump operations. Although these heuristic and surrogate-assisted methods \cite{Broad2010,Rao2007,Ashraf2024} efficiently discover high-quality schedules without exhaustive enumeration, they cannot provide a mathematical certificate of global optimality.
 
-Exact methods make a different trade-off by retaining a certificate for the discrete problem. \citeN{Costa2016} coupled hydraulic simulation with an enumerative Branch-and-Bound (B\&B) procedure that branches on the number of active pumps and rejects hydraulically infeasible prefixes. \citeN{Bonvin2021} instead developed an LP/NLP B\&B framework whose tailored MILP relaxation retains demand, storage, and hydraulic information to provide more informative lower bounds. The former is a specialized simulation-driven enumeration, whereas the latter supports a broader class of network components through a more elaborate mathematical relaxation. Neither approach removes the combinatorial growth of the scheduling problem, and both incur substantial work when the horizon or the surviving search tree grows.
+Methods that certify global optimality make a different trade-off: they provide a guarantee for the discrete problem but may require substantially more computation. \citeN{Costa2016} coupled hydraulic simulation with an enumerative Branch-and-Bound (B\&B) procedure that branches on the number of active pumps and rejects hydraulically infeasible prefixes. \citeN{Bonvin2021} instead developed an LP/NLP B\&B framework whose tailored MILP relaxation retains demand, storage, and hydraulic information to provide more informative lower bounds. The former is a specialized simulation-driven enumeration, whereas the latter supports a broader class of network components through a more elaborate mathematical relaxation. Neither approach removes the combinatorial growth of the scheduling problem, and both incur substantial work when the horizon or the surviving search tree grows.
 
-Because exact methods must still explore potentially large search trees, parallel B\&B architectures offer a principled approach to reducing wall-clock execution time by exploring search subtrees concurrently across distributed computing ranks \cite{Gendron1994,Li1986,Hrga2021}. For simulation-driven optimization, however, tree parallelization addresses only part of the computational bottleneck; accelerating the search also requires eliminating redundant hydraulic simulations during backtracking.
+Because these methods may still explore potentially large search trees, parallel B\&B architectures offer a principled approach to reducing wall-clock execution time by exploring search subtrees concurrently across distributed computing ranks \cite{Gendron1994,Li1986,Hrga2021}. For simulation-driven optimization, however, tree parallelization addresses only part of the computational bottleneck; accelerating the search also requires eliminating redundant hydraulic simulations during backtracking.
 
-We address a focused research question: can exact enumeration of hourly schedules for interchangeable parallel pumps be accelerated without weakening individual binary actuation constraints? To answer this, we use \texttt{epanet-bb}, our open-source fork of the Open Water Analytics EPANET repository, which integrates the distributed-memory B\&B solver with a customized EPANET hydraulic engine \cite{owaepanet}.
+We address a focused research question: can complete search of hourly schedules for interchangeable parallel pumps be accelerated without weakening individual binary actuation constraints? To answer this, we use \texttt{epanet-bb}, our open-source fork of the Open Water Analytics EPANET repository, which integrates the distributed-memory B\&B solver with a customized EPANET hydraulic engine \cite{owaepanet}.
 
 The principal contributions of this work are:
 
 \begin{enumerate}
-	\item an exact symmetry reduction that searches aggregate pump counts while a periodic dynamic-programming layer enforces individual pump actuation limits;
+	\item a symmetry reduction that searches aggregate pump counts while a periodic dynamic-programming layer enforces individual pump actuation limits;
 	\item a distributed-memory parallel search that explores statically partitioned subtrees while asynchronously sharing incumbent upper bounds; and
 	\item a hierarchical snapshot mechanism that enables state restoration in time independent of search prefix length.
 \end{enumerate}
@@ -74,7 +74,7 @@ The proposed framework is evaluated through systematic parallel scaling, compone
 \section{Problem Formulation}
 \label{sec:problem_formulation}
 
-Consider a WDN over a horizon divided into equal scheduling periods $\mathcal{H}=\{1,\ldots,T\}$. Let $\mathcal{P}$ be the set of $N_p$ fixed-speed pumps, $\mathcal{J}$ the set of demand junctions, $\mathcal{K}$ the set of storage tanks, and $\mathcal{L}$ the set of network pipes. The underlying optimization problem is stated in terms of the binary status of each pump.  To enable exact symmetry reduction, we assume that the pumps in $\mathcal{P}$ operate in parallel as an interchangeable group sharing identical hydraulic connections, performance curves, efficiency profiles, and energy tariffs, with no identity-specific start-up costs or dynamic states.
+Consider a WDN over a horizon divided into equal scheduling periods $\mathcal{H}=\{1,\ldots,T\}$. Let $\mathcal{P}$ be the set of $N_p$ fixed-speed pumps, $\mathcal{J}$ the set of demand junctions, $\mathcal{K}$ the set of storage tanks, and $\mathcal{L}$ the set of network pipes. The underlying optimization problem is stated in terms of the binary status of each pump.  To enable symmetry reduction, we assume that the pumps in $\mathcal{P}$ operate in parallel as an interchangeable group sharing identical hydraulic connections, performance curves, efficiency profiles, and energy tariffs, with no identity-specific start-up costs or dynamic states.
 
 \subsection{Decision Space and Objective}
 
@@ -171,8 +171,7 @@ Rather than explicitly encoding the nonlinear constraints \eqref{eq:flow_conserv
 \section{Enhanced Branch-and-Bound}
 \label{sec:algorithm}
 
-We present a distributed-memory parallel Branch-and-Bound (B\&B) framework implemented in \texttt{epanet-bb} \cite{epanetbb}. The framework integrates the combinatorial search and the customized EPANET hydraulic engine within the same implementation. The parallel architecture builds a unified search tree across MPI ranks, which concurrently explore statically allocated top-level subtrees and asynchronously exchange global incumbent upper bounds to accelerate pruning, without migrating search nodes during execution \cite{Gendron1994}. Within this architecture, the algorithm combines aggregate pump-count branching, exact periodic
-disaggregation, cost-based pruning, and prefix-independent hydraulic snapshots.
+We present a distributed-memory parallel Branch-and-Bound (B\&B) framework implemented in \texttt{epanet-bb} \cite{epanetbb}. The framework integrates the combinatorial search and the customized EPANET hydraulic engine within the same implementation. The parallel architecture builds a unified search tree across MPI ranks, which concurrently explore statically allocated top-level subtrees and asynchronously exchange global incumbent upper bounds to accelerate pruning, without migrating search nodes during execution \cite{Gendron1994}. Within this architecture, the algorithm combines aggregate pump-count branching, dynamic-programming disaggregation, cost-based pruning, and prefix-independent hydraulic snapshots.
 
 \subsection{Two-Level Schedule Representation}
 
@@ -181,7 +180,7 @@ To reduce the exponential $2^{N_p \times T}$ search space, we define the aggrega
 	y_h = \sum_{j=1}^{N_p} x_{j,h},
 	\qquad y_h \in \{0, 1, \ldots, N_p\},
 \]
-where the B\&B tree branches on the total number $y_h$ of active pumps rather than on individual binary pump identities. This space reduction is exact for groups of interchangeable parallel pumps that share identical hydraulic connections, performance curves, efficiency profiles, and energy tariffs, with no identity-specific start-up costs or dynamic states. Under these conditions, permuting pump identities leaves both hydraulic feasibility and operational cost invariant.
+where the B\&B tree branches on the total number $y_h$ of active pumps rather than on individual binary pump identities. This space reduction is lossless for groups of interchangeable parallel pumps that share identical hydraulic connections, performance curves, efficiency profiles, and energy tariffs, with no identity-specific start-up costs or dynamic states. Under these conditions, permuting pump identities leaves both hydraulic feasibility and operational cost invariant.
 
 Because the embedded hydraulic engine requires individual binary statuses to construct and solve the network equations, each aggregate decision $y_h$ must be mapped to a binary state for simulation. We construct a canonical binary representative $\mathbf{x}_h^{\mathrm{can}} = (x_{1,h}^{\mathrm{can}}, \ldots, x_{N_p,h}^{\mathrm{can}})$, which simply activates the first $y_h$ pumps:
 \[
@@ -191,12 +190,12 @@ Because the embedded hydraulic engine requires individual binary statuses to con
 		0, & j > y_h.
 	\end{cases}
 \]
-Due to pump interchangeability, simulating $\mathbf{x}_h^{\mathrm{can}}$ yields the exact hydraulic state transition for any binary allocation of $y_h$ active pumps. As illustrated in Fig.~\ref{fig:two_level} for a six-hour sequence, these canonical binary identities serve solely as a standardized input to the hydraulic engine and are not required to satisfy individual actuation limits.
+Due to pump interchangeability, simulating $\mathbf{x}_h^{\mathrm{can}}$ yields the same hydraulic state transition for any binary allocation of $y_h$ active pumps. As illustrated in Fig.~\ref{fig:two_level} for a six-hour sequence, these canonical binary identities serve solely as a standardized input to the hydraulic engine and are not required to satisfy individual actuation limits.
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.5\columnwidth]{figures/Figure_1_two_level_diagram.pdf}
-	\caption{Two-level schedule representation. The aggregate variable specifies 2, 3, 3, 2, 1, and 0 active pumps over six hours, while $\mathbf{x}_h^{\mathrm{can}}$ supplies the fixed canonical representative simulated hydraulically. Exact disaggregation tracks feasible identity assignments separately and reconstructs the binary actuation schedule.}
+	\caption{Two-level schedule representation. The aggregate variable specifies 2, 3, 3, 2, 1, and 0 active pumps over six hours, while $\mathbf{x}_h^{\mathrm{can}}$ supplies the fixed canonical representative simulated hydraulically. The disaggregation tracks feasible identity assignments separately and reconstructs the binary actuation schedule.}
 	\label{fig:two_level}
 \end{figure}
 
@@ -205,13 +204,13 @@ To enforce individual actuation limits, feasibility is maintained via a dynamic 
 To enable full schedule reconstruction, each state retained in layer $\mathcal{D}_h$ stores a pointer to its predecessor state in $\mathcal{D}_{h-1}$ and the permutation applied during canonicalization. Once the optimal aggregate schedule $\mathbf{y}^*$ is identified at the terminal step $h=T$, traversing these predecessor links backward reconstructs an explicit binary schedule $\mathbf{x}^* \in \{0,1\}^{N_p \times T}$ that realizes the aggregate decisions while satisfying every individual pump actuation limit. Consequently, each search node carries two paired components: the hydraulic snapshot generated by the canonical prefix $\mathbf{x}_{1:h}^{\mathrm{can}}$ and the reachable actuation classes $\mathcal{D}_h$.
 
 \bigskip
-\noindent\textbf{Proposition (Exact periodic disaggregation).}
+\noindent\textbf{Proposition (Completeness of periodic disaggregation).}
 For any aggregate schedule $\mathbf{y}$, the final dynamic-programming layer $\mathcal{D}_T$ (evaluated after the periodic closure transition $T \to 1$) is nonempty if and only if $\mathbf{y}$ admits a binary disaggregation satisfying the individual periodic actuation limits in \eqref{eq:actuation_limits}. Moreover, the predecessor links reconstruct one such binary schedule.
 
 \emph{Proof.}
 The result follows by induction on the prefix length. At $h=1$, the layer $\mathcal{D}_1$ represents every permutation class of binary assignments containing exactly $y_1$ active pumps. Suppose that $\mathcal{D}_h$ represents all binary prefixes compatible with $\mathbf{y}_{1:h}$ and the accumulated switch limits. The transition to $\mathcal{D}_{h+1}$ considers every assignment containing $y_{h+1}$ active pumps, updates the corresponding switch counts, and rejects only states that already exceed the prescribed limit. Canonicalization merges states that differ solely by a permutation of pump identities. Because their initial status, current status, and switch count coincide up to permutation, they have the same possible successor classes. Thus, $\mathcal{D}_{h+1}$ represents all and only the feasible extensions. At $h=T$, adding the transition from the final to the initial status ($T \to 1$) enforces the periodic limit. Consequently, the final layer $\mathcal{D}_T$ is nonempty exactly when a feasible binary disaggregation exists, and following its predecessor links reconstructs one. \hfill\(\square\)
 
-By searching over aggregate pump decisions, the framework leverages the permutation invariance of interchangeable pumps. Together with exact periodic disaggregation, this structure guarantees that, for any conclusive execution, the global optimum of the original binary formulation under the specified hydraulic engine configuration is preserved.
+By searching over aggregate pump decisions, the framework leverages the permutation invariance of interchangeable pumps. Complete periodic disaggregation ensures that the aggregate search retains every class with a feasible binary realization. Consequently, any conclusive execution returns a global optimum of the specified discrete binary problem under the fixed hydraulic model and numerical configuration.
 
 \subsection{Task Decomposition and Parallel Execution}
 
@@ -256,11 +255,11 @@ A fundamental property enabling effective branch-and-bound pruning is the monoto
 \[
 	z_h = \sum_{t=1}^{h} \sum_{j=1}^{N_p} C_{j,t} \cdot E_{j,t},
 \]
-serves as a monotonic lower bound $LB(\mathbf{y}_{1:h}) = z_h$ along any search trajectory by effectively assigning zero cost to unsimulated future hours $h+1 \dots T$: $z_1 \le z_2 \le \cdots \le z_T$. This non-decreasing property guarantees that if a partial schedule's cost satisfies $z_h \ge \min\{UB_{\mathrm{local}}, UB_{\mathrm{global}}\}$, no further extension of that prefix can yield a cheaper complete schedule. The corresponding subtree can therefore be safely pruned without compromising global optimality.
+serves as a monotonic lower bound $LB(\mathbf{y}_{1:h}) = z_h$ along any search trajectory by effectively assigning zero cost to unsimulated future hours $h+1 \dots T$: $z_1 \le z_2 \le \cdots \le z_T$. This non-decreasing property guarantees that if a partial schedule's cost satisfies $z_h \ge \min\{UB_{\mathrm{local}}, UB_{\mathrm{global}}\}$, no further extension of that prefix can yield a cheaper complete schedule. The corresponding subtree can therefore be safely pruned without excluding a globally optimal solution of the discrete problem.
 
 Our solver employs Depth-First Search (DFS) and applies the following pruning criteria at each node (hour \(h\)):
 \begin{enumerate}
-	\item \textbf{Actuation Viability:} Prune if the exact disaggregation layer is empty ($\mathcal{D}_h = \emptyset$), including periodic boundary closure at $h=T$.
+	\item \textbf{Actuation Viability:} Prune if the disaggregation layer is empty ($\mathcal{D}_h = \emptyset$), including periodic boundary closure at $h=T$.
 	\item \textbf{Tank Saturation:} Prune if engine instrumentation reports corrective blocking of inflow or outflow at tank bounds, rejecting trajectories that depend on artificial saturation.
 	\item \textbf{Tank Bounds:} Prune if $L_{k,h} \notin [L_{k}^{\min}, L_{k}^{\max}]$ for any tank $k$.
 	\item \textbf{Cost Bound:} Prune if $z_h \ge \min\{UB_{\mathrm{local}}, UB_{\mathrm{global}}\}$, as monotonicity ensures no feasible extension can yield a lower total cost.
@@ -440,25 +439,25 @@ The evaluation outcomes are summarized in Table~\ref{tab:comparison_feasibility}
 \begin{figure*}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/Figure_7_comparison_table_a1.pdf}
-	\caption{Published schedules and exact replay status for $NA_{\max}=1$. Costs are comparable only among schedules marked feasible.}
+	\caption{Published schedules and replay status for $NA_{\max}=1$. Costs are comparable only among schedules marked feasible.}
 	\label{fig:comparison_a1}
 \end{figure*}
 
 \begin{figure*}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/Figure_8_comparison_table_a2.pdf}
-	\caption{Published schedules and exact replay status for $NA_{\max}=2$. Infeasible schedules retain their published costs for identification, not comparison.}
+	\caption{Published schedules and replay status for $NA_{\max}=2$. Infeasible schedules retain their published costs for identification, not comparison.}
 	\label{fig:comparison_a2}
 \end{figure*}
 
 \begin{figure*}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{figures/Figure_9_comparison_table_a3.pdf}
-	\caption{Published schedules and exact replay status for $NA_{\max}=3$. Infeasible schedules retain their published costs for identification, not comparison.}
+	\caption{Published schedules and replay status for $NA_{\max}=3$. Infeasible schedules retain their published costs for identification, not comparison.}
 	\label{fig:comparison_a3}
 \end{figure*}
 
-Beyond uniform binary schedule replays, alternative optimization formulations provide a broader methodological context. \citeN{Bonvin2021} developed an exact LP/NLP branch-and-bound framework that uses a tailored MILP relaxation based on convex linear outer approximations to obtain lower bounds and evaluates integer candidates through restricted nonlinear subproblems. For binary-setting networks such as AnyTown Modified, this candidate evaluation is specialized to an extended-period hydraulic feasibility check. In their historical comparison with the sequential enumeration of \citeN{Costa2016}, the LP/NLP method was slightly slower in the most restricted case and retained optimality gaps of 1.6\% and 1.9\% in the two less restricted cases after the corresponding comparison times. These results show that more informative lower bounds do not ensure faster solution on every instance. They do not constitute a direct comparison with the present implementation because the hardware, hydraulic models, formulations, and switching conventions differ.
+Beyond uniform binary schedule replays, alternative optimization formulations provide a broader methodological context. \citeN{Bonvin2021} developed an LP/NLP branch-and-bound framework that uses a tailored MILP relaxation based on convex linear outer approximations to obtain lower bounds and evaluates integer candidates through restricted nonlinear subproblems. For binary-setting networks such as AnyTown Modified, this candidate evaluation is specialized to an extended-period hydraulic feasibility check. In their historical comparison with the sequential enumeration of \citeN{Costa2016}, the LP/NLP method was slightly slower in the most restricted case and retained optimality gaps of 1.6\% and 1.9\% in the two less restricted cases after the corresponding comparison times. These results show that more informative lower bounds do not ensure faster solution on every instance. They do not constitute a direct comparison with the present implementation because the hardware, hydraulic models, formulations, and switching conventions differ.
 
 A complementary methodological direction replaces the hourly binary representation with continuous pump-operation intervals. \citeN{Bras2025} considered a time-position-unrestricted duty-cycle formulation in which each pump operation is described by a real-valued starting time and duration and optimized it using the hybrid Smart Dynamic Local Search (Smart-DLS) heuristic. For AnyTown Modified, the authors reported a best operating cost of \$3,416.18 and an estimated optimization time of approximately 5.14 minutes. The numerically lower published cost is consistent with greater temporal flexibility, but it cannot be attributed to that flexibility alone or interpreted as algorithmic dominance because the number and distribution of pump starts, the feasible space, and the hydraulic verification protocol differ from those of the hourly cases considered here. Smart-DLS provides no certificate of global optimality.
 
@@ -483,7 +482,7 @@ We developed a distributed-memory B\&B framework for the hourly scheduling of in
 
 On the tested benchmark, the experiments show how these mechanisms affect both operating cost and computational effort. All three 24-hour cases completed conclusively with 64 MPI ranks. Relaxing the actuation limit reduced operating cost but increased the surviving search space and wall-clock time, showing that operational flexibility and the effort required to certify a schedule must be considered together. For the intermediate case, strong scaling reduced the median runtime from 700.85~s with one rank to 24.44~s with 64 ranks, although parallel efficiency declined as load imbalance and candidate work increased. The ablation study further identified cost pruning, hydraulic snapshots, and task shuffling as the main contributors to performance in the tested configuration.
 
-Because the search space still grows exponentially, performance on larger or real networks, multiple pump groups, and variable-speed operation remains to be established. Future work should evaluate dynamic task redistribution, stronger bounds or hierarchical decomposition, extensions to multiple interchangeable groups, and additional networks. Within the scope demonstrated here, the framework provides an exact reference for studying actuation constraints, auditing published schedules, and measuring the quality of faster approximate methods.
+Because the search space still grows exponentially, performance on larger or real networks, multiple pump groups, and variable-speed operation remains to be established. Future work should evaluate dynamic task redistribution, stronger bounds or hierarchical decomposition, extensions to multiple interchangeable groups, and additional networks. Within the scope demonstrated here, the framework provides globally optimal reference schedules for studying actuation constraints, auditing published schedules, and measuring the quality of faster approximate methods.
 
 \section*{Data Availability Statement}
 
