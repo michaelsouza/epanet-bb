@@ -1,0 +1,41 @@
+{
+  "title": "EPANET-BB: Parallel Branch-and-Bound Pump Scheduling Optimizer",
+  "version": "v2.0.1",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "mit",
+  "language": "eng",
+  "creators": [
+    {
+      "name": "Gomes Melo da Rocha, Jéssica",
+      "affiliation": "Universidade Federal do Ceará",
+      "orcid": "0009-0005-9126-6086"
+    },
+    {
+      "name": "Muritiba, Albert Einstein Fernandes",
+      "affiliation": "Universidade Federal do Ceará"
+    },
+    {
+      "name": "Araújo, Ascânio",
+      "affiliation": "Universidade Federal do Ceará",
+      "orcid": "0000-0001-6609-7501"
+    },
+    {
+      "name": "Lavor, Carlile",
+      "affiliation": "Universidade Estadual de Campinas (UNICAMP)",
+      "orcid": "0000-0002-8105-3627"
+    },
+    {
+      "name": "Souza, Michael",
+      "affiliation": "Universidade Federal do Ceará; Universidade Estadual de Campinas (UNICAMP)",
+      "orcid": "0000-0001-6751-2877"
+    }
+  ],
+  "keywords": [
+    "water distribution networks",
+    "pump scheduling",
+    "branch-and-bound",
+    "EPANET",
+    "MPI"
+  ]
+}
