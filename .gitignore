@@ -13,3 +13,6 @@ paper/paper.synctex.gz
 build
 scripts/__pycache__
 tests/__pycache__
+reviews/review-indexed.pdf
+reviews/~$view-indexed.docx
+reviews/review-indexed.docx
