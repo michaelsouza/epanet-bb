@@ -194,7 +194,7 @@ Due to pump interchangeability, simulating $\mathbf{x}_h^{\mathrm{can}}$ yields 
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.5\columnwidth]{figures/Figure_1_two_level_diagram.pdf}
+	\includegraphics[width=0.5\columnwidth]{Figure_1_two_level_diagram.pdf}
 	\caption{Two-level schedule representation. The aggregate variable specifies 2, 3, 3, 2, 1, and 0 active pumps over six hours, while $\mathbf{x}_h^{\mathrm{can}}$ supplies the fixed canonical representative simulated hydraulically. The disaggregation tracks feasible identity assignments separately and reconstructs the binary actuation schedule.}
 	\label{fig:two_level}
 \end{figure}
@@ -218,7 +218,7 @@ We decompose the search tree into independent subproblems to exploit distributed
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\columnwidth]{figures/Figure_2_tree_decomposition.pdf}
+	\includegraphics[width=0.9\columnwidth]{Figure_2_tree_decomposition.pdf}
 	\caption{Task decomposition by prefix. The search tree is partitioned at depth $d$, yielding $(N_p+1)^d$ independent subtrees distributed across MPI ranks. In this example, $d=2$ and $N_p=3$ generate 16 tasks assigned to 3 ranks via round-robin.}
 	\label{fig:tree_decomposition}
 \end{figure}
@@ -312,14 +312,14 @@ We evaluate our framework on the AnyTown Modified network, a widely adopted benc
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\columnwidth]{figures/Figure_3_anytown_network.pdf}
+	\includegraphics[width=0.9\columnwidth]{Figure_3_anytown_network.pdf}
 	\caption{Topology of the AnyTown Modified network. The network includes a reservoir (node 10), three storage tanks (nodes 65, 165, 265), and 19 demand junctions connected by 41 pipes and three pump links.}
 	\label{fig:anytown_network}
 \end{figure}
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.8\columnwidth]{figures/Figure_4_anytown_energy_cost.pdf}
+	\includegraphics[width=0.8\columnwidth]{Figure_4_anytown_energy_cost.pdf}
 	\caption{Hourly energy price pattern used for pump operating cost calculations in the AnyTown Modified network.}
 	\label{fig:anytown_energy_cost}
 \end{figure}
@@ -337,7 +337,7 @@ To assess the individual contribution of each active algorithmic component, we p
 	\caption{Ablation study on the 24-hour problem ($NA_{\max}=3$, $N_{\mathrm{procs}}=64$).}
 	\label{tab:ablation}
 	\small
-	\input{tables/ablation.tex}
+	\input{Table_1_ablation.tex}
 \end{table}
 
 Cost pruning had the largest measured effect: the no-cost-pruning variant was 26.86$\times$ slower than the baseline. Without snapshots, median runtime increased by a factor of 9.60, indicating that hydraulic-state restoration avoids substantial repeated work during backtracking. The no-task-shuffling variant was 5.84$\times$ slower than the baseline and increased median load imbalance from 49.3\% to 701.2\% (Table~\ref{tab:ablation}). This result is consistent with the role of task shuffling in distributing static top-level tasks more evenly across ranks. By contrast, the variant without global synchronization was only 2.8\% slower. Although small for this network, process count, and tuned configuration, this effect does not preclude benefits in other settings; we therefore retain global synchronization to support timely incumbent sharing across ranks.
@@ -349,12 +349,12 @@ Cost pruning had the largest measured effect: the no-cost-pruning variant was 26
 	\caption{Strong-scaling results for the 24-hour problem ($NA_{\max}=2$).}
 	\label{tab:scalability}
 	\small
-	\input{tables/scalability.tex}
+	\input{Table_2_scalability.tex}
 \end{table}
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=0.9\columnwidth]{figures/Figure_5_scalability.pdf}
+	\includegraphics[width=0.9\columnwidth]{Figure_5_scalability.pdf}
 	\caption{Strong scaling on AnyTown Modified ($T=24$, $NA_{\max}=2$).}
 	\label{fig:scalability}
 \end{figure}
@@ -369,7 +369,7 @@ We solved the complete 24-hour problem for $NA_{\max}=1,2,3$ with 64 ranks, $d=8
 
 \begin{figure}[htbp]
 	\centering
-	\includegraphics[width=\linewidth]{figures/Figure_6_tank_levels_24h.pdf}
+	\includegraphics[width=\linewidth]{Figure_6_tank_levels_24h.pdf}
 	\caption{Hydraulic trajectories for optimal schedules under different actuation limits ($NA_{\max}=1,2,3$). Top: tank water levels; dashed lines show bounds, dotted line shows initial level. Bottom: nodal pressures; dashed lines show minimum thresholds.}
 	\label{fig:tank_levels}
 \end{figure}
@@ -378,7 +378,7 @@ We solved the complete 24-hour problem for $NA_{\max}=1,2,3$ with 64 ranks, $d=8
 	\centering
 	\caption{Conclusive 24-hour searches on AnyTown Modified with 64 MPI ranks. Load imbalance is the percentage by which the maximum rank execution time exceeds the mean.}
 	\label{tab:results_24h}
-	\input{tables/final_cases.tex}
+	\input{Table_3_final_cases.tex}
 \end{table}
 
 For this benchmark, relaxing the actuation limit illustrates a trade-off between operational flexibility and computational effort. Moving from $NA_{\max}=1$ to $NA_{\max}=2$ reduces the optimal operating cost from \$3,900.25 to \$3,606.83, but extends wall-clock time from 1.6 to 25.1~s. At $NA_{\max}=3$, the lowest cost among the three hourly cases is \$3,575.54, obtained in 408.9~s. Load imbalance also falls from 227.5\% to 46.0\%, which is consistent with deeper surviving subtrees distributing work more uniformly across the static MPI tasks. Relative to $NA_{\max}=2$, the final relaxation yields less than 1\% in additional savings but requires approximately 16 times more wall-clock time.
@@ -392,7 +392,7 @@ Table~\ref{tab:pruning} classifies every explored node by its outcome. The total
 	\caption{Node classifications and explored-node counts for the final 24-hour searches.}
 	\label{tab:pruning}
 	\small
-	\input{tables/pruning.tex}
+	\input{Table_4_pruning.tex}
 \end{table}
 
 The breakdown of pruning criteria highlights how search dynamics evolve as actuation limits relax. At $NA_{\max}=1$, actuation constraints dominate the search, accounting for 52.6\% of all explored nodes; as $NA_{\max}$ increases to 3, this share declines to 27.3\%. Conversely, cost-bound pruning grows from 4.4\% to 22.2\%, and pressure violations rise from 1.5\% to 4.7\%, reflecting deeper search depth before sub-optimal or hydraulically infeasible branches are pruned. Tank-level pruning accounts for 7.8\%--11.8\% of explored nodes. Because the embedded hydraulic engine may close incident links when continued inflow or outflow would drive a tank beyond its operating bound, standard post-simulation level checks cannot identify every physical overfill or depletion event. We therefore instrumented the engine to capture these internal link-closure events directly, pruning any schedule that relies on automatic simulator intervention to remain within bounds.
@@ -407,7 +407,7 @@ To assess numerical sensitivity, we varied the hydraulic convergence tolerance a
 	\caption{Hydraulic sensitivity of fixed schedules across convergence tolerances.}
 	\label{tab:accuracy_fixed}
 	\small
-	\input{tables/accuracy_fixed.tex}
+	\input{Table_5_accuracy_fixed.tex}
 \end{table*}
 
 \begin{table*}[htbp]
@@ -415,7 +415,7 @@ To assess numerical sensitivity, we varied the hydraulic convergence tolerance a
 	\caption{End-to-end optimization sensitivity across convergence tolerances.}
 	\label{tab:accuracy_optimization}
 	\small
-	\input{tables/accuracy_optimization.tex}
+	\input{Table_6_accuracy_optimization.tex}
 \end{table*}
 
 The results of the sensitivity analysis are summarized in Tables~\ref{tab:accuracy_fixed} and~\ref{tab:accuracy_optimization}. For fixed schedules (Table~\ref{tab:accuracy_fixed}), relative to the $10^{-4}$ baseline, median hydraulic execution time decreases by approximately 7\% at $10^{-3}$ and increases by 13--15\% at $10^{-7}$. The median cumulative number of hydraulic iterations (\emph{trials}) decreases by 8--9\% at $10^{-3}$ and increases by 17--18\% at $10^{-7}$. Because these sub-millisecond measurements isolate the hydraulic kernel, Table~\ref{tab:accuracy_optimization} evaluates the end-to-end optimization impact. Tightening the accuracy to $10^{-7}$ increases total wall-clock time by roughly 8\% for $NA_{\max}=2$ and $3$, where solver computation dominates MPI launch overhead. Although tree-traversal node counts exhibit minor floating-point variations, all nine optimizations for each $NA_{\max}$ select the same optimal schedule. Accuracy-dependent costs differ by at most $3.36\times10^{-4}$ and therefore agree at the reported cent precision. We retain $10^{-4}$ as the reference used in the main experiments.
@@ -431,28 +431,28 @@ For the binary schedule evaluation, we replayed the 24-hour pump decisions repor
 	\caption{Evaluation of nine published pump schedules under the common physical feasibility policy.}
 	\label{tab:comparison_feasibility}
 	\small
-	\input{tables/comparison_feasibility.tex}
+	\input{Table_7_comparison_feasibility.tex}
 \end{table*}
 
 The evaluation outcomes are summarized in Table~\ref{tab:comparison_feasibility} and illustrated in Figs.~\ref{fig:comparison_a1}--\ref{fig:comparison_a3}. All three Costa et al. schedules and all three schedules produced by the proposed solver satisfy the physical and operational constraints. In contrast, the schedules of \citeN{Cimorelli2020} exceed the periodic actuation limit during the closing transition from hour 24 to hour 1. The schedule of \citeN{Paola2024} is feasible for $NA_{\max}=1$, but the schedules for $NA_{\max}=2$ and $3$ require tank-saturation interventions at hour 21 and are therefore infeasible under the common physical policy. Within the feasible subset, the proposed solver produced operating costs 0.287\%, 0.325\%, and 0.088\% lower than the lowest feasible external schedule for $NA_{\max}=1,2,3$, respectively. Infeasible published schedules are retained in the figures for identification, labeled with their reported costs, but are excluded from the cost comparison among feasible schedules. This schedule audit does not rank the original optimization algorithms, which were not rerun under a common computational protocol.
 
 \begin{figure*}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{figures/Figure_7_comparison_table_a1.pdf}
+	\includegraphics[width=\textwidth]{Figure_7_comparison_table_a1.pdf}
 	\caption{Published schedules and replay status for $NA_{\max}=1$. Costs are comparable only among schedules marked feasible.}
 	\label{fig:comparison_a1}
 \end{figure*}
 
 \begin{figure*}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{figures/Figure_8_comparison_table_a2.pdf}
+	\includegraphics[width=\textwidth]{Figure_8_comparison_table_a2.pdf}
 	\caption{Published schedules and replay status for $NA_{\max}=2$. Infeasible schedules retain their published costs for identification, not comparison.}
 	\label{fig:comparison_a2}
 \end{figure*}
 
 \begin{figure*}[htbp]
 	\centering
-	\includegraphics[width=\textwidth]{figures/Figure_9_comparison_table_a3.pdf}
+	\includegraphics[width=\textwidth]{Figure_9_comparison_table_a3.pdf}
 	\caption{Published schedules and replay status for $NA_{\max}=3$. Infeasible schedules retain their published costs for identification, not comparison.}
 	\label{fig:comparison_a3}
 \end{figure*}
