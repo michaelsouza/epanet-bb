@@ -27,6 +27,7 @@ class SummarizeAblationTests(unittest.TestCase):
         for variant_id, environment in (
             ("baseline", {}),
             ("no-snapshots", {"BB_ENABLE_SNAPSHOTS": "0"}),
+            ("no-cost-to-go", {"BB_ENABLE_COST_TO_GO": "0"}),
         ):
             directory = campaign / "ablation" / variant_id
             commands.append(
@@ -76,6 +77,9 @@ class SummarizeAblationTests(unittest.TestCase):
                         "search": {"status": "CONCLUSIVE"},
                         "metadata": metadata,
                         "time_total": duration - rank,
+                        "NONE": [1, 2],
+                        "COST": [3],
+                        "COST_TO_GO": [0 if variant_id == "no-cost-to-go" else 4],
                         "tasks_processed": 10,
                         "disaggregation_summary": {
                             "candidate_assignments": 100 + number
@@ -106,7 +110,7 @@ class SummarizeAblationTests(unittest.TestCase):
                 "status": "complete",
                 "tasks": [
                     {
-                        "return_codes": [0, 0],
+                        "return_codes": [0] * len(commands),
                         "duration_seconds": baseline + variant,
                     }
                 ],
@@ -136,6 +140,12 @@ class SummarizeAblationTests(unittest.TestCase):
             self.assertEqual(no_snapshots["wall_seconds_minimum"], 20.0)
             self.assertEqual(no_snapshots["wall_seconds_maximum"], 30.0)
             self.assertEqual(no_snapshots["paired_slowdown_median"], 2.0)
+            self.assertEqual(no_snapshots["nodes_total_median"], 20)
+            no_cost_to_go = variants["no-cost-to-go"]
+            self.assertEqual(
+                no_cost_to_go["environment"], {"BB_ENABLE_COST_TO_GO": "0"}
+            )
+            self.assertEqual(no_cost_to_go["summary"]["nodes_total_median"], 12)
 
     def test_rejects_an_even_repetition_count(self) -> None:
         with self.assertRaisesRegex(SUMMARY.AuditError, "odd number"):

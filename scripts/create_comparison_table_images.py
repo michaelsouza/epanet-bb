@@ -9,10 +9,12 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).absolute().parents[1]
 
-# Source display configuration (key -> label, grayscale fill, hatch)
+# Source display configuration (key -> label, grayscale fill, hatch), in
+# chronological order, which is also the row order of each table.
 SOURCE_CONFIG = {
     "Costa2016": ("Costa et al. (2016)", "#222222", None),
     "Cimorelli2020": ("Cimorelli et al. (2020)", "#7a7a7a", "///"),
+    "Cimorelli2021": ("Cimorelli et al. (2021)", "#a3a3a3", "xxx"),
     "Paola2025": ("De Paola et al. (2025)", "#c7c7c7", "..."),
     "Souza2026": ("EPANET-BB", "#ffffff", "\\\\\\"),
 }
@@ -134,7 +136,7 @@ def draw_table(na_max, entries, output_path):
 
     header_bg, border = "#3a3a3a", "#d0d0d0"
 
-    def cell(x, y, w, h, text, bg, fg="black", bold=False, align="center", size=10):
+    def cell(x, y, w, h, text, bg, fg="black", bold=False, align="center", size=12):
         ax.add_patch(patches.Rectangle((x, y - h), w, h, ec=border, fc=bg))
         ha = {"left": "left", "right": "right"}.get(align, "center")
         cx = x + (0.18 if align == "left" else w - 0.1 if align == "right" else w / 2)
@@ -171,7 +173,7 @@ def draw_table(na_max, entries, output_path):
             header_bg,
             "white",
             True,
-            size=8,
+            size=11.5,
         )
     y -= H_HEADER
 
@@ -201,7 +203,9 @@ def draw_table(na_max, entries, output_path):
             bg_cost,
             bold=True,
         )
-        cell(x_time, y, W_TIME, H_SOURCE, f"{entry['time']:.2f}", bg_time)
+        # Sources that report no computing time (time 0) show a dash.
+        time_text = f"{entry['time']:.2f}" if entry["time"] > 0 else "--"
+        cell(x_time, y, W_TIME, H_SOURCE, time_text, bg_time)
 
         for p in range(3):
             yp = y - p * H_ROW

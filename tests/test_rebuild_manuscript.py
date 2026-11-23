@@ -276,6 +276,22 @@ class RebuildManuscriptTests(unittest.TestCase):
             for name in ("ablation", "scalability", "final_cases", "pruning"):
                 self.assertGreater((output_directory / "data" / f"{name}.csv").stat().st_size, 50)
                 self.assertGreater((output_directory / "tables" / f"{name}.tex").stat().st_size, 50)
+            # The manifest passes the single-day final cases, which add a
+            # column group to the final-cases and pruning tables.
+            final_cases_tex = (
+                output_directory / "tables" / "final_cases.tex"
+            ).read_text(encoding="utf-8")
+            self.assertIn("\\multicolumn{3}{c}{Single-day count}", final_cases_tex)
+            self.assertIn(
+                "3 & 3{,}575.54 & 74.8 & 33.2 &  & 3{,}575.46 & 84.4 & 26.3",
+                final_cases_tex,
+            )
+            self.assertIn(
+                "Single-day count ($NA_{\\max}$)",
+                (output_directory / "tables" / "pruning.tex").read_text(
+                    encoding="utf-8"
+                ),
+            )
             self.assertGreater(
                 (output_directory / "data" / "comparison_feasibility.csv").stat().st_size,
                 50,
@@ -332,6 +348,10 @@ class RebuildManuscriptTests(unittest.TestCase):
             self.assertIn("PublishedCost,ReevaluatedCost,Feasible,Reason", comparison_rows)
             self.assertIn(
                 "Cimorelli et al. (2020),3634.67,0.000000,False,ACTUATIONS",
+                comparison_rows,
+            )
+            self.assertIn(
+                "Cimorelli et al. (2021),3915.87,3915.785179,True,NONE",
                 comparison_rows,
             )
             artifact_manifest = json.loads(

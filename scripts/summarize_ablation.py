@@ -11,6 +11,19 @@ from pathlib import Path
 from statistics import median
 
 
+PRUNE_REASONS = (
+    "NONE",
+    "PRESSURES",
+    "LEVELS",
+    "TANK_SATURATION",
+    "STABILITY",
+    "COST",
+    "COST_TO_GO",
+    "ACTUATIONS",
+    "TIMESTEP",
+)
+
+
 class AuditError(RuntimeError):
     """Raised when campaign evidence is incomplete or incompatible."""
 
@@ -80,6 +93,7 @@ def audit_variant(
     rank_times = []
     candidate_assignments = 0
     tasks_processed = 0
+    nodes_total = 0
     for path in stats_paths:
         stats = load_json(path)
         if stats.get("search", {}).get("status") != "CONCLUSIVE":
@@ -108,6 +122,10 @@ def audit_variant(
             disaggregation.get("candidate_assignments", 0)
         )
         tasks_processed += int(stats.get("tasks_processed", 0))
+        for reason in PRUNE_REASONS:
+            counts = stats.get(reason, [])
+            if isinstance(counts, list):
+                nodes_total += sum(int(value) for value in counts)
 
     costs = []
     for path in best_paths:
@@ -141,6 +159,7 @@ def audit_variant(
         "load_imbalance_factor": imbalance,
         "candidate_assignments": candidate_assignments,
         "tasks_processed": tasks_processed,
+        "nodes_total": nodes_total,
         "stats_files": len(stats_paths),
         "best_files": len(best_paths),
         "global_best_cost": min(costs),
@@ -227,6 +246,7 @@ def summarize_campaigns(campaigns: list[Path]) -> dict:
         wall_times = [item["wall_seconds"] for item in repetitions]
         slowdowns = [item["paired_slowdown"] for item in repetitions]
         candidates = [item["candidate_assignments"] for item in repetitions]
+        nodes = [item["nodes_total"] for item in repetitions]
         imbalances = [item["load_imbalance_factor"] for item in repetitions]
         variants.append(
             {
@@ -241,6 +261,7 @@ def summarize_campaigns(campaigns: list[Path]) -> dict:
                     "paired_slowdown_minimum": min(slowdowns),
                     "paired_slowdown_maximum": max(slowdowns),
                     "candidate_assignments_median": median(candidates),
+                    "nodes_total_median": median(nodes),
                     "load_imbalance_factor_median": median(imbalances),
                 },
             }
@@ -273,6 +294,7 @@ def write_csv(summary: dict, path: Path) -> None:
         "paired_slowdown_minimum",
         "paired_slowdown_maximum",
         "candidate_assignments_median",
+        "nodes_total_median",
         "load_imbalance_factor_median",
         "global_best_cost",
     ]

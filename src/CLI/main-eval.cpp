@@ -9,6 +9,7 @@
 
 #include "Core/project.h"
 #include "Elements/tank.h"
+#include "Optimization/ExactDisaggregation.h"
 
 #include <algorithm>
 #include <chrono>
@@ -30,7 +31,12 @@ struct EvalResult
   int hour_failed = -1;
   std::vector<int> x;
   std::vector<int> y;
+  // Status changes over hours 1..h_max with the closing transition from
+  // h_max back to hour 1 (periodic convention).
   std::vector<int> periodic_switch_counts;
+  // Switch-ons (0 -> 1) between consecutive hours 1..h_max, without
+  // wrap-around (single-day convention).
+  std::vector<int> single_day_switch_on_counts;
   bool hydraulic_converged = true;
   int hydraulic_status = 0;
   int hydraulic_solves = 0;
@@ -148,8 +154,36 @@ bool updateX(int h, int h_max, int num_pumps, int max_actuations, std::vector<in
   return success;
 }
 
+// Fills both switch counts of a complete binary schedule and returns true when
+// every pump respects the limit of the selected convention.
+bool countSwitches(EvalResult &result, int h_max, int num_pumps,
+                   int max_actuations, bool periodic)
+{
+  result.periodic_switch_counts.assign(num_pumps, 0);
+  result.single_day_switch_on_counts.assign(num_pumps, 0);
+  bool within_limit = true;
+  for (int pump = 0; pump < num_pumps; ++pump)
+  {
+    for (int h = 2; h <= h_max; ++h)
+    {
+      const int before = result.x.at((h - 1) * num_pumps + pump);
+      const int after = result.x.at(h * num_pumps + pump);
+      result.periodic_switch_counts[pump] += before != after;
+      result.single_day_switch_on_counts[pump] += before == 0 && after == 1;
+    }
+    result.periodic_switch_counts[pump] +=
+        result.x.at(h_max * num_pumps + pump) !=
+        result.x.at(num_pumps + pump);
+    if (periodic ? result.periodic_switch_counts[pump] > 2 * max_actuations
+                 : result.single_day_switch_on_counts[pump] > max_actuations)
+      within_limit = false;
+  }
+  return within_limit;
+}
+
 EvalResult evaluateSolution(const std::vector<int> &y, const std::optional<std::vector<int>> &binary_schedule,
-                            int h_max, int max_actuations, const std::string &inpFile,
+                            int h_max, int max_actuations, bool periodic,
+                            const std::string &inpFile,
                             const std::optional<double> &hydraulic_accuracy,
                             const std::optional<int> &hydraulic_max_trials,
                             int verbose)
@@ -162,6 +196,7 @@ EvalResult evaluateSolution(const std::vector<int> &y, const std::optional<std::
   config.inpFile = inpFile;
   config.h_max = h_max;
   config.max_actuations = max_actuations;
+  config.periodic_switch_count = periodic;
   config.enable_cost_pruning = false;
   config.enable_global_sync = false;
   config.verbose = verbose;
@@ -189,23 +224,41 @@ EvalResult evaluateSolution(const std::vector<int> &y, const std::optional<std::
         throw std::invalid_argument("best_x and best_y must agree at every hour");
     }
 
-    result.periodic_switch_counts.assign(num_pumps, 0);
-    for (int pump = 0; pump < num_pumps; ++pump)
+    if (!countSwitches(result, h_max, num_pumps, max_actuations, periodic))
     {
-      for (int h = 2; h <= h_max; ++h)
-        result.periodic_switch_counts[pump] +=
-            result.x.at((h - 1) * num_pumps + pump) !=
-            result.x.at(h * num_pumps + pump);
-      result.periodic_switch_counts[pump] +=
-          result.x.at(h_max * num_pumps + pump) !=
-          result.x.at(num_pumps + pump);
-      if (result.periodic_switch_counts[pump] > 2 * max_actuations)
+      result.prune_reason = BBPrune::Reason::ACTUATIONS;
+      result.hour_failed = h_max;
+      return result;
+    }
+  }
+  else if (!periodic)
+  {
+    // Single-day convention: the exact disaggregation decides whether the
+    // aggregate schedule has a binary realization and returns a witness.
+    result.x.assign((h_max + 1) * num_pumps, 0);
+    ExactDisaggregation disaggregation(num_pumps, max_actuations, false);
+    for (int h = 1; h <= h_max; ++h)
+    {
+      if (y.at(h) < 0 || y.at(h) > num_pumps)
+        throw std::invalid_argument("best_y values must lie in [0, number of pumps]");
+      if (!disaggregation.append(y.at(h)))
       {
         result.prune_reason = BBPrune::Reason::ACTUATIONS;
-        result.hour_failed = h_max;
+        result.hour_failed = h;
         return result;
       }
     }
+    const auto witness = disaggregation.finish_periodic();
+    if (!witness.has_value())
+    {
+      result.prune_reason = BBPrune::Reason::ACTUATIONS;
+      result.hour_failed = h_max;
+      return result;
+    }
+    for (int h = 1; h <= h_max; ++h)
+      std::copy(witness->at(h - 1).begin(), witness->at(h - 1).end(),
+                result.x.begin() + h * num_pumps);
+    countSwitches(result, h_max, num_pumps, max_actuations, periodic);
   }
   else
     result.x.resize((h_max + 1) * num_pumps, 0);
@@ -248,7 +301,7 @@ EvalResult evaluateSolution(const std::vector<int> &y, const std::optional<std::
   for (int h = 1; h <= h_max; ++h)
   {
     // Convert y[h] to x[h]
-    if (!binary_schedule.has_value() &&
+    if (!binary_schedule.has_value() && periodic &&
         !updateX(h, h_max, num_pumps, max_actuations, result.x, y))
     {
       result.prune_reason = BBPrune::Reason::ACTUATIONS;
@@ -357,13 +410,21 @@ void printUsage(const char *prog)
   std::cerr << "{\n";
   std::cerr << "  \"y\": [0, 1, 1, 2, ...],  // pump count per hour (length = h_max + 1)\n";
   std::cerr << "  \"h_max\": 24,             // simulation hours\n";
-  std::cerr << "  \"max_actuations\": 1,     // max complete periodic cycles per pump\n";
+  std::cerr << "  \"max_actuations\": 1,     // NA: switching limit per pump (see below)\n";
+  std::cerr << "  \"switch_count_convention\": \"periodic\", // optional: periodic (default) or single_day\n";
   std::cerr << "  \"schedule_mode\": \"aggregate\", // or binary, which requires best_x\n";
   std::cerr << "  \"hydraulic_accuracy\": 0.0001, // optional relative accuracy override\n";
   std::cerr << "  \"hydraulic_max_trials\": 40,  // optional trial-limit override\n";
   std::cerr << "  \"inp_file\": \"networks/anytown-24h.inp\",  // optional, default: networks/anytown-24h.inp\n";
   std::cerr << "  \"verbose\": 0             // optional (int, default 0)\n";
   std::cerr << "}\n";
+  std::cerr << "\nSwitch-count conventions:\n";
+  std::cerr << "  periodic:   status changes over hours 1..h_max plus the closing\n";
+  std::cerr << "              transition h_max -> 1, at most 2*NA per pump\n";
+  std::cerr << "  single_day: switch-ons (0 -> 1) between consecutive hours, no\n";
+  std::cerr << "              wrap-around, at most NA per pump\n";
+  std::cerr << "In aggregate mode, periodic uses the legacy greedy disaggregation and\n";
+  std::cerr << "single_day the exact disaggregation.\n";
 }
 
 int main(int argc, char *argv[])
@@ -414,6 +475,16 @@ int main(int argc, char *argv[])
   int h_max = input.value("h_max", 24);
   int max_actuations = input.value("max_actuations", 1);
   std::string inpFile = input.value("inp_file", "networks/anytown.inp");
+  std::string switchCountConvention =
+      input.value("switch_count_convention", "periodic");
+  if (switchCountConvention != "periodic" &&
+      switchCountConvention != "single_day")
+  {
+    std::cerr << "Error: switch_count_convention must be 'periodic' or 'single_day'\n";
+    MPI_Finalize();
+    return EXIT_FAILURE;
+  }
+  const bool periodic = switchCountConvention == "periodic";
   std::string scheduleMode = input.value("schedule_mode", "aggregate");
   if (scheduleMode != "aggregate" && scheduleMode != "binary")
   {
@@ -482,14 +553,15 @@ int main(int argc, char *argv[])
 
   // Evaluate solution
   Console::printf(Console::Color::BRIGHT_WHITE, "Evaluating solution from: %s\n", inputFile.c_str());
-  Console::printf(Console::Color::BRIGHT_WHITE, "  h_max: %d, max_actuations: %d\n", h_max, max_actuations);
+  Console::printf(Console::Color::BRIGHT_WHITE, "  h_max: %d, max_actuations: %d, switch_count_convention: %s\n",
+                  h_max, max_actuations, switchCountConvention.c_str());
   Console::printf(Console::Color::BRIGHT_WHITE, "  inp_file: %s\n", inpFile.c_str());
 
   EvalResult result;
   try
   {
     result = evaluateSolution(y, binarySchedule, h_max, max_actuations,
-                              inpFile, hydraulicAccuracy,
+                              periodic, inpFile, hydraulicAccuracy,
                               hydraulicMaxTrials, verbose);
   }
   catch (const std::invalid_argument &error)
@@ -506,7 +578,11 @@ int main(int argc, char *argv[])
   output["prune_reason"] = BBPrune::labels[result.prune_reason];
   output["hour_failed"] = result.hour_failed >= 0 ? json(result.hour_failed) : json(nullptr);
   output["schedule_mode"] = scheduleMode;
+  output["switch_count_convention"] = switchCountConvention;
+  output["max_switch_count_per_pump"] =
+      periodic ? 2 * max_actuations : max_actuations;
   output["periodic_switch_counts"] = result.periodic_switch_counts;
+  output["single_day_switch_on_counts"] = result.single_day_switch_on_counts;
   output["hydraulic"] = {
       {"converged", result.hydraulic_converged},
       {"status", result.hydraulic_status},

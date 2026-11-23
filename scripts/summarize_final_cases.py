@@ -13,6 +13,7 @@ from pathlib import Path
 PRUNE_REASONS = (
     "ACTUATIONS",
     "COST",
+    "COST_TO_GO",
     "LEVELS",
     "TANK_SATURATION",
     "PRESSURES",
@@ -20,9 +21,18 @@ PRUNE_REASONS = (
     "TIMESTEP",
     "NONE",
 )
+# Campaign tasks that run the three final cases, with the switch-count
+# convention each one must use (see BB_PERIODIC_SWITCH_COUNT).
+FINAL_CASE_TASKS = {
+    "final-cases": "periodic",
+    "final-cases-single-day": "single_day",
+}
+LEGACY_TASK = "final-cases"
+FALSE_ENVIRONMENT_VALUES = ("0", "false", "FALSE", "off", "OFF")
 PRUNE_GROUPS = {
     "Actuation": ("ACTUATIONS",),
     "Cost bound": ("COST",),
+    "Cost-to-go bound": ("COST_TO_GO",),
     "Tank levels": ("LEVELS", "TANK_SATURATION"),
     "Pressure": ("PRESSURES",),
 }
@@ -68,6 +78,27 @@ def expected_configuration(experiment: dict, process_count: int) -> dict:
     }
 
 
+def environment_convention(environment: dict) -> str:
+    """Convention selected by a solver environment, as parsed by BBConfig."""
+    value = environment.get("BB_PERIODIC_SWITCH_COUNT")
+    if value is not None and str(value) in FALSE_ENVIRONMENT_VALUES:
+        return "single_day"
+    return "periodic"
+
+
+def artifact_convention(configuration: dict) -> str:
+    """Convention recorded in a statistics artifact.
+
+    Artifacts written before the option existed carry neither field and used
+    the periodic convention.
+    """
+    if "switch_count_convention" in configuration:
+        return str(configuration["switch_count_convention"])
+    if "periodic_switch_count" in configuration:
+        return "periodic" if configuration["periodic_switch_count"] else "single_day"
+    return "periodic"
+
+
 def validate_schedule(best: dict, configuration: dict, case_id: str) -> None:
     hours = configuration["hours"]
     best_x = best.get("best_x")
@@ -96,6 +127,7 @@ def audit_case(
     plan_experiment: dict,
     process_count: int,
     executable_sha256: str,
+    convention: str = "periodic",
 ) -> dict:
     configuration = expected_configuration(plan_experiment, process_count)
     actuations = configuration["actuations"]
@@ -141,6 +173,12 @@ def audit_case(
             raise AuditError(
                 f"{case_id}: artifact configuration {observed} differs from "
                 f"{configuration}"
+            )
+        observed_convention = artifact_convention(observed_configuration)
+        if observed_convention != convention:
+            raise AuditError(
+                f"{case_id}: artifact {path.name} used the "
+                f"{observed_convention} switch count; expected {convention}"
             )
         artifact_hash = metadata.get("software", {}).get("executable_sha256")
         if artifact_hash != executable_sha256:
@@ -223,15 +261,32 @@ def summarize_campaign(campaign: Path) -> dict:
         raise AuditError("campaign did not record a clean Git tree")
     tasks = campaign_plan.get("tasks", [])
     result_tasks = campaign_results.get("tasks", [])
-    if len(tasks) != 1 or tasks[0].get("id") != "final-cases":
-        raise AuditError("campaign does not contain exactly one final-cases task")
-    if len(result_tasks) != 1 or result_tasks[0].get("return_codes") != [0]:
+    if len(tasks) != 1 or tasks[0].get("id") not in FINAL_CASE_TASKS:
+        raise AuditError(
+            "campaign does not contain exactly one final-cases task "
+            f"({', '.join(FINAL_CASE_TASKS)})"
+        )
+    task_id = tasks[0]["id"]
+    convention = FINAL_CASE_TASKS[task_id]
+    if (
+        len(result_tasks) != 1
+        or result_tasks[0].get("id", task_id) != task_id
+        or result_tasks[0].get("return_codes") != [0]
+    ):
         raise AuditError("campaign receipt is incomplete or unsuccessful")
     commands = tasks[0].get("commands", [])
     if len(commands) != 1:
-        raise AuditError("final-cases task must contain one runner command")
+        raise AuditError(f"{task_id} task must contain one runner command")
+    planned_convention = environment_convention(
+        commands[0].get("environment", {})
+    )
+    if planned_convention != convention:
+        raise AuditError(
+            f"{task_id} task planned the {planned_convention} switch count; "
+            f"expected {convention}"
+        )
 
-    final_cases = campaign / "final-cases"
+    final_cases = campaign / task_id
     execution_plan = load_json(final_cases / "execution-plan.json")
     execution_results = load_json(final_cases / "execution-results.json")
     if execution_results.get("status") != "complete":
@@ -254,6 +309,7 @@ def summarize_campaign(campaign: Path) -> dict:
             plan_experiment,
             process_count,
             executable_sha256,
+            convention,
         )
         for execution, plan_experiment in zip(executions, plan_experiments)
     ]
@@ -271,7 +327,7 @@ def summarize_campaign(campaign: Path) -> dict:
         if observed != reference:
             raise AuditError("final cases used different common configurations")
 
-    return {
+    summary = {
         "schema_version": 1,
         "campaign": campaign.name,
         "git": git,
@@ -281,6 +337,20 @@ def summarize_campaign(campaign: Path) -> dict:
         "configuration": reference,
         "cases": cases,
     }
+    if task_id != LEGACY_TASK:
+        # The original final-cases summary keeps its historical layout; other
+        # tasks record which task and switch-count convention produced them.
+        summary["task"] = task_id
+        summary["switch_count_convention"] = convention
+        summary["max_switch_count_per_pump"] = {
+            str(case["actuations"]): (
+                2 * case["actuations"]
+                if convention == "periodic"
+                else case["actuations"]
+            )
+            for case in cases
+        }
+    return summary
 
 
 def write_csv(summary: dict, path: Path) -> None:

@@ -15,8 +15,11 @@ constexpr std::size_t no_predecessor = static_cast<std::size_t>(-1);
 
 } // namespace
 
-ExactDisaggregation::ExactDisaggregation(int pump_count, int max_cycles)
-    : pump_count_(pump_count), max_switches_(2 * max_cycles)
+ExactDisaggregation::ExactDisaggregation(int pump_count, int max_cycles,
+                                         bool periodic)
+    : pump_count_(pump_count),
+      max_switches_(periodic ? 2 * max_cycles : max_cycles),
+      periodic_(periodic)
 {
   if (pump_count <= 0)
     throw std::invalid_argument("pump_count must be positive");
@@ -63,7 +66,9 @@ bool ExactDisaggregation::append(int active_pumps)
     for (int pump = 0; pump < pump_count_; ++pump)
     {
       const int status = pump < active_pumps ? 1 : 0;
-      initial.push_back({status, status, 0});
+      // Without wrap-around the first status is irrelevant; store 0 so that
+      // equivalent states are merged.
+      initial.push_back({periodic_ ? status : 0, status, 0});
     }
     std::sort(initial.begin(), initial.end());
     layers_.push_back({{std::move(initial), no_predecessor, {}}});
@@ -97,7 +102,10 @@ bool ExactDisaggregation::append(int active_pumps)
         {
           const PumpState &old_state = previous[static_cast<std::size_t>(position)];
           const int status = next_status[static_cast<std::size_t>(position)];
-          const int switches = old_state.switches + (old_state.current_status != status);
+          const int switches =
+              old_state.switches +
+              (periodic_ ? (old_state.current_status != status)
+                         : (old_state.current_status == 0 && status == 1));
           if (switches > max_switches_)
           {
             ++last_transition_statistics_.switch_limit_rejections;
@@ -174,6 +182,8 @@ std::optional<BinarySchedule> ExactDisaggregation::finish_periodic() const
         state.begin(), state.end(),
         [&](const PumpState &pump)
         {
+          if (!periodic_)
+            return pump.switches <= max_switches_;
           return pump.switches + (pump.current_status != pump.first_status) <=
                  max_switches_;
         });

@@ -236,7 +236,29 @@ if(BUILD_TESTING)
         COMMAND
             IntegratedSearchTest
             "${CMAKE_CURRENT_SOURCE_DIR}/networks/any-town.inp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/data/any-town-strict-tank-limits.inp"
             "${CMAKE_CURRENT_BINARY_DIR}/phase3-integrated-search.json"
+    )
+
+    add_executable(CostToGoTest
+        tests/test_cost_to_go.cpp
+        src/CLI/BBConstraints.cpp
+        src/CLI/BBSolver.cpp
+        src/CLI/BBStatistics.cpp
+        src/CLI/Console.cpp
+        src/CLI/Profiler.cpp
+    )
+    target_include_directories(CostToGoTest PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/CLI"
+    )
+    target_link_libraries(CostToGoTest PRIVATE epanet3-bb)
+    add_test(
+        NAME CostToGoTest
+        COMMAND
+            CostToGoTest
+            "${CMAKE_CURRENT_SOURCE_DIR}/networks/any-town.inp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/data/any-town-strict-tank-limits.inp"
     )
 
     add_test(
@@ -246,7 +268,7 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_fixed_schedule_evaluator.py"
             $<TARGET_FILE:run-epanet3-bb-eval>
             "${CMAKE_CURRENT_SOURCE_DIR}/networks/any-town.inp"
-            "${CMAKE_CURRENT_SOURCE_DIR}/experiments/results/final-cases-anytown-24h-summary.json"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/data/any-town-na1-optimum.json"
             "${CMAKE_CURRENT_SOURCE_DIR}/experiments/comparison-schedules/run_Cimorelli2020_a_01.json"
             "${MPIEXEC_EXECUTABLE}"
     )

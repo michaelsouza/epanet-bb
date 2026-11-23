@@ -108,15 +108,15 @@
   "inp_file": "networks/any-town.inp",
   "max_actuations": 1,
   "revised_validation": {
-    "feasible": true,
-    "hour_failed": null,
+    "feasible": false,
+    "hour_failed": 22,
     "periodic_switch_counts": [
       2,
       2,
       2
     ],
-    "prune_reason": "NONE",
-    "reevaluated_cost": 3911.4825435681696,
+    "prune_reason": "LEVELS",
+    "reevaluated_cost": 3631.409230643135,
     "schedule_mode": "binary"
   },
   "verbose": 1

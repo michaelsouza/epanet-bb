@@ -21,9 +21,15 @@ class SummarizeFinalCasesTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload), encoding="utf-8")
 
-    def make_campaign(self, root: Path) -> Path:
+    def make_campaign(
+        self,
+        root: Path,
+        task_id: str = "final-cases",
+        environment: dict | None = None,
+        convention_fields: dict | None = None,
+    ) -> Path:
         campaign = root / "campaign"
-        final_cases = campaign / "final-cases"
+        final_cases = campaign / task_id
         plan_experiments = []
         result_experiments = []
         for actuations in (1, 2, 3):
@@ -62,12 +68,14 @@ class SummarizeFinalCasesTests(unittest.TestCase):
                         "max_cycles_per_pump": actuations,
                         "task_decomposition_level": 8,
                         "sync_interval": 32768,
+                        **(convention_fields or {}),
                     },
                     "software": {"executable_sha256": "binary-hash"},
                 }
                 pruning = {
                     "ACTUATIONS": [10 + actuations],
                     "COST": [5],
+                    "COST_TO_GO": [4],
                     "LEVELS": [0],
                     "TANK_SATURATION": [2],
                     "PRESSURES": [1],
@@ -109,8 +117,10 @@ class SummarizeFinalCasesTests(unittest.TestCase):
                 },
                 "tasks": [
                     {
-                        "id": "final-cases",
-                        "commands": [{"np": 2}],
+                        "id": task_id,
+                        "commands": [
+                            {"np": 2, "environment": environment or {}}
+                        ],
                     }
                 ],
             },
@@ -121,7 +131,7 @@ class SummarizeFinalCasesTests(unittest.TestCase):
                 "status": "complete",
                 "tasks": [
                     {
-                        "id": "final-cases",
+                        "id": task_id,
                         "return_codes": [0],
                         "duration_seconds": 60.0,
                     }
@@ -157,8 +167,100 @@ class SummarizeFinalCasesTests(unittest.TestCase):
             self.assertEqual(case["best_y"], [1] * 25)
             self.assertAlmostEqual(
                 case["pruning_percentages"]["Tank levels"],
-                5.0,
+                4 / 88 * 100.0,
             )
+            self.assertEqual(case["pruning_counts"]["COST"], 10)
+            self.assertEqual(case["pruning_counts"]["COST_TO_GO"], 8)
+            self.assertAlmostEqual(
+                case["pruning_percentages"]["Cost bound"], 10 / 88 * 100.0
+            )
+            self.assertAlmostEqual(
+                case["pruning_percentages"]["Cost-to-go bound"], 8 / 88 * 100.0
+            )
+
+    def test_legacy_task_keeps_its_summary_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            campaign = self.make_campaign(Path(temporary))
+
+            summary = SUMMARY.summarize_campaign(campaign)
+
+            self.assertEqual(
+                set(summary),
+                {
+                    "schema_version",
+                    "campaign",
+                    "git",
+                    "compatibility_sha256",
+                    "executable_sha256",
+                    "campaign_duration_seconds",
+                    "configuration",
+                    "cases",
+                },
+            )
+            self.assertEqual(
+                set(summary["configuration"]),
+                {"np", "hours", "level", "sync_interval"},
+            )
+
+    def test_single_day_task_records_its_convention(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            campaign = self.make_campaign(
+                Path(temporary),
+                task_id="final-cases-single-day",
+                environment={"BB_PERIODIC_SWITCH_COUNT": "0"},
+                convention_fields={
+                    "periodic_switch_count": False,
+                    "switch_count_convention": "single_day",
+                },
+            )
+
+            summary = SUMMARY.summarize_campaign(campaign)
+
+            self.assertEqual(summary["task"], "final-cases-single-day")
+            self.assertEqual(summary["switch_count_convention"], "single_day")
+            self.assertEqual(
+                summary["max_switch_count_per_pump"], {"1": 1, "2": 2, "3": 3}
+            )
+            self.assertEqual(
+                [case["actuations"] for case in summary["cases"]], [1, 2, 3]
+            )
+            self.assertEqual(summary["cases"][0]["global_best_cost"], 1001.0)
+
+    def test_single_day_task_rejects_periodic_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            campaign = self.make_campaign(
+                Path(temporary),
+                task_id="final-cases-single-day",
+                environment={"BB_PERIODIC_SWITCH_COUNT": "0"},
+            )
+
+            with self.assertRaisesRegex(
+                SUMMARY.AuditError, "periodic switch count; expected single_day"
+            ):
+                SUMMARY.summarize_campaign(campaign)
+
+    def test_single_day_task_requires_its_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            campaign = self.make_campaign(
+                Path(temporary),
+                task_id="final-cases-single-day",
+                convention_fields={"switch_count_convention": "single_day"},
+            )
+
+            with self.assertRaisesRegex(SUMMARY.AuditError, "planned the periodic"):
+                SUMMARY.summarize_campaign(campaign)
+
+    def test_periodic_task_rejects_single_day_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            campaign = self.make_campaign(
+                Path(temporary),
+                convention_fields={"periodic_switch_count": False},
+            )
+
+            with self.assertRaisesRegex(
+                SUMMARY.AuditError, "single_day switch count; expected periodic"
+            ):
+                SUMMARY.summarize_campaign(campaign)
 
     def test_rejects_missing_rank_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

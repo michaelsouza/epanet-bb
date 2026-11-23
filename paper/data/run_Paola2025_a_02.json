@@ -115,8 +115,8 @@
       4,
       2
     ],
-    "prune_reason": "TANK_SATURATION",
-    "reevaluated_cost": 3325.8453105067665,
+    "prune_reason": "LEVELS",
+    "reevaluated_cost": 3325.84531050687,
     "schedule_mode": "binary"
   },
   "verbose": 1

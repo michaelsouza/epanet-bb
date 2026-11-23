@@ -1,66 +1,9 @@
 {
-  "evaluator_sha256": "dd8fe41a209be8cfe53a8a5fead2bca1373cd2d5a61eecca5ecaa02fd317388b",
-  "final_summary_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd",
-  "network_sha256": "c6104ab9283c9b7eb06bd3ace44bca2a4dcf4776f86886fd7508a35ce2dad9c3",
+  "evaluator_sha256": "acf93d8e128c3d6ca3c656155cffacda8d34325635165e6fc8053697bc9cc36e",
+  "final_summary_sha256": "2b8ffff920f976ac6f4b52294ad74e56cbc0489a14f1f19a8931e978ab2e655e",
+  "network_sha256": "023deb7bbda94399f1b2e27d0003ad4b76e42279a7a7d87601535ffd9a1a6a79",
   "periodic_horizon": "hours 1-24 with closure from hour 24 to hour 1",
   "records": [
-    {
-      "actuations": 1,
-      "feasible": false,
-      "hour_failed": 24,
-      "log": "logs/Cimorelli2020-a1.log",
-      "periodic_switch_counts": [
-        4,
-        0,
-        0
-      ],
-      "prune_reason": "ACTUATIONS",
-      "published_cost": 3634.67,
-      "reevaluated_cost": 0.0,
-      "request": "requests/Cimorelli2020-a1.json",
-      "result": "results/Cimorelli2020-a1.json",
-      "source": "Cimorelli2020",
-      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_01.json",
-      "source_artifact_sha256": "e5edfd8430970ed4e627747074c35dc0419c5022ed79da7a7bb2a5b1d96bceff"
-    },
-    {
-      "actuations": 2,
-      "feasible": false,
-      "hour_failed": 24,
-      "log": "logs/Cimorelli2020-a2.log",
-      "periodic_switch_counts": [
-        6,
-        0,
-        0
-      ],
-      "prune_reason": "ACTUATIONS",
-      "published_cost": 3580.11,
-      "reevaluated_cost": 0.0,
-      "request": "requests/Cimorelli2020-a2.json",
-      "result": "results/Cimorelli2020-a2.json",
-      "source": "Cimorelli2020",
-      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_02.json",
-      "source_artifact_sha256": "f840f9bcca2c343145727cf898d584412d6c1b806f823238f68a756e99f40706"
-    },
-    {
-      "actuations": 3,
-      "feasible": false,
-      "hour_failed": 24,
-      "log": "logs/Cimorelli2020-a3.log",
-      "periodic_switch_counts": [
-        8,
-        0,
-        0
-      ],
-      "prune_reason": "ACTUATIONS",
-      "published_cost": 3575.54,
-      "reevaluated_cost": 0.0,
-      "request": "requests/Cimorelli2020-a3.json",
-      "result": "results/Cimorelli2020-a3.json",
-      "source": "Cimorelli2020",
-      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_03.json",
-      "source_artifact_sha256": "3ee0e9deda85af6ea91557a64d7da6bfaa3b6f34a576a839cc4fd1548601dfed"
-    },
     {
       "actuations": 1,
       "feasible": true,
@@ -73,7 +16,7 @@
       ],
       "prune_reason": "NONE",
       "published_cost": 3916.98,
-      "reevaluated_cost": 3916.9839049600055,
+      "reevaluated_cost": 3916.983904959969,
       "request": "requests/Costa2016-a1.json",
       "result": "results/Costa2016-a1.json",
       "source": "Costa2016",
@@ -92,7 +35,7 @@
       ],
       "prune_reason": "NONE",
       "published_cost": 3618.59,
-      "reevaluated_cost": 3618.595780163883,
+      "reevaluated_cost": 3618.595780163983,
       "request": "requests/Costa2016-a2.json",
       "result": "results/Costa2016-a2.json",
       "source": "Costa2016",
@@ -111,7 +54,7 @@
       ],
       "prune_reason": "NONE",
       "published_cost": 3578.67,
-      "reevaluated_cost": 3578.6717566591865,
+      "reevaluated_cost": 3578.67175665922,
       "request": "requests/Costa2016-a3.json",
       "result": "results/Costa2016-a3.json",
       "source": "Costa2016",
@@ -120,17 +63,131 @@
     },
     {
       "actuations": 1,
+      "feasible": false,
+      "hour_failed": 24,
+      "log": "logs/Cimorelli2020-a1.log",
+      "periodic_switch_counts": [
+        4,
+        2,
+        4
+      ],
+      "prune_reason": "ACTUATIONS",
+      "published_cost": 3634.67,
+      "reevaluated_cost": 0.0,
+      "request": "requests/Cimorelli2020-a1.json",
+      "result": "results/Cimorelli2020-a1.json",
+      "source": "Cimorelli2020",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_01.json",
+      "source_artifact_sha256": "e5edfd8430970ed4e627747074c35dc0419c5022ed79da7a7bb2a5b1d96bceff"
+    },
+    {
+      "actuations": 2,
+      "feasible": false,
+      "hour_failed": 24,
+      "log": "logs/Cimorelli2020-a2.log",
+      "periodic_switch_counts": [
+        6,
+        4,
+        6
+      ],
+      "prune_reason": "ACTUATIONS",
+      "published_cost": 3580.11,
+      "reevaluated_cost": 0.0,
+      "request": "requests/Cimorelli2020-a2.json",
+      "result": "results/Cimorelli2020-a2.json",
+      "source": "Cimorelli2020",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_02.json",
+      "source_artifact_sha256": "88b00d0b462cbd34e962d0ae37da690d82dfcd84cdca2519b09ff27d0f0d9700"
+    },
+    {
+      "actuations": 3,
+      "feasible": false,
+      "hour_failed": 24,
+      "log": "logs/Cimorelli2020-a3.log",
+      "periodic_switch_counts": [
+        8,
+        8,
+        6
+      ],
+      "prune_reason": "ACTUATIONS",
+      "published_cost": 3575.54,
+      "reevaluated_cost": 0.0,
+      "request": "requests/Cimorelli2020-a3.json",
+      "result": "results/Cimorelli2020-a3.json",
+      "source": "Cimorelli2020",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_03.json",
+      "source_artifact_sha256": "3ee0e9deda85af6ea91557a64d7da6bfaa3b6f34a576a839cc4fd1548601dfed"
+    },
+    {
+      "actuations": 1,
       "feasible": true,
       "hour_failed": null,
-      "log": "logs/Paola2025-a1.log",
+      "log": "logs/Cimorelli2021-a1.log",
       "periodic_switch_counts": [
         2,
         2,
         2
       ],
       "prune_reason": "NONE",
+      "published_cost": 3915.87,
+      "reevaluated_cost": 3915.78517943874,
+      "request": "requests/Cimorelli2021-a1.json",
+      "result": "results/Cimorelli2021-a1.json",
+      "source": "Cimorelli2021",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2021_a_01.json",
+      "source_artifact_sha256": "9bd84bf1e116a9de23daf3b19c60df93a7944574e52aefc0f1e413ef011aed77"
+    },
+    {
+      "actuations": 2,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2021-a2.log",
+      "periodic_switch_counts": [
+        4,
+        4,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3618.59,
+      "reevaluated_cost": 3618.5957801638447,
+      "request": "requests/Cimorelli2021-a2.json",
+      "result": "results/Cimorelli2021-a2.json",
+      "source": "Cimorelli2021",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2021_a_02.json",
+      "source_artifact_sha256": "ab51e201dce59c0362cc0bc3b0a5aac13425ddac02725a9d131ad76c33b9ceb8"
+    },
+    {
+      "actuations": 3,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2021-a3.log",
+      "periodic_switch_counts": [
+        6,
+        6,
+        6
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3575.61,
+      "reevaluated_cost": 3575.5380640404123,
+      "request": "requests/Cimorelli2021-a3.json",
+      "result": "results/Cimorelli2021-a3.json",
+      "source": "Cimorelli2021",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2021_a_03.json",
+      "source_artifact_sha256": "406c18f95e2372e9a792fc2e145ef35d465ffe3f41c1efd224a557db10791d06"
+    },
+    {
+      "actuations": 1,
+      "feasible": false,
+      "hour_failed": 22,
+      "log": "logs/Paola2025-a1.log",
+      "periodic_switch_counts": [
+        2,
+        2,
+        2
+      ],
+      "prune_reason": "LEVELS",
       "published_cost": 3911.52,
-      "reevaluated_cost": 3911.4825435681696,
+      "reevaluated_cost": 3631.409230643135,
       "request": "requests/Paola2025-a1.json",
       "result": "results/Paola2025-a1.json",
       "source": "Paola2025",
@@ -147,9 +204,9 @@
         4,
         2
       ],
-      "prune_reason": "TANK_SATURATION",
+      "prune_reason": "LEVELS",
       "published_cost": 3606.22,
-      "reevaluated_cost": 3325.8453105067665,
+      "reevaluated_cost": 3325.84531050687,
       "request": "requests/Paola2025-a2.json",
       "result": "results/Paola2025-a2.json",
       "source": "Paola2025",
@@ -166,9 +223,9 @@
         6,
         4
       ],
-      "prune_reason": "TANK_SATURATION",
+      "prune_reason": "LEVELS",
       "published_cost": 3577.4,
-      "reevaluated_cost": 3325.1120960017665,
+      "reevaluated_cost": 3325.112096001735,
       "request": "requests/Paola2025-a3.json",
       "result": "results/Paola2025-a3.json",
       "source": "Paola2025",
@@ -186,13 +243,13 @@
         2
       ],
       "prune_reason": "NONE",
-      "published_cost": 3900.2474978417204,
-      "reevaluated_cost": 3900.2474978416194,
+      "published_cost": 3914.400543421451,
+      "reevaluated_cost": 3914.4005434216165,
       "request": "requests/Souza2026-a1.json",
       "result": "results/Souza2026-a1.json",
       "source": "Souza2026",
       "source_artifact": "experiments/results/final-cases-anytown-24h-summary.json",
-      "source_artifact_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd"
+      "source_artifact_sha256": "2b8ffff920f976ac6f4b52294ad74e56cbc0489a14f1f19a8931e978ab2e655e"
     },
     {
       "actuations": 2,
@@ -205,13 +262,13 @@
         4
       ],
       "prune_reason": "NONE",
-      "published_cost": 3606.828628872831,
-      "reevaluated_cost": 3606.8286288728636,
+      "published_cost": 3618.5957801640034,
+      "reevaluated_cost": 3618.5957801638215,
       "request": "requests/Souza2026-a2.json",
       "result": "results/Souza2026-a2.json",
       "source": "Souza2026",
       "source_artifact": "experiments/results/final-cases-anytown-24h-summary.json",
-      "source_artifact_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd"
+      "source_artifact_sha256": "2b8ffff920f976ac6f4b52294ad74e56cbc0489a14f1f19a8931e978ab2e655e"
     },
     {
       "actuations": 3,
@@ -224,13 +281,13 @@
         6
       ],
       "prune_reason": "NONE",
-      "published_cost": 3575.5380640403023,
-      "reevaluated_cost": 3575.5380640403705,
+      "published_cost": 3575.538064040429,
+      "reevaluated_cost": 3575.5380640402655,
       "request": "requests/Souza2026-a3.json",
       "result": "results/Souza2026-a3.json",
       "source": "Souza2026",
       "source_artifact": "experiments/results/final-cases-anytown-24h-summary.json",
-      "source_artifact_sha256": "dd5388952de4fa8bb0ad58604db414c85c883925b30b17f13ef9641f5327dadd"
+      "source_artifact_sha256": "2b8ffff920f976ac6f4b52294ad74e56cbc0489a14f1f19a8931e978ab2e655e"
     }
   ],
   "schedule_mode": "binary",

@@ -1,16 +1,17 @@
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}l@{\quad}rrr@{}p{1em}@{}rrr@{}}
   \hline
-   & \multicolumn{3}{c}{$NA_{\max}$} \\
-  \cline{2-4}
-  Classification (\% of nodes) & 1 & 2 & 3 \\
+   & \multicolumn{3}{c}{Periodic count ($NA_{\max}$)} &  & \multicolumn{3}{c}{Single-day count ($NA_{\max}$)} \\
+  \cline{2-4} \cline{6-8}
+  Classification (\% of nodes) & 1 & 2 & 3 &  & 1 & 2 & 3 \\
   \hline
-  Actuation & 52.6 & 44.3 & 27.3 \\
-  Cost bound & 4.4 & 13.0 & 22.2 \\
-  Tank levels & 7.8 & 9.3 & 11.8 \\
-  Pressure & 1.5 & 2.7 & 4.7 \\
-  Total pruned & 66.4 & 69.3 & 66.0 \\
-  Not pruned & 33.6 & 30.7 & 34.0 \\
+  Actuation & 53.0 & 44.7 & 25.6 &  & 52.3 & 42.2 & 23.4 \\
+  Cost bound & 1.7 & 1.0 & 1.5 &  & 0.7 & 0.3 & 0.8 \\
+  Cost-to-go bound & 2.5 & 12.9 & 26.8 &  & 3.0 & 16.3 & 30.7 \\
+  Tank levels & 9.7 & 15.2 & 20.6 &  & 14.6 & 15.6 & 19.7 \\
+  Pressure & 0.0 & 0.0 & 0.1 &  & 0.0 & 0.0 & 0.0 \\
+  Total pruned & 67.0 & 73.9 & 74.5 &  & 70.6 & 74.5 & 74.7 \\
+  Not pruned & 33.0 & 26.1 & 25.5 &  & 29.4 & 25.5 & 25.3 \\
   \hline
-  Explored nodes (count) & 247{,}695 & 23{,}165{,}594 & 350{,}839{,}702 \\
+  Explored nodes (count) & 226{,}745 & 10{,}675{,}946 & 81{,}103{,}914 &  & 930{,}961 & 23{,}448{,}712 & 112{,}154{,}963 \\
   \hline
 \end{tabular}

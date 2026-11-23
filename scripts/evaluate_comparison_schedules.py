@@ -15,13 +15,38 @@ import subprocess
 
 
 ROOT = Path(__file__).absolute().parents[1]
-EXTERNAL_SOURCES = ("Cimorelli2020", "Costa2016", "Paola2025")
+# Chronological order of publication.
+EXTERNAL_SOURCES = ("Costa2016", "Cimorelli2020", "Cimorelli2021", "Paola2025")
 EXPECTED_FEASIBILITY = {
-    "Cimorelli2020": {1: False, 2: False, 3: False},
     "Costa2016": {1: True, 2: True, 3: True},
-    "Paola2025": {1: True, 2: False, 3: False},
+    "Cimorelli2020": {1: False, 2: False, 3: False},
+    "Cimorelli2021": {1: True, 2: True, 3: True},
+    "Paola2025": {1: False, 2: False, 3: False},
     "Souza2026": {1: True, 2: True, 3: True},
 }
+# Re-evaluated costs ($) asserted to within COST_TOLERANCE.
+EXPECTED_COSTS = {
+    "Cimorelli2021": {1: 3915.785179, 2: 3618.595780, 3: 3575.538064},
+}
+# Under the single-day switch count (switch-ons between consecutive hours,
+# no closure from hour 24 to hour 1) only the schedules optimized under that
+# convention carry an expectation; the other external sources are recorded.
+EXPECTED_SINGLE_DAY_FEASIBILITY = {
+    "Cimorelli2020": {1: True, 2: True, 3: True},
+    "Souza2026": {1: True, 2: True, 3: True},
+}
+EXPECTED_SINGLE_DAY_COSTS = {
+    "Cimorelli2020": {1: 3634.602760, 2: 3580.033092, 3: 3575.463604},
+}
+SWITCH_COUNT_CONVENTIONS = ("periodic", "single_day")
+EXPECTATIONS = {
+    "periodic": (EXPECTED_FEASIBILITY, EXPECTED_COSTS),
+    "single_day": (EXPECTED_SINGLE_DAY_FEASIBILITY, EXPECTED_SINGLE_DAY_COSTS),
+}
+COST_TOLERANCE = 1e-6
+DEFAULT_FINAL_SUMMARY = (
+    ROOT / "experiments" / "results" / "final-cases-anytown-24h-summary.json"
+)
 
 
 class EvaluationError(RuntimeError):
@@ -60,6 +85,32 @@ def repository_path(path: Path) -> str:
         raise EvaluationError(
             f"source artifact is outside the repository: {path}"
         ) from exc
+
+
+def recorded_convention(payload: dict) -> str:
+    """Switch-count convention recorded in a summary; absent means periodic."""
+    return str(payload.get("switch_count_convention", "periodic"))
+
+
+def expectation_mismatches(summary: dict) -> list[str]:
+    """Records that contradict the expectations of the summary's convention."""
+    feasibility, costs = EXPECTATIONS[recorded_convention(summary)]
+    mismatches = []
+    for record in summary["records"]:
+        source, actuations = record["source"], record["actuations"]
+        expected = feasibility.get(source, {}).get(actuations)
+        if expected is not None and record["feasible"] != expected:
+            mismatches.append(
+                f"{source} NA_max={actuations}: feasible={record['feasible']}, "
+                f"expected {expected}"
+            )
+        cost = costs.get(source, {}).get(actuations)
+        if cost is not None and abs(record["reevaluated_cost"] - cost) > COST_TOLERANCE:
+            mismatches.append(
+                f"{source} NA_max={actuations}: cost "
+                f"{record['reevaluated_cost']:.6f}, expected {cost:.6f}"
+            )
+    return mismatches
 
 
 def revised_solutions(final_summary: dict) -> list[tuple[str, int, dict]]:
@@ -103,24 +154,48 @@ def evaluate_schedules(
     evaluator: Path,
     network: Path,
     comparison_data_dir: Path,
-    final_summary_path: Path,
+    final_summary_path: Path | None,
     mpi_launcher: Path,
     output_dir: Path,
+    switch_count_convention: str = "periodic",
 ) -> dict:
-    for path in (evaluator, network, final_summary_path, mpi_launcher):
+    """Replay every schedule; the revised solutions need a final summary.
+
+    The final summary may be omitted only under the single-day convention,
+    and its recorded convention must match the requested one.
+    """
+    if switch_count_convention not in SWITCH_COUNT_CONVENTIONS:
+        raise EvaluationError(
+            f"unknown switch-count convention: {switch_count_convention}"
+        )
+    single_day = switch_count_convention == "single_day"
+    if final_summary_path is None and not single_day:
+        raise EvaluationError("the periodic comparison requires a final summary")
+    required = [evaluator, network, mpi_launcher]
+    if final_summary_path is not None:
+        required.append(final_summary_path)
+    for path in required:
         if not path.is_file():
             raise EvaluationError(f"missing executable or input: {path}")
-    final_summary = load_json(final_summary_path)
     solutions = [
         (source, actuations, payload, path)
         for source, actuations, payload, path in external_solutions(
             comparison_data_dir
         )
     ]
-    solutions.extend(
-        (source, actuations, payload, final_summary_path)
-        for source, actuations, payload in revised_solutions(final_summary)
-    )
+    if final_summary_path is not None:
+        final_summary = load_json(final_summary_path)
+        observed_convention = recorded_convention(final_summary)
+        if observed_convention != switch_count_convention:
+            raise EvaluationError(
+                f"final summary {final_summary_path} records the "
+                f"{observed_convention} switch count; expected "
+                f"{switch_count_convention}"
+            )
+        solutions.extend(
+            (source, actuations, payload, final_summary_path)
+            for source, actuations, payload in revised_solutions(final_summary)
+        )
     output_dir.mkdir(parents=True, exist_ok=False)
     requests_dir = output_dir / "requests"
     results_dir = output_dir / "results"
@@ -148,6 +223,8 @@ def evaluate_schedules(
             "schedule_mode": "binary",
             "verbose": 0,
         }
+        if single_day:
+            request_payload["switch_count_convention"] = switch_count_convention
         stem = f"{source}-a{actuations}"
         request_path = requests_dir / f"{stem}.json"
         result_path = results_dir / f"{stem}.json"
@@ -183,36 +260,54 @@ def evaluate_schedules(
                 f"code {completed.returncode}"
             )
         observed = load_json(result_path)
+        if recorded_convention(observed) != switch_count_convention:
+            raise EvaluationError(
+                f"{source} NA_max={actuations}: evaluator did not apply the "
+                f"{switch_count_convention} switch count"
+            )
         feasible = bool(observed["feasible"])
         if completed.returncode != (0 if feasible else 1):
             raise EvaluationError(f"{source} NA_max={actuations}: status/code mismatch")
-        records.append(
-            {
-                "source": source,
-                "actuations": actuations,
-                "source_artifact": repository_path(source_path),
-                "source_artifact_sha256": sha256(source_path),
-                "published_cost": float(payload["best_cost"]),
-                "feasible": feasible,
-                "prune_reason": observed["prune_reason"],
-                "hour_failed": observed["hour_failed"],
-                "reevaluated_cost": float(observed["cost"]),
-                "periodic_switch_counts": observed["periodic_switch_counts"],
-                "request": str(request_path.relative_to(output_dir)),
-                "result": str(result_path.relative_to(output_dir)),
-                "log": str(log_path.relative_to(output_dir)),
-            }
-        )
+        record = {
+            "source": source,
+            "actuations": actuations,
+            "source_artifact": repository_path(source_path),
+            "source_artifact_sha256": sha256(source_path),
+            "published_cost": float(payload["best_cost"]),
+            "feasible": feasible,
+            "prune_reason": observed["prune_reason"],
+            "hour_failed": observed["hour_failed"],
+            "reevaluated_cost": float(observed["cost"]),
+            "periodic_switch_counts": observed["periodic_switch_counts"],
+            "request": str(request_path.relative_to(output_dir)),
+            "result": str(result_path.relative_to(output_dir)),
+            "log": str(log_path.relative_to(output_dir)),
+        }
+        if single_day:
+            record["single_day_switch_on_counts"] = observed[
+                "single_day_switch_on_counts"
+            ]
+        records.append(record)
 
     summary = {
         "schema_version": 1,
         "evaluator_sha256": sha256(evaluator),
         "network_sha256": sha256(network),
-        "final_summary_sha256": sha256(final_summary_path),
+        "final_summary_sha256": (
+            sha256(final_summary_path) if final_summary_path is not None else None
+        ),
         "schedule_mode": "binary",
-        "periodic_horizon": "hours 1-24 with closure from hour 24 to hour 1",
         "records": records,
     }
+    # Periodic summaries keep their historical layout without a convention
+    # field; single-day summaries record it explicitly.
+    if single_day:
+        summary["switch_count_convention"] = switch_count_convention
+        summary["switch_count_horizon"] = (
+            "switch-ons between consecutive hours 1-24 without closure"
+        )
+    else:
+        summary["periodic_horizon"] = "hours 1-24 with closure from hour 24 to hour 1"
     (output_dir / "comparison-feasibility-summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -227,14 +322,25 @@ def evaluate_schedules(
         "reevaluated_cost",
         "periodic_switch_counts",
     ]
+    count_fields = ["periodic_switch_counts"]
+    if single_day:
+        fields.append("single_day_switch_on_counts")
+        count_fields.append("single_day_switch_on_counts")
+        fields.insert(0, "switch_count_convention")
     with csv_path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for record in records:
-            row = {key: record[key] for key in fields}
-            row["periodic_switch_counts"] = "/".join(
-                str(value) for value in record["periodic_switch_counts"]
-            )
+            row = {
+                key: (
+                    switch_count_convention
+                    if key == "switch_count_convention"
+                    else record[key]
+                )
+                for key in fields
+            }
+            for key in count_fields:
+                row[key] = "/".join(str(value) for value in record[key])
             writer.writerow(row)
     return summary
 
@@ -251,13 +357,28 @@ def parse_arguments() -> argparse.Namespace:
         default=ROOT / "experiments" / "comparison-schedules",
     )
     parser.add_argument(
+        "--switch-count-convention",
+        choices=SWITCH_COUNT_CONVENTIONS,
+        default="periodic",
+        help="switch-count limits applied by the evaluator (default: periodic)",
+    )
+    parser.add_argument(
         "--final-summary",
         type=Path,
-        default=ROOT / "experiments" / "results" / "final-cases-anytown-24h-summary.json",
+        help=(
+            "final-cases summary with the revised solutions; it must record "
+            "the selected convention. Defaults to "
+            f"{DEFAULT_FINAL_SUMMARY.relative_to(ROOT)} for the periodic "
+            "convention; without it the single-day evaluation omits the "
+            "revised solutions"
+        ),
     )
     parser.add_argument("--mpi-launcher", default="mpiexec")
     parser.add_argument("--output-dir", required=True, type=Path)
-    return parser.parse_args()
+    arguments = parser.parse_args()
+    if arguments.final_summary is None and arguments.switch_count_convention == "periodic":
+        arguments.final_summary = DEFAULT_FINAL_SUMMARY
+    return arguments
 
 
 def main() -> int:
@@ -267,15 +388,22 @@ def main() -> int:
             arguments.evaluator.absolute(),
             arguments.network.absolute(),
             arguments.comparison_data_dir.absolute(),
-            arguments.final_summary.absolute(),
+            (
+                arguments.final_summary.absolute()
+                if arguments.final_summary is not None
+                else None
+            ),
             executable_path(arguments.mpi_launcher),
             arguments.output_dir.absolute(),
+            arguments.switch_count_convention,
         )
     except (EvaluationError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         print(f"comparison schedule evaluation failed: {exc}")
         return 1
     feasible = sum(record["feasible"] for record in summary["records"])
     print(f"evaluated {len(summary['records'])} schedules; {feasible} are feasible")
+    for mismatch in expectation_mismatches(summary):
+        print(f"warning: expectation mismatch: {mismatch}")
     return 0
 
 

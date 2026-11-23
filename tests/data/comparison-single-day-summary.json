@@ -1,0 +1,299 @@
+{
+  "evaluator_sha256": "acf93d8e128c3d6ca3c656155cffacda8d34325635165e6fc8053697bc9cc36e",
+  "final_summary_sha256": null,
+  "network_sha256": "023deb7bbda94399f1b2e27d0003ad4b76e42279a7a7d87601535ffd9a1a6a79",
+  "records": [
+    {
+      "actuations": 1,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Costa2016-a1.log",
+      "periodic_switch_counts": [
+        2,
+        2,
+        2
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3916.98,
+      "reevaluated_cost": 3916.983904959969,
+      "request": "requests/Costa2016-a1.json",
+      "result": "results/Costa2016-a1.json",
+      "single_day_switch_on_counts": [
+        1,
+        1,
+        1
+      ],
+      "source": "Costa2016",
+      "source_artifact": "experiments/comparison-schedules/run_Costa2016_a_01.json",
+      "source_artifact_sha256": "e8fceabe1330f1c64f7bc7313047cd111598f05e210e748ec834bca89d81fd84"
+    },
+    {
+      "actuations": 2,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Costa2016-a2.log",
+      "periodic_switch_counts": [
+        4,
+        4,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3618.59,
+      "reevaluated_cost": 3618.595780163983,
+      "request": "requests/Costa2016-a2.json",
+      "result": "results/Costa2016-a2.json",
+      "single_day_switch_on_counts": [
+        2,
+        2,
+        2
+      ],
+      "source": "Costa2016",
+      "source_artifact": "experiments/comparison-schedules/run_Costa2016_a_02.json",
+      "source_artifact_sha256": "48558b5008289aacfee62c383c49b745b51ed398bb20ab0a98e6a0245dc0ce0e"
+    },
+    {
+      "actuations": 3,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Costa2016-a3.log",
+      "periodic_switch_counts": [
+        6,
+        6,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3578.67,
+      "reevaluated_cost": 3578.67175665922,
+      "request": "requests/Costa2016-a3.json",
+      "result": "results/Costa2016-a3.json",
+      "single_day_switch_on_counts": [
+        2,
+        3,
+        2
+      ],
+      "source": "Costa2016",
+      "source_artifact": "experiments/comparison-schedules/run_Costa2016_a_03.json",
+      "source_artifact_sha256": "bc11b92bd2fd7f576b49ee5a8040dc35cbfe16ba7bcf9e9162d3f08c86cb32f0"
+    },
+    {
+      "actuations": 1,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2020-a1.log",
+      "periodic_switch_counts": [
+        4,
+        2,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3634.67,
+      "reevaluated_cost": 3634.6027604799147,
+      "request": "requests/Cimorelli2020-a1.json",
+      "result": "results/Cimorelli2020-a1.json",
+      "single_day_switch_on_counts": [
+        1,
+        1,
+        1
+      ],
+      "source": "Cimorelli2020",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_01.json",
+      "source_artifact_sha256": "e5edfd8430970ed4e627747074c35dc0419c5022ed79da7a7bb2a5b1d96bceff"
+    },
+    {
+      "actuations": 2,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2020-a2.log",
+      "periodic_switch_counts": [
+        6,
+        4,
+        6
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3580.11,
+      "reevaluated_cost": 3580.033091584863,
+      "request": "requests/Cimorelli2020-a2.json",
+      "result": "results/Cimorelli2020-a2.json",
+      "single_day_switch_on_counts": [
+        2,
+        2,
+        2
+      ],
+      "source": "Cimorelli2020",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_02.json",
+      "source_artifact_sha256": "88b00d0b462cbd34e962d0ae37da690d82dfcd84cdca2519b09ff27d0f0d9700"
+    },
+    {
+      "actuations": 3,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2020-a3.log",
+      "periodic_switch_counts": [
+        8,
+        8,
+        6
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3575.54,
+      "reevaluated_cost": 3575.4636038160907,
+      "request": "requests/Cimorelli2020-a3.json",
+      "result": "results/Cimorelli2020-a3.json",
+      "single_day_switch_on_counts": [
+        3,
+        3,
+        3
+      ],
+      "source": "Cimorelli2020",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2020_a_03.json",
+      "source_artifact_sha256": "3ee0e9deda85af6ea91557a64d7da6bfaa3b6f34a576a839cc4fd1548601dfed"
+    },
+    {
+      "actuations": 1,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2021-a1.log",
+      "periodic_switch_counts": [
+        2,
+        2,
+        2
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3915.87,
+      "reevaluated_cost": 3915.78517943874,
+      "request": "requests/Cimorelli2021-a1.json",
+      "result": "results/Cimorelli2021-a1.json",
+      "single_day_switch_on_counts": [
+        1,
+        0,
+        1
+      ],
+      "source": "Cimorelli2021",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2021_a_01.json",
+      "source_artifact_sha256": "9bd84bf1e116a9de23daf3b19c60df93a7944574e52aefc0f1e413ef011aed77"
+    },
+    {
+      "actuations": 2,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2021-a2.log",
+      "periodic_switch_counts": [
+        4,
+        4,
+        4
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3618.59,
+      "reevaluated_cost": 3618.5957801638447,
+      "request": "requests/Cimorelli2021-a2.json",
+      "result": "results/Cimorelli2021-a2.json",
+      "single_day_switch_on_counts": [
+        2,
+        2,
+        2
+      ],
+      "source": "Cimorelli2021",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2021_a_02.json",
+      "source_artifact_sha256": "ab51e201dce59c0362cc0bc3b0a5aac13425ddac02725a9d131ad76c33b9ceb8"
+    },
+    {
+      "actuations": 3,
+      "feasible": true,
+      "hour_failed": null,
+      "log": "logs/Cimorelli2021-a3.log",
+      "periodic_switch_counts": [
+        6,
+        6,
+        6
+      ],
+      "prune_reason": "NONE",
+      "published_cost": 3575.61,
+      "reevaluated_cost": 3575.5380640404123,
+      "request": "requests/Cimorelli2021-a3.json",
+      "result": "results/Cimorelli2021-a3.json",
+      "single_day_switch_on_counts": [
+        3,
+        3,
+        2
+      ],
+      "source": "Cimorelli2021",
+      "source_artifact": "experiments/comparison-schedules/run_Cimorelli2021_a_03.json",
+      "source_artifact_sha256": "406c18f95e2372e9a792fc2e145ef35d465ffe3f41c1efd224a557db10791d06"
+    },
+    {
+      "actuations": 1,
+      "feasible": false,
+      "hour_failed": 22,
+      "log": "logs/Paola2025-a1.log",
+      "periodic_switch_counts": [
+        2,
+        2,
+        2
+      ],
+      "prune_reason": "LEVELS",
+      "published_cost": 3911.52,
+      "reevaluated_cost": 3631.409230643135,
+      "request": "requests/Paola2025-a1.json",
+      "result": "results/Paola2025-a1.json",
+      "single_day_switch_on_counts": [
+        1,
+        1,
+        1
+      ],
+      "source": "Paola2025",
+      "source_artifact": "experiments/comparison-schedules/run_Paola2025_a_01.json",
+      "source_artifact_sha256": "28a1b740c3da62d3a5651d08a64ebac8bccaa2dd5ccea774343db00d4bbbd693"
+    },
+    {
+      "actuations": 2,
+      "feasible": false,
+      "hour_failed": 21,
+      "log": "logs/Paola2025-a2.log",
+      "periodic_switch_counts": [
+        4,
+        4,
+        2
+      ],
+      "prune_reason": "LEVELS",
+      "published_cost": 3606.22,
+      "reevaluated_cost": 3325.84531050687,
+      "request": "requests/Paola2025-a2.json",
+      "result": "results/Paola2025-a2.json",
+      "single_day_switch_on_counts": [
+        2,
+        2,
+        1
+      ],
+      "source": "Paola2025",
+      "source_artifact": "experiments/comparison-schedules/run_Paola2025_a_02.json",
+      "source_artifact_sha256": "f7ffc1a259c395f89fdbd2ee52700cf07fbf148a0f81c6a27c3375d54a123ae4"
+    },
+    {
+      "actuations": 3,
+      "feasible": false,
+      "hour_failed": 21,
+      "log": "logs/Paola2025-a3.log",
+      "periodic_switch_counts": [
+        6,
+        6,
+        4
+      ],
+      "prune_reason": "LEVELS",
+      "published_cost": 3577.4,
+      "reevaluated_cost": 3325.112096001735,
+      "request": "requests/Paola2025-a3.json",
+      "result": "results/Paola2025-a3.json",
+      "single_day_switch_on_counts": [
+        2,
+        2,
+        2
+      ],
+      "source": "Paola2025",
+      "source_artifact": "experiments/comparison-schedules/run_Paola2025_a_03.json",
+      "source_artifact_sha256": "985d3c282186b6650974fe3790cf6025edddff97be42decef796a1ee42a1f69e"
+    }
+  ],
+  "schedule_mode": "binary",
+  "schema_version": 1,
+  "switch_count_convention": "single_day",
+  "switch_count_horizon": "switch-ons between consecutive hours 1-24 without closure"
+}

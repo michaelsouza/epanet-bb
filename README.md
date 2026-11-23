@@ -8,9 +8,8 @@ It combines a distributed-memory Branch-and-Bound solver with a customized,
 embedded EPANET hydraulic engine to optimize day-ahead pump schedules subject
 to hydraulic, operational, and energy-cost constraints.
 
-The repository includes the submission [manuscript](paper/paper.pdf), its
-[source](paper/paper.tex), and the precomputed data used to reconstruct its
-tables and figures. Versioned releases are archived in the
+The repository includes the precomputed data used to reconstruct the tables
+and figures of the accompanying article. Versioned releases are archived in the
 [project Zenodo record](https://doi.org/10.5281/zenodo.19363091).
 
 ## Requirements and build
@@ -52,13 +51,52 @@ synchronization interval (`-s`), hydraulic iteration limit
 (`--hydraulic-max-trials`), hydraulic accuracy (`--hydraulic-accuracy`), and
 verbosity (`-v`).
 
+### Feasibility protocol
+
+The tank limits declared in `networks/any-town.inp` (61.53 to 75.53 m) are
+deliberately wider than the operating limits, so the hydraulic engine never
+clamps a tank level. The operating tank limits (66.53 to 71.53 m) and the
+minimum junction pressures are checked by the optimizer and by
+`run-epanet3-bb-eval` after every hydraulic step (see
+`src/CLI/BBConstraints.cpp`); a schedule that violates them at any step is
+infeasible.
+
+### Cost-to-go bound
+
+Besides the accumulated cost, the optimizer prunes a node when its accumulated
+cost plus a lower bound on the cost still to be paid reaches the incumbent. The
+bound merges the tanks into one store, charges every pumped cubic metre at the
+smallest energy per unit volume of the pump curve, and solves the resulting
+relaxation once per run by dynamic programming over a storage grid. Statement,
+proof and the conditions it needs are in
+the Supplemental Materials of the article; the implementation is
+`BBConstraints::build_cost_to_go`. The conditions of Lemma S3 are checked from
+the network data at start-up; if one fails, the bound is disabled with a
+warning. Statistics count these prunes as `COST_TO_GO`, separately from
+`COST`. Set `BB_ENABLE_COST_TO_GO=0` to disable the bound
+(`BB_ENABLE_COST_PRUNING=0` disables both cost tests).
+
+### Switch-count convention
+
+By default `-a NA` limits each pump to `NA` periodic cycles: status changes
+are counted around the 24 h cycle, including the transition from the last hour
+back to the first, at most `2*NA` per pump. Set `BB_PERIODIC_SWITCH_COUNT=0`
+to count instead only switch-ons (off to on) between consecutive hours of a
+single day, at most `NA` per pump, with a free first-hour status (the
+convention of Cimorelli et al., 2020). The single-day count requires the exact
+disaggregation and is rejected together with
+`BB_ENABLE_EXACT_DISAGGREGATION=0`. The configuration banner, the statistics
+JSON (`switch_count_convention`, `max_switch_count_per_pump`) and the
+best-solution JSON record the convention in use.
+
 ### Outputs
 
 Each MPI rank writes statistics, best-solution, and profiling files under
 `outputs/`. The statistics JSON reports whether the search was conclusive and
 records the effective execution and hydraulic configuration. The best-solution
 JSON contains the aggregate schedule, its hydraulically simulated canonical
-representative, and the reconstructed periodic binary schedule.
+representative, and the reconstructed binary schedule, which respects the
+selected switch-count convention.
 
 ## Reproducibility
 
@@ -93,7 +131,10 @@ Inspect an experiment subset before execution with:
 ```
 
 `--select scalability` and `--select ablation` choose the corresponding
-campaign subsets.
+campaign subsets. `--select final-cases` runs the three final cases
+(`NA` = 1, 2, 3) under the periodic switch count and
+`--select final-cases-single-day` repeats them with
+`BB_PERIODIC_SWITCH_COUNT=0`.
 
 Actual campaign execution requires `--select <subset>` or `--all`. The
 `--profile smoke` option validates orchestration only and must not be used as
@@ -125,7 +166,11 @@ build/run-epanet3-bb-eval input.json output.json
 ```
 
 Set `schedule_mode` to `binary` and provide `best_x` to evaluate specified
-pump identities instead of reconstructing them from `best_y`.
+pump identities instead of reconstructing them from `best_y`. The optional
+`switch_count_convention` field selects `periodic` (default) or `single_day`
+limits, as described for the optimizer; the output reports both
+`periodic_switch_counts` and `single_day_switch_on_counts` whenever the binary
+schedule is known before simulation.
 
 ## Citation
 
