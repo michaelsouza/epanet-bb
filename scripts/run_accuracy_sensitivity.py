@@ -38,6 +38,7 @@ PRUNE_REASONS = (
     "TANK_SATURATION",
     "STABILITY",
     "COST",
+    "COST_TO_GO",
     "ACTUATIONS",
     "TIMESTEP",
 )

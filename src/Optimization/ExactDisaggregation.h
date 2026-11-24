@@ -20,7 +20,11 @@ struct DisaggregationTransitionStatistics
 class ExactDisaggregation
 {
 public:
-  ExactDisaggregation(int pump_count, int max_cycles);
+  // periodic = true: status changes are counted around the cycle (wrap-around),
+  // at most 2 * max_cycles per pump. periodic = false: only switch-ons between
+  // consecutive periods of a single day are counted, at most max_cycles per pump
+  // (convention of Cimorelli et al. 2020); the first-period status is free.
+  ExactDisaggregation(int pump_count, int max_cycles, bool periodic = true);
 
   bool append(int active_pumps);
   bool prefix_feasible() const noexcept;
@@ -54,6 +58,7 @@ private:
 
   int pump_count_;
   int max_switches_;
+  bool periodic_;
   std::vector<Layer> layers_;
   DisaggregationTransitionStatistics last_transition_statistics_;
 };

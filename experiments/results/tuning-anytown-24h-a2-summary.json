@@ -1,0 +1,33 @@
+{
+  "best_trial": {
+    "best_cost": 3618.5957801640034,
+    "number": 0,
+    "objective_seconds": 9.028698499314487,
+    "params": {
+      "level": 8,
+      "np": 64,
+      "sync_interval": 32768
+    },
+    "racing_cutoff_count": 0,
+    "racing_wall_times": [
+      9.079190709628165,
+      9.028415883891284,
+      9.028698499314487
+    ],
+    "repetition_wall_times": [
+      9.079190709628165,
+      9.028415883891284,
+      9.028698499314487
+    ],
+    "validation_performed": false
+  },
+  "direction": "MINIMIZE",
+  "study_name": "phase4-anytown-24h-a2-racing-v1",
+  "trial_counts": {
+    "COMPLETE": 6,
+    "FAIL": 0,
+    "PRUNED": 79,
+    "RUNNING": 0,
+    "WAITING": 0
+  }
+}

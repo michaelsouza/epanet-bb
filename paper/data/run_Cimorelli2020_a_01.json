@@ -112,8 +112,8 @@
     "hour_failed": 24,
     "periodic_switch_counts": [
       4,
-      0,
-      0
+      2,
+      4
     ],
     "prune_reason": "ACTUATIONS",
     "reevaluated_cost": 0.0,

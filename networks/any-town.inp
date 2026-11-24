@@ -31,9 +31,9 @@ Parallel pump IDs: 111, 222, 333
 
 [TANKS]
 ;ID              	Elevation   	InitLevel   	MinLevel    	MaxLevel    	Diameter    	MinVol      	VolCurve
- 65              	0           	66.93       	66.53       	71.53       	21.55       	0           	                	;
- 165             	0           	66.93       	66.53       	71.53       	21.55       	0           	                	;
- 265             	0           	66.93       	66.53       	71.53       	21.55       	0           	                	;
+ 65              	0           	66.93       	61.53       	75.53       	21.55       	0           	                	;
+ 165             	0           	66.93       	61.53       	75.53       	21.55       	0           	                	;
+ 265             	0           	66.93       	61.53       	75.53       	21.55       	0           	                	;
 
 [PIPES]
 ;ID              	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status

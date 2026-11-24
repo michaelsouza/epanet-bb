@@ -86,7 +86,7 @@ accuracy = float(sys.argv[sys.argv.index("--hydraulic-accuracy") + 1])
 conclusive = os.environ.get("FAKE_ALL_CONCLUSIVE") == "1" or accuracy != 1e-7
 (output / "rank_000_stats.json").write_text(json.dumps({
     "NONE": [1], "PRESSURES": [0], "LEVELS": [0],
-    "TANK_SATURATION": [0], "STABILITY": [0], "COST": [0],
+    "TANK_SATURATION": [0], "STABILITY": [0], "COST": [0], "COST_TO_GO": [0],
     "ACTUATIONS": [0], "TIMESTEP": [0],
     "tasks_processed": 1,
     "search": {"status": "CONCLUSIVE" if conclusive else "INCONCLUSIVE_HYDRAULIC_NONCONVERGENCE"},

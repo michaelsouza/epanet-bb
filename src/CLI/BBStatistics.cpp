@@ -12,6 +12,7 @@
 BBStatistics::BBStatistics(const BBConfig &config)
 {
     exact_disaggregation_enabled = config.enable_exact_disaggregation;
+    periodic_switch_count = config.periodic_switch_count;
     search_trace_enabled = config.enable_search_trace;
     globally_conclusive = true;
     run_configuration = {
@@ -22,7 +23,11 @@ BBStatistics::BBStatistics(const BBConfig &config)
         {"sync_interval", config.sync_interval},
         {"snapshots", config.enable_snapshots},
         {"cost_pruning", config.enable_cost_pruning},
+        {"cost_to_go", config.enable_cost_to_go},
         {"exact_disaggregation", config.enable_exact_disaggregation},
+        {"periodic_switch_count", config.periodic_switch_count},
+        {"switch_count_convention", config.switch_count_convention()},
+        {"max_switch_count_per_pump", config.max_switch_count_per_pump()},
         {"search_trace", config.enable_search_trace},
         {"hydraulic_max_trials_override",
          config.hydraulic_max_trials > 0
@@ -91,11 +96,14 @@ nlohmann::json BBStatistics::to_json_value() const
     j["metadata"] = run_metadata;
     j["metadata"]["configuration"] = run_configuration;
     j["metadata"]["hydraulic"] = hydraulic_configuration;
+    j["metadata"]["cost_to_go"] = cost_to_go_status;
 
     j["search"] = {
-        {"method", exact_disaggregation_enabled
-                       ? "EXACT_PERIODIC_DISAGGREGATION"
-                       : "LEGACY_GREEDY_DISAGGREGATION"},
+        {"method", !exact_disaggregation_enabled
+                       ? "LEGACY_GREEDY_DISAGGREGATION"
+                       : (periodic_switch_count
+                              ? "EXACT_PERIODIC_DISAGGREGATION"
+                              : "EXACT_SINGLE_DAY_DISAGGREGATION")},
         {"trace_enabled", search_trace_enabled},
         {"status", is_conclusive()
                        ? "CONCLUSIVE"
@@ -149,7 +157,11 @@ nlohmann::json BBStatistics::to_json_value() const
            {"estimated_resident_state_bytes",
             transition.estimated_resident_state_bytes},
            {"prefix_feasible", transition.prefix_feasible},
+           // Historical name: true when a complete aggregate schedule has a
+           // binary witness under the selected switch-count convention.
            {"periodic_witness_available",
+            transition.periodic_witness_available},
+           {"complete_witness_available",
             transition.periodic_witness_available}});
     }
     j["branch_evaluations"] = nlohmann::json::array();
@@ -265,6 +277,11 @@ void BBStatistics::record_hydraulic_nonconvergence(
 void BBStatistics::set_run_metadata(nlohmann::json metadata)
 {
   run_metadata = std::move(metadata);
+}
+
+void BBStatistics::set_cost_to_go_status(nlohmann::json status)
+{
+  cost_to_go_status = std::move(status);
 }
 
 void BBStatistics::set_hydraulic_configuration(

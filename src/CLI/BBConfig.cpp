@@ -99,13 +99,17 @@ BBConfig::BBConfig(int argc, char *argv[])
 
   enable_snapshots = get_env_bool("BB_ENABLE_SNAPSHOTS", true);
   enable_cost_pruning = get_env_bool("BB_ENABLE_COST_PRUNING", true);
+  enable_cost_to_go = get_env_bool("BB_ENABLE_COST_TO_GO", true);
   enable_pump_sorting = get_env_bool("BB_ENABLE_PUMP_SORTING", true);
   enable_task_shuffle = get_env_bool("BB_ENABLE_TASK_SHUFFLE", true);
   enable_global_sync = get_env_bool("BB_ENABLE_GLOBAL_SYNC", true);
   enable_timestep_check = get_env_bool("BB_ENABLE_TIMESTEP_CHECK", false);
   enable_exact_disaggregation =
       get_env_bool("BB_ENABLE_EXACT_DISAGGREGATION", true);
+  periodic_switch_count = get_env_bool("BB_PERIODIC_SWITCH_COUNT", true);
   enable_search_trace = get_env_bool("BB_ENABLE_SEARCH_TRACE", false);
+
+  validate();
 
   // Buffers for filenames
   try
@@ -142,10 +146,16 @@ void BBConfig::show() const
   Console::printf(Console::Color::CYAN, "Experimental Toggles:\n");
   Console::printf(Console::Color::WHITE, "  Snapshots:       %s\n", enable_snapshots ? "ON" : "OFF");
   Console::printf(Console::Color::WHITE, "  Cost Pruning:    %s\n", enable_cost_pruning ? "ON" : "OFF");
+  Console::printf(Console::Color::WHITE, "  Cost-to-go:      %s\n",
+                  !enable_cost_to_go ? "OFF" : (enable_cost_pruning ? "ON" : "OFF (cost pruning off)"));
   Console::printf(Console::Color::WHITE, "  Pump Sorting:    %s\n", enable_pump_sorting ? "ON" : "OFF");
   Console::printf(Console::Color::WHITE, "  Task Shuffle:    %s\n", enable_task_shuffle ? "ON" : "OFF");
   Console::printf(Console::Color::WHITE, "  Global Sync:     %s\n", enable_global_sync ? "ON" : "OFF");
   Console::printf(Console::Color::WHITE, "  Timestep Check:  %s\n", enable_timestep_check ? "ON" : "OFF");
   Console::printf(Console::Color::WHITE, "  Exact Disagg.:   %s\n", enable_exact_disaggregation ? "ON" : "OFF");
+  Console::printf(Console::Color::WHITE, "  Periodic Count:  %s\n",
+                  periodic_switch_count
+                      ? "ON (status changes with wrap-around <= 2*NA)"
+                      : "OFF (single-day switch-ons <= NA)");
   Console::printf(Console::Color::WHITE, "  Search Trace:    %s\n", enable_search_trace ? "ON" : "OFF");
 }

@@ -301,6 +301,7 @@ def task_commands(
                 sync_interval=sync_interval,
                 hydraulic_accuracy=hydraulic_accuracy,
                 hydraulic_max_trials=hydraulic_max_trials,
+                environment=task.get("environment", {}),
             )
             for process_count in process_counts
         ]

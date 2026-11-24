@@ -13,7 +13,9 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 
 namespace
@@ -74,9 +76,7 @@ HydraulicOutcome evaluate_binary_schedule(
   return outcome;
 }
 
-void short_search_uses_exact_disaggregation_and_a_canonical_representative(
-    const char *input_file, const char *executable,
-    const char *artifact_file)
+BBConfig reduced_search_config(const char *input_file)
 {
   BBConfig config;
   config.inpFile = input_file;
@@ -88,15 +88,34 @@ void short_search_uses_exact_disaggregation_and_a_canonical_representative(
   config.enable_task_shuffle = false;
   config.enable_exact_disaggregation = true;
   config.enable_search_trace = true;
+  return config;
+}
 
+// Mirrors populate_tasks at level 1: one root task per hour-1 aggregate
+// decision, each searching hours 2..h_max.
+void process_level_one_tasks(BBConfig &config, BBConstraints &constraints,
+                             BBStatistics &statistics)
+{
+  for (int pumps = 0; pumps <= constraints.get_num_pumps(); ++pumps)
+  {
+    BBTask task(pumps, config, constraints);
+    task.y[1] = pumps;
+    task.h_root = config.level + 1;
+    task.tid = 0;
+    processTask(task, config, constraints, statistics);
+  }
+}
+
+void short_search_uses_exact_disaggregation_and_a_canonical_representative(
+    const char *input_file, const char *executable,
+    const char *artifact_file)
+{
+  BBConfig config = reduced_search_config(input_file);
   BBConstraints constraints(config);
   BBStatistics statistics(config);
   statistics.set_run_metadata(RunMetadata::capture(executable, 1));
-  BBTask task(0, config, constraints);
-  task.h_root = 1;
-  task.tid = 0;
 
-  processTask(task, config, constraints, statistics);
+  process_level_one_tasks(config, constraints, statistics);
 
   const auto output = statistics.to_json_value();
   require(output.at("search").at("method") == "EXACT_PERIODIC_DISAGGREGATION",
@@ -206,6 +225,14 @@ void short_search_uses_exact_disaggregation_and_a_canonical_representative(
           "the effective process count should be recorded");
   require(metadata.at("configuration").at("horizon_hours") == 3,
           "the search configuration should be recorded");
+  require(metadata.at("configuration").at("switch_count_convention") ==
+              "periodic",
+          "the default switch-count convention should be periodic");
+  require(metadata.at("configuration").at("max_switch_count_per_pump") == 2,
+          "the periodic convention should allow 2 * NA status changes");
+  require(constraints.to_json_value().at("switch_count_convention") ==
+              "periodic",
+          "the best-solution JSON should record the periodic convention");
   require(std::abs(
               metadata.at("hydraulic")
                       .at("relative_accuracy")
@@ -216,18 +243,17 @@ void short_search_uses_exact_disaggregation_and_a_canonical_representative(
               "input_file",
           "the source of the hydraulic accuracy should be recorded");
 
-  bool saw_saturation_prune = false;
+  bool saw_level_prune = false;
   for (const auto &evaluation : output.at("branch_evaluations"))
   {
-    if (evaluation.at("reason") == "TANK_SATURATION")
-    {
-      saw_saturation_prune = true;
-      require(!evaluation.at("tank_saturation_events").empty(),
-              "a saturation prune should retain its causal tank event");
-    }
+    require(evaluation.at("reason") != "TANK_SATURATION" &&
+                evaluation.at("tank_saturation_events").empty(),
+            "relaxed network tank limits should never require tank intervention");
+    saw_level_prune =
+        saw_level_prune || evaluation.at("reason") == "LEVELS";
   }
-  require(saw_saturation_prune,
-          "the reduced integrated search should exercise saturation pruning");
+  require(saw_level_prune,
+          "operating tank limits should be enforced by the external level check");
 
   require(!constraints.best_y.empty(),
           "the reduced search should produce a complete aggregate schedule");
@@ -287,6 +313,31 @@ void short_search_uses_exact_disaggregation_and_a_canonical_representative(
       {"tolerance", 1.0e-9}};
   std::ofstream file(artifact_file);
   file << artifact.dump(2);
+}
+
+void strict_tank_limits_exercise_saturation_pruning(
+    const char *strict_input_file, const char *executable)
+{
+  BBConfig config = reduced_search_config(strict_input_file);
+  BBConstraints constraints(config);
+  BBStatistics statistics(config);
+  statistics.set_run_metadata(RunMetadata::capture(executable, 1));
+
+  process_level_one_tasks(config, constraints, statistics);
+
+  const auto output = statistics.to_json_value();
+  bool saw_saturation_prune = false;
+  for (const auto &evaluation : output.at("branch_evaluations"))
+  {
+    if (evaluation.at("reason") == "TANK_SATURATION")
+    {
+      saw_saturation_prune = true;
+      require(!evaluation.at("tank_saturation_events").empty(),
+              "a saturation prune should retain its causal tank event");
+    }
+  }
+  require(saw_saturation_prune,
+          "the reduced integrated search should exercise saturation pruning");
 }
 
 void hydraulic_nonconvergence_marks_the_search_inconclusive_without_pruning(
@@ -356,6 +407,134 @@ void metadata_resolves_the_running_executable_when_invoked_through_path(
       "metadata should hash the running executable when argv[0] is a PATH name");
 }
 
+struct ConventionOutcome
+{
+  double best_cost;
+  std::vector<int> best_x;
+  std::vector<int> best_y;
+  nlohmann::json statistics;
+  nlohmann::json solution;
+};
+
+ConventionOutcome search_with_convention(const char *input_file,
+                                         const char *executable,
+                                         bool periodic)
+{
+  BBConfig config = reduced_search_config(input_file);
+  config.h_max = 8;
+  config.enable_cost_pruning = true;
+  config.periodic_switch_count = periodic;
+  BBConstraints constraints(config);
+  BBStatistics statistics(config);
+  statistics.set_run_metadata(RunMetadata::capture(executable, 1));
+  process_level_one_tasks(config, constraints, statistics);
+  return {constraints.best_cost_local, constraints.best_x, constraints.best_y,
+          statistics.to_json_value(), constraints.to_json_value()};
+}
+
+void single_day_count_relaxes_the_periodic_search(const char *input_file,
+                                                   const char *executable)
+{
+  const ConventionOutcome periodic =
+      search_with_convention(input_file, executable, true);
+  const ConventionOutcome single_day =
+      search_with_convention(input_file, executable, false);
+  std::cout << "h_max=8, NA=1: periodic " << periodic.best_cost
+            << ", single-day " << single_day.best_cost << '\n';
+
+  require(periodic.best_cost < std::numeric_limits<double>::max() &&
+              single_day.best_cost < std::numeric_limits<double>::max(),
+          "both conventions should find a schedule");
+  // A periodic witness has at most NA switch-ons inside the day, so every
+  // periodic-feasible schedule is single-day feasible.
+  require(single_day.best_cost <= periodic.best_cost + 1.0e-9,
+          "the single-day count should relax the periodic count");
+  // On this reduced horizon the relaxation is strict, so the test also
+  // detects a solver that ignores the convention.
+  require(single_day.best_cost < periodic.best_cost - 1.0,
+          "the single-day optimum should be cheaper on the 8 h horizon");
+
+  require(single_day.statistics.at("search").at("method") ==
+              "EXACT_SINGLE_DAY_DISAGGREGATION",
+          "the search metadata should identify the single-day convention");
+  const auto &configuration =
+      single_day.statistics.at("metadata").at("configuration");
+  require(configuration.at("switch_count_convention") == "single_day" &&
+              configuration.at("periodic_switch_count") == false &&
+              configuration.at("max_switch_count_per_pump") == 1 &&
+              configuration.at("max_cycles_per_pump") == 1,
+          "the configuration should record the single-day convention");
+  require(single_day.solution.at("switch_count_convention") == "single_day" &&
+              single_day.solution.at("max_switch_count_per_pump") == 1,
+          "the best-solution JSON should record the single-day convention");
+  bool saw_witness = false;
+  for (const auto &transition :
+       single_day.statistics.at("disaggregation_transitions"))
+    saw_witness = saw_witness ||
+                  transition.at("complete_witness_available").get<bool>();
+  require(saw_witness, "a complete schedule should expose a single-day witness");
+
+  constexpr std::size_t pumps = 3;
+  const auto &x = single_day.best_x;
+  const auto &y = single_day.best_y;
+  require(x.size() == y.size() * pumps,
+          "the single-day result should expose a padded binary witness");
+  for (std::size_t hour = 1; hour < y.size(); ++hour)
+  {
+    const auto begin = x.begin() + static_cast<std::ptrdiff_t>(hour * pumps);
+    require(std::accumulate(begin, begin + pumps, 0) == y.at(hour),
+            "the single-day witness should realize every aggregate period");
+  }
+  for (std::size_t pump = 0; pump < pumps; ++pump)
+  {
+    int switch_ons = 0;
+    for (std::size_t hour = 2; hour < y.size(); ++hour)
+      switch_ons += x.at((hour - 1) * pumps + pump) == 0 &&
+                    x.at(hour * pumps + pump) == 1;
+    require(switch_ons <= 1,
+            "the single-day witness should switch each pump on at most once");
+  }
+}
+
+void single_day_count_rejects_the_legacy_disaggregation(
+    const char *input_file)
+{
+  BBConfig config = reduced_search_config(input_file);
+  config.periodic_switch_count = false;
+  config.enable_exact_disaggregation = false;
+
+  bool rejected = false;
+  try
+  {
+    config.validate();
+  }
+  catch (const std::invalid_argument &)
+  {
+    rejected = true;
+  }
+  require(rejected,
+          "the single-day count should require exact disaggregation");
+
+  BBConstraints constraints(config);
+  BBStatistics statistics(config);
+  BBTask task(1, config, constraints);
+  task.y[1] = 1;
+  task.h_root = config.level + 1;
+  task.tid = 0;
+  rejected = false;
+  try
+  {
+    processTask(task, config, constraints, statistics);
+  }
+  catch (const std::invalid_argument &)
+  {
+    rejected = true;
+  }
+  require(rejected,
+          "the solver should refuse the legacy disaggregation with the "
+          "single-day count instead of solving a different problem");
+}
+
 void statistics_merge_preserves_integrated_search_evidence()
 {
   BBConfig config;
@@ -398,13 +577,17 @@ void statistics_merge_preserves_integrated_search_evidence()
 int main(int argc, char **argv)
 {
   require(
-      argc == 3,
-      "usage: IntegratedSearchTest <network.inp> <artifact.json>");
+      argc == 4,
+      "usage: IntegratedSearchTest <network.inp> <strict-tank-limits.inp> "
+      "<artifact.json>");
   short_search_uses_exact_disaggregation_and_a_canonical_representative(
-      argv[1], argv[0], argv[2]);
+      argv[1], argv[0], argv[3]);
+  strict_tank_limits_exercise_saturation_pruning(argv[2], argv[0]);
   hydraulic_nonconvergence_marks_the_search_inconclusive_without_pruning(
       argv[1], argv[0]);
   metadata_resolves_the_running_executable_when_invoked_through_path(argv[0]);
+  single_day_count_relaxes_the_periodic_search(argv[1], argv[0]);
+  single_day_count_rejects_the_legacy_disaggregation(argv[1]);
   statistics_merge_preserves_integrated_search_evidence();
   return EXIT_SUCCESS;
 }

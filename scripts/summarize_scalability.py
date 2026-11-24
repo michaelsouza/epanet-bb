@@ -42,8 +42,12 @@ def command_signature(command: dict) -> dict:
     }
 
 
-def point_directory(campaign: Path, command: dict) -> Path:
-    declared = Path(command["output_dir"])
+def point_directory(
+    campaign: Path, command: dict, recorded: str | None = None
+) -> Path:
+    # A resumed campaign reruns an interrupted command in a new directory
+    # (for example np-001-resume-001); the receipt records the one that ran.
+    declared = Path(recorded if recorded is not None else command["output_dir"])
     if declared.is_dir():
         return declared
     return campaign / "scalability" / declared.name
@@ -53,11 +57,12 @@ def audit_point(
     campaign: Path,
     command: dict,
     expected_executable_sha256: str,
+    recorded_output_dir: str | None = None,
 ) -> dict:
     signature = command_signature(command)
     process_count = signature["np"]
     point_id = f"np-{process_count:03d}"
-    directory = point_directory(campaign, command)
+    directory = point_directory(campaign, command, recorded_output_dir)
     execution = load_json(directory / "execution-results.json")
     experiments = execution.get("experiments", [])
     if execution.get("status") != "complete" or len(experiments) != 1:
@@ -165,6 +170,9 @@ def audit_campaign(campaign: Path) -> dict:
         raise AuditError(f"campaign has unsuccessful commands: {campaign}")
 
     executable_sha256 = plan["metadata"]["executable"]["sha256"]
+    recorded_dirs = result_tasks[0].get("output_dirs")
+    if not isinstance(recorded_dirs, list) or len(recorded_dirs) != len(commands):
+        recorded_dirs = [None] * len(commands)
     return {
         "campaign": campaign.name,
         "git": git,
@@ -172,8 +180,8 @@ def audit_campaign(campaign: Path) -> dict:
         "compatibility_sha256": plan["compatibility_sha256"],
         "duration_seconds": float(result_tasks[0]["duration_seconds"]),
         "points": [
-            audit_point(campaign, command, executable_sha256)
-            for command in commands
+            audit_point(campaign, command, executable_sha256, recorded)
+            for command, recorded in zip(commands, recorded_dirs)
         ],
     }
 

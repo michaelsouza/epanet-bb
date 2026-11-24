@@ -3,8 +3,9 @@
 Most users need only two entry points:
 
 - `run_campaign.py` plans, executes, or resumes experiment subsets declared in
-  `experiments/reproducibility.json`, including `--select ablation` and
-  `--select scalability`.
+  `experiments/reproducibility.json`, including `--select ablation`,
+  `--select scalability`, `--select final-cases` and
+  `--select final-cases-single-day`.
 - `rebuild_manuscript.py` reconstructs the declared manuscript products from
   checked-in data without running MPI experiments.
 
@@ -14,7 +15,8 @@ or focused provenance utilities:
 - Campaign execution: `run_experiments.py`, `run_tuning.py`, and
   `run_accuracy_sensitivity.py`.
 - Result processing: `summarize_ablation.py`, `summarize_scalability.py`,
-  `summarize_final_cases.py`, `summarize_accuracy_sensitivity.py`,
+  `summarize_final_cases.py` (both final-cases tasks),
+  `summarize_accuracy_sensitivity.py`,
   `audit_accuracy_sensitivity.py`, `evaluate_comparison_schedules.py`, and
   `prepare_manuscript_artifacts.py`.
 - Figure generation: `create_comparison_table_images.py`, `plot_network.py`,

@@ -116,7 +116,7 @@
       4
     ],
     "prune_reason": "NONE",
-    "reevaluated_cost": 3618.595780163883,
+    "reevaluated_cost": 3618.595780163983,
     "schedule_mode": "binary"
   },
   "verbose": 1

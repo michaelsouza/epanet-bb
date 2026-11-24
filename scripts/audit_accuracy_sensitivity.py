@@ -88,8 +88,14 @@ def audit_campaign(campaign: Path) -> dict:
     planned_ids = [cell["id"] for cell in plan.get("cells", [])]
     records = receipt.get("records", [])
     record_ids = [record["id"] for record in records]
-    if record_ids != planned_ids or len(set(record_ids)) != len(record_ids):
-        raise AuditError("receipt records do not match the planned cell order")
+    # A cell that crashed and was rerun on resume is appended after the others,
+    # so the receipt holds the planned cells in a different order.
+    if sorted(record_ids) != sorted(planned_ids) or len(set(record_ids)) != len(
+        record_ids
+    ):
+        raise AuditError("receipt records do not match the planned cells")
+    position = {cell_id: index for index, cell_id in enumerate(planned_ids)}
+    records = sorted(records, key=lambda record: position[record["id"]])
     fixed = [record for record in records if record["kind"] == "fixed"]
     optimization = [record for record in records if record["kind"] == "optimization"]
     if len(fixed) != 45 or len(optimization) != 27:

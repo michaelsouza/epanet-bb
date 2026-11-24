@@ -144,6 +144,8 @@ public:
       int solver_status);
   void set_run_metadata(nlohmann::json metadata);
   void set_hydraulic_configuration(nlohmann::json configuration);
+  /// Records whether the cost-to-go bound was active and its parameters
+  void set_cost_to_go_status(nlohmann::json status);
   bool is_conclusive() const noexcept;
   void set_global_conclusive(bool conclusive) noexcept;
 
@@ -167,9 +169,11 @@ public:
 
 private:
   bool exact_disaggregation_enabled;
+  bool periodic_switch_count = true;
   bool search_trace_enabled;
   nlohmann::json run_configuration;
   nlohmann::json run_metadata;
   nlohmann::json hydraulic_configuration;
+  nlohmann::json cost_to_go_status;
   bool globally_conclusive;
 };

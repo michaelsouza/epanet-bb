@@ -19,6 +19,7 @@ DEFAULT_COMPARISON_DATA = ROOT / "experiments" / "comparison-schedules"
 VARIANT_LABELS = {
     "baseline": "All features",
     "no-cost-pruning": "No cost pruning",
+    "no-cost-to-go": "No cost-to-go bound",
     "no-snapshots": "No snapshots",
     "no-task-shuffle": "No task shuffling",
     "no-global-sync": "No global synchronization",
@@ -28,21 +29,32 @@ EXPECTED_ABLATION_VARIANTS = set(VARIANT_ORDER) | {"no-pump-sorting"}
 PRUNING_ORDER = (
     "Actuation",
     "Cost bound",
+    "Cost-to-go bound",
     "Tank levels",
     "Pressure",
     "Total pruned",
     "Feasible",
 )
-EXTERNAL_SOURCES = ("Costa2016", "Cimorelli2020", "Paola2025")
+# Chronological order of publication; the comparison table follows it.
+EXTERNAL_SOURCES = ("Costa2016", "Cimorelli2020", "Cimorelli2021", "Paola2025")
 EXTERNAL_SOURCE_LABELS = {
-    "Costa2016": "Costa et al.",
-    "Cimorelli2020": "Cimorelli et al.",
-    "Paola2025": "De Paola et al.",
+    "Costa2016": "Costa et al. (2016)",
+    "Cimorelli2020": "Cimorelli et al. (2020)",
+    "Cimorelli2021": "Cimorelli et al. (2021)",
+    "Paola2025": "De Paola et al. (2025)",
 }
+COMPARISON_SOURCES = (*EXTERNAL_SOURCES, "Souza2026")
 COMPARISON_REASON_LABELS = {
     "NONE": "--",
     "ACTUATIONS": "Periodic actuation",
+    "LEVELS": "Tank level",
+    "PRESSURES": "Pressure",
     "TANK_SATURATION": "Tank saturation",
+}
+# The single-day table names the switch count it applies.
+SINGLE_DAY_REASON_LABELS = {
+    **COMPARISON_REASON_LABELS,
+    "ACTUATIONS": "Single-day actuation",
 }
 ACCURACY_ORDER = ("1e-3", "1e-4", "1e-7")
 ACCURACY_LABELS = {
@@ -87,6 +99,9 @@ def validate_summaries(
     ):
         if payload.get("schema_version") != 1:
             raise PreparationError(f"{name} summary has an unsupported schema")
+    # The original final-cases summary predates the field and is periodic.
+    if final_cases.get("switch_count_convention", "periodic") != "periodic":
+        raise PreparationError("final cases summary must use the periodic switch count")
     hashes = {
         ablation.get("executable_sha256"),
         scalability.get("executable_sha256"),
@@ -486,55 +501,114 @@ def prepare_scalability(summary: dict, data_dir: Path, tables_dir: Path) -> None
     )
 
 
-def prepare_final_cases(summary: dict, data_dir: Path, tables_dir: Path) -> None:
-    rows = []
-    tex_rows = []
-    pruning_rows = []
-    cases = sorted(summary["cases"], key=lambda case: case["actuations"])
-    for case in cases:
-        row = {
-            "NA_max": case["actuations"],
-            "cost": case["global_best_cost"],
-            "wall_time": case["wall_seconds"],
-            "proc_avg": case["average_rank_seconds"],
-            "proc_max": case["maximum_rank_seconds"],
-            "load_imbalance": case["load_imbalance_factor"],
-            "candidate_assignments": case["candidate_assignments"],
-            "total_tasks": case["tasks_processed"],
-            "nodes_total": case["nodes_total"],
-        }
-        rows.append(row)
-        tex_rows.append(
-            [
-                str(case["actuations"]),
-                format_cost(case["global_best_cost"]),
-                f"{case['wall_seconds']:.1f}",
-                f"{100.0 * case['load_imbalance_factor']:.1f}",
-            ]
+PRUNING_REASONS = {
+    "Actuation": ("ACTUATIONS",),
+    "Cost bound": ("COST",),
+    "Cost-to-go bound": ("COST_TO_GO",),
+    "Tank levels": ("LEVELS", "TANK_SATURATION"),
+    "Pressure": ("PRESSURES",),
+}
+# Column groups of the final-cases and pruning tables when both switch-count
+# conventions are reported.
+CONVENTION_GROUP_LABELS = {
+    "periodic": "Periodic count",
+    "single_day": "Single-day count",
+}
+
+
+def validate_single_day_final_cases(final_cases: dict, single_day: dict) -> None:
+    """Check that the single-day final cases repeat the periodic protocol."""
+    if single_day.get("schema_version") != 1:
+        raise PreparationError("single-day final cases summary has an unsupported schema")
+    if single_day.get("switch_count_convention") != "single_day":
+        raise PreparationError(
+            "single-day final cases summary must use the single_day switch count"
         )
-        for criterion in PRUNING_ORDER:
-            if criterion in ("Total pruned", "Feasible"):
+    if single_day.get("max_switch_count_per_pump", {"1": 1, "2": 2, "3": 3}) != {
+        "1": 1,
+        "2": 2,
+        "3": 3,
+    }:
+        raise PreparationError(
+            "single-day final cases summary has unexpected switch limits"
+        )
+    if single_day.get("configuration") != final_cases.get("configuration"):
+        raise PreparationError(
+            "periodic and single-day final cases used different configurations"
+        )
+    periodic_cases = {case["actuations"]: case for case in final_cases["cases"]}
+    single_day_cases = {
+        case["actuations"]: case for case in single_day.get("cases", [])
+    }
+    if sorted(single_day_cases) != [1, 2, 3] or len(single_day.get("cases", [])) != 3:
+        raise PreparationError("single-day final summary must contain NA_max=1,2,3")
+    for actuations, case in single_day_cases.items():
+        if case.get("configuration") != periodic_cases[actuations].get("configuration"):
+            raise PreparationError(
+                "periodic and single-day final cases used different "
+                f"configurations: NA_max={actuations}"
+            )
+
+
+def tex_count(value: int) -> str:
+    return f"{value:,}".replace(",", "{,}")
+
+
+def prepare_final_cases(
+    summary: dict,
+    data_dir: Path,
+    tables_dir: Path,
+    single_day_summary: dict | None = None,
+) -> None:
+    """Final-cases and pruning tables; single-day results add column groups."""
+    grouped = single_day_summary is not None
+    summaries = {"periodic": summary}
+    if grouped:
+        summaries["single_day"] = single_day_summary
+    cases_by_convention = {
+        convention: sorted(payload["cases"], key=lambda case: case["actuations"])
+        for convention, payload in summaries.items()
+    }
+    rows = []
+    pruning_rows = []
+    for convention, cases in cases_by_convention.items():
+        for case in cases:
+            row = {
+                "NA_max": case["actuations"],
+                "cost": case["global_best_cost"],
+                "wall_time": case["wall_seconds"],
+                "proc_avg": case["average_rank_seconds"],
+                "proc_max": case["maximum_rank_seconds"],
+                "load_imbalance": case["load_imbalance_factor"],
+                "candidate_assignments": case["candidate_assignments"],
+                "total_tasks": case["tasks_processed"],
+                "nodes_total": case["nodes_total"],
+            }
+            if grouped:
+                row["switch_count_convention"] = convention
+            rows.append(row)
+            for criterion in PRUNING_ORDER:
                 if criterion == "Feasible":
                     count = case["pruning_counts"]["NONE"]
-                else:
+                elif criterion == "Total pruned":
                     count = case["nodes_total"] - case["pruning_counts"]["NONE"]
-            else:
-                reasons = {
-                    "Actuation": ("ACTUATIONS",),
-                    "Cost bound": ("COST",),
-                    "Tank levels": ("LEVELS", "TANK_SATURATION"),
-                    "Pressure": ("PRESSURES",),
-                }[criterion]
-                count = sum(case["pruning_counts"][reason] for reason in reasons)
-            pruning_rows.append(
-                {
+                else:
+                    count = sum(
+                        case["pruning_counts"][reason]
+                        for reason in PRUNING_REASONS[criterion]
+                    )
+                pruning_row = {
                     "NA_max": case["actuations"],
                     "criterion": criterion,
                     "count": count,
                     "percentage": case["pruning_percentages"][criterion],
                     "nodes_total": case["nodes_total"],
                 }
-            )
+                if grouped:
+                    pruning_row["switch_count_convention"] = convention
+                pruning_rows.append(pruning_row)
+
+    for case in cases_by_convention["periodic"]:
         solution = {
             "best_cost": case["global_best_cost"],
             "duration": case["wall_seconds"],
@@ -555,35 +629,118 @@ def prepare_final_cases(summary: dict, data_dir: Path, tables_dir: Path) -> None
 
     write_rows(data_dir / "final_cases.csv", list(rows[0]), rows)
     write_rows(data_dir / "pruning.csv", list(pruning_rows[0]), pruning_rows)
-    (tables_dir / "final_cases.tex").write_text(
-        tex_table(
+
+    def case_cells(case: dict) -> list[str]:
+        return [
+            format_cost(case["global_best_cost"]),
+            f"{case['wall_seconds']:.1f}",
+            f"{100.0 * case['load_imbalance_factor']:.1f}",
+        ]
+
+    conventions = list(cases_by_convention)
+
+    def grouped_cells(cells_by_convention: list[list[str]]) -> list[str]:
+        # An empty spacer column separates the convention groups so that the
+        # \cline under each group header stays visibly separate.
+        joined = list(cells_by_convention[0])
+        for cells in cells_by_convention[1:]:
+            joined.extend(["", *cells])
+        return joined
+
+    # Column layout of the grouped tables: leading column, three periodic
+    # columns, a 1em spacer, three single-day columns.
+    group_header = (
+        "   & \\multicolumn{3}{c}{%s} &  & \\multicolumn{3}{c}{%s} \\\\"
+    )
+    group_rules = "  \\cline{2-4} \\cline{6-8}"
+    group_columns = "rrr@{}p{1em}@{}rrr@{}}"
+    tex_rows = [
+        [str(actuations)]
+        + grouped_cells(
+            [
+                case_cells(cases_by_convention[convention][index])
+                for convention in conventions
+            ]
+        )
+        for index, actuations in enumerate((1, 2, 3))
+    ]
+    if not grouped:
+        final_cases_tex = tex_table(
             "@{}rrrr@{}",
             ["$NA_{\\max}$", "Cost (\\$)", "Time (s)", "Load imb. (\\%)"],
             tex_rows,
-        ),
-        encoding="utf-8",
-    )
+        )
+    else:
+        final_lines = [
+            "\\begin{tabular}{@{}r@{\\quad}" + group_columns,
+            "  \\hline",
+            group_header
+            % tuple(CONVENTION_GROUP_LABELS[convention] for convention in conventions),
+            group_rules,
+            "  "
+            + " & ".join(
+                ["$NA_{\\max}$"]
+                + grouped_cells(
+                    [["Cost (\\$)", "Time (s)", "Load imb. (\\%)"]] * len(conventions)
+                )
+            )
+            + " \\\\",
+            "  \\hline",
+        ]
+        final_lines.extend("  " + " & ".join(row) + " \\\\" for row in tex_rows)
+        final_lines.extend(["  \\hline", "\\end{tabular}", ""])
+        final_cases_tex = "\n".join(final_lines)
+    (tables_dir / "final_cases.tex").write_text(final_cases_tex, encoding="utf-8")
 
-    pruning_by_case = {
-        case["actuations"]: case["pruning_percentages"] for case in cases
-    }
     pruning_tex_rows = [
         ["Not pruned" if criterion == "Feasible" else criterion]
-        + [f"{pruning_by_case[actuations][criterion]:.1f}" for actuations in (1, 2, 3)]
+        + grouped_cells(
+            [
+                [
+                    f"{case['pruning_percentages'][criterion]:.1f}"
+                    for case in cases_by_convention[convention]
+                ]
+                for convention in conventions
+            ]
+        )
         for criterion in PRUNING_ORDER
     ]
     pruning_tex_rows.append(
         ["Explored nodes (count)"]
-        + [f"{next(case for case in cases if case['actuations'] == a)['nodes_total']:,}".replace(",", "{,}") for a in (1, 2, 3)]
+        + grouped_cells(
+            [
+                [tex_count(case["nodes_total"]) for case in cases_by_convention[convention]]
+                for convention in conventions
+            ]
+        )
     )
-    pruning_lines = [
-        "\\begin{tabular}{@{}lrrr@{}}",
-        "  \\hline",
-        "   & \\multicolumn{3}{c}{$NA_{\\max}$} \\\\",
-        "  \\cline{2-4}",
-        "  Classification (\\% of nodes) & 1 & 2 & 3 \\\\",
-        "  \\hline",
-    ]
+    if not grouped:
+        pruning_lines = [
+            "\\begin{tabular}{@{}lrrr@{}}",
+            "  \\hline",
+            "   & \\multicolumn{3}{c}{$NA_{\\max}$} \\\\",
+            "  \\cline{2-4}",
+            "  Classification (\\% of nodes) & 1 & 2 & 3 \\\\",
+            "  \\hline",
+        ]
+    else:
+        pruning_lines = [
+            "\\begin{tabular}{@{}l@{\\quad}" + group_columns,
+            "  \\hline",
+            group_header
+            % tuple(
+                f"{CONVENTION_GROUP_LABELS[convention]} ($NA_{{\\max}}$)"
+                for convention in conventions
+            ),
+            group_rules,
+            "  "
+            + " & ".join(
+                ["Classification (\\% of nodes)"]
+                + grouped_cells([["1", "2", "3"]] * len(conventions))
+            )
+            + " \\\\",
+            "  \\hline",
+        ]
     pruning_lines.extend(
         "  " + " & ".join(row) + " \\\\" for row in pruning_tex_rows[:-1]
     )
@@ -611,29 +768,56 @@ def validate_external_solution(path: Path) -> None:
         raise PreparationError(f"comparison solution has an invalid cost: {path}")
 
 
-def prepare_comparison_validation(
+def comparison_grid(
     summary: dict,
-    data_dir: Path,
-    tables_dir: Path,
-) -> dict[tuple[str, int], dict]:
+    convention: str,
+    revised_required: bool,
+    name: str = "comparison feasibility summary",
+) -> tuple[dict[tuple[str, int], dict], tuple[str, ...]]:
+    """Validate a replay summary; return its records by key and its sources.
+
+    Our own source (Souza2026) is optional when revised_required is false,
+    but must then be present for all three cases or for none.
+    """
     if summary.get("schema_version") != 1 or summary.get("schedule_mode") != "binary":
-        raise PreparationError("comparison feasibility summary is incompatible")
+        raise PreparationError(f"{name} is incompatible")
+    # Summaries without the field predate the option and are periodic.
+    if summary.get("switch_count_convention", "periodic") != convention:
+        raise PreparationError(f"{name} must use the {convention} switch count")
     records = summary.get("records", [])
-    if len(records) != 12:
-        raise PreparationError("comparison feasibility summary must contain 12 records")
+    sources = COMPARISON_SOURCES
+    if not revised_required and not any(
+        record.get("source") == "Souza2026" for record in records
+    ):
+        sources = EXTERNAL_SOURCES
+    expected_records = 3 * len(sources)
+    if len(records) != expected_records:
+        raise PreparationError(f"{name} must contain {expected_records} records")
     by_key = {
         (record["source"], int(record["actuations"])): record
         for record in records
     }
     expected = {
         (source, actuations)
-        for source in (*EXTERNAL_SOURCES, "Souza2026")
+        for source in sources
         for actuations in (1, 2, 3)
     }
     if set(by_key) != expected:
-        raise PreparationError("comparison feasibility summary has an unexpected grid")
+        raise PreparationError(f"{name} has an unexpected grid")
     if len(by_key) != len(records):
-        raise PreparationError("comparison feasibility summary contains duplicate records")
+        raise PreparationError(f"{name} contains duplicate records")
+    return by_key, sources
+
+
+def write_comparison_outputs(
+    by_key: dict[tuple[str, int], dict],
+    sources: tuple[str, ...],
+    count_keys: tuple[str, ...],
+    reason_labels: dict[str, str],
+    csv_path: Path,
+    tex_path: Path,
+) -> None:
+    """Write the CSV of every record and the LaTeX table of external sources."""
     fields = [
         "source",
         "actuations",
@@ -642,30 +826,33 @@ def prepare_comparison_validation(
         "prune_reason",
         "hour_failed",
         "reevaluated_cost",
-        "periodic_switch_counts",
+        *count_keys,
     ]
     rows = []
     tex_rows = []
-    for source in (*EXTERNAL_SOURCES, "Souza2026"):
+    for source in sources:
         for actuations in (1, 2, 3):
             record = by_key[(source, actuations)]
-            switches = record.get("periodic_switch_counts")
-            if (
-                not isinstance(switches, list)
-                or len(switches) != 3
-                or any(not isinstance(value, int) or value < 0 for value in switches)
-            ):
-                raise PreparationError(
-                    f"invalid periodic switch counts: {source} NA_max={actuations}"
-                )
+            row = {key: record[key] for key in fields}
+            for key in count_keys:
+                switches = record.get(key)
+                if (
+                    not isinstance(switches, list)
+                    or len(switches) != 3
+                    or any(
+                        not isinstance(value, int) or value < 0
+                        for value in switches
+                    )
+                ):
+                    raise PreparationError(
+                        f"invalid {key.replace('_', ' ')}: "
+                        f"{source} NA_max={actuations}"
+                    )
+                row[key] = "/".join(str(value) for value in switches)
             if record["feasible"] != (record["prune_reason"] == "NONE"):
                 raise PreparationError(
                     f"inconsistent replay status: {source} NA_max={actuations}"
                 )
-            row = {key: record[key] for key in fields}
-            row["periodic_switch_counts"] = "/".join(
-                str(value) for value in switches
-            )
             rows.append(row)
             if source in EXTERNAL_SOURCES:
                 tex_rows.append(
@@ -673,15 +860,15 @@ def prepare_comparison_validation(
                         EXTERNAL_SOURCE_LABELS[source],
                         str(actuations),
                         "Yes" if record["feasible"] else "No",
-                        COMPARISON_REASON_LABELS[record["prune_reason"]],
+                        reason_labels[record["prune_reason"]],
                         format_cost(record["published_cost"]),
                         format_cost(record["reevaluated_cost"])
                         if record["feasible"]
                         else "--",
                     ]
                 )
-    write_rows(data_dir / "comparison_feasibility.csv", fields, rows)
-    (tables_dir / "comparison_feasibility.tex").write_text(
+    write_rows(csv_path, fields, rows)
+    tex_path.write_text(
         tex_table(
             "@{}lrrlrr@{}",
             [
@@ -695,6 +882,46 @@ def prepare_comparison_validation(
             tex_rows,
         ),
         encoding="utf-8",
+    )
+
+
+def prepare_comparison_validation(
+    summary: dict,
+    data_dir: Path,
+    tables_dir: Path,
+) -> dict[tuple[str, int], dict]:
+    """Periodic replay table; every source, including ours, is required."""
+    by_key, sources = comparison_grid(summary, "periodic", revised_required=True)
+    write_comparison_outputs(
+        by_key,
+        sources,
+        ("periodic_switch_counts",),
+        COMPARISON_REASON_LABELS,
+        data_dir / "comparison_feasibility.csv",
+        tables_dir / "comparison_feasibility.tex",
+    )
+    return by_key
+
+
+def prepare_single_day_comparison(
+    summary: dict,
+    data_dir: Path,
+    tables_dir: Path,
+) -> dict[tuple[str, int], dict]:
+    """Single-day replay table; our own source is included when present."""
+    by_key, sources = comparison_grid(
+        summary,
+        "single_day",
+        revised_required=False,
+        name="single-day comparison feasibility summary",
+    )
+    write_comparison_outputs(
+        by_key,
+        sources,
+        ("periodic_switch_counts", "single_day_switch_on_counts"),
+        SINGLE_DAY_REASON_LABELS,
+        data_dir / "comparison_feasibility_single_day.csv",
+        tables_dir / "comparison_feasibility_single_day.tex",
     )
     return by_key
 
@@ -734,6 +961,8 @@ def prepare_package(
     accuracy_optimization_path: Path,
     comparison_data_dir: Path,
     output_dir: Path,
+    single_day_comparison_path: Path | None = None,
+    single_day_final_cases_path: Path | None = None,
 ) -> dict:
     input_paths = [
         ablation_path,
@@ -750,6 +979,11 @@ def prepare_package(
     comparison_validation = load_json(comparison_validation_path)
     accuracy_audit = load_json(accuracy_audit_path)
     validate_summaries(ablation, scalability, final_cases)
+    single_day_final_cases = None
+    if single_day_final_cases_path is not None:
+        single_day_final_cases = load_json(single_day_final_cases_path)
+        validate_single_day_final_cases(final_cases, single_day_final_cases)
+        input_paths.append(single_day_final_cases_path)
     if comparison_validation.get("final_summary_sha256") != sha256(final_cases_path):
         raise PreparationError(
             "comparison replay used a different final-cases summary"
@@ -761,7 +995,7 @@ def prepare_package(
     tables_dir.mkdir(parents=True, exist_ok=True)
     prepare_ablation(ablation, data_dir, tables_dir)
     prepare_scalability(scalability, data_dir, tables_dir)
-    prepare_final_cases(final_cases, data_dir, tables_dir)
+    prepare_final_cases(final_cases, data_dir, tables_dir, single_day_final_cases)
     prepare_accuracy(
         accuracy_audit,
         accuracy_audit_path,
@@ -788,6 +1022,45 @@ def prepare_package(
             input_paths.append(source_path)
             shutil.copyfile(source_path, data_dir / source_path.name)
     annotate_comparison_solutions(data_dir, validation)
+
+    if single_day_comparison_path is not None:
+        single_day_summary = load_json(single_day_comparison_path)
+        if single_day_summary.get("network_sha256") != comparison_validation.get(
+            "network_sha256"
+        ):
+            raise PreparationError(
+                "periodic and single-day comparison replays used different networks"
+            )
+        single_day = prepare_single_day_comparison(
+            single_day_summary, data_dir, tables_dir
+        )
+        for source in EXTERNAL_SOURCES:
+            for actuations in (1, 2, 3):
+                source_path = (
+                    comparison_data_dir / f"run_{source}_a_{actuations:02d}.json"
+                )
+                if single_day[(source, actuations)].get(
+                    "source_artifact_sha256"
+                ) != sha256(source_path):
+                    raise PreparationError(
+                        "single-day comparison replay used a different source "
+                        f"artifact: {source} NA_max={actuations}"
+                    )
+        if single_day_final_cases is not None and ("Souza2026", 1) in single_day:
+            if single_day_summary.get("final_summary_sha256") != sha256(
+                single_day_final_cases_path
+            ):
+                raise PreparationError(
+                    "single-day comparison replay used a different final-cases summary"
+                )
+            for case in single_day_final_cases["cases"]:
+                record = single_day[("Souza2026", case["actuations"])]
+                if not close(record["published_cost"], case["global_best_cost"]):
+                    raise PreparationError(
+                        "single-day comparison cost differs from the final cases: "
+                        f"NA_max={case['actuations']}"
+                    )
+        input_paths.append(single_day_comparison_path)
 
     output_paths = sorted(
         path
@@ -835,9 +1108,25 @@ def parse_arguments() -> argparse.Namespace:
         default=DEFAULT_RESULTS / "final-cases-anytown-24h-summary.json",
     )
     parser.add_argument(
+        "--single-day-final-cases",
+        type=Path,
+        help=(
+            "optional final-cases summary searched under the single-day switch "
+            "count; adds its columns to the final-cases and pruning tables"
+        ),
+    )
+    parser.add_argument(
         "--comparison-validation",
         type=Path,
         default=DEFAULT_RESULTS / "comparison-feasibility-summary.json",
+    )
+    parser.add_argument(
+        "--single-day-comparison-validation",
+        type=Path,
+        help=(
+            "optional comparison summary replayed under the single-day switch "
+            "count; adds the single-day comparison table"
+        ),
     )
     parser.add_argument(
         "--accuracy-audit",
@@ -874,6 +1163,16 @@ def main() -> int:
             arguments.accuracy_optimization.absolute(),
             arguments.comparison_data_dir.absolute(),
             arguments.output_dir.absolute(),
+            (
+                arguments.single_day_comparison_validation.absolute()
+                if arguments.single_day_comparison_validation is not None
+                else None
+            ),
+            (
+                arguments.single_day_final_cases.absolute()
+                if arguments.single_day_final_cases is not None
+                else None
+            ),
         )
     except (PreparationError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         print(f"manuscript artifact preparation failed: {exc}")

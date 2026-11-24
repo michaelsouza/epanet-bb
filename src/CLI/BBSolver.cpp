@@ -176,6 +176,11 @@ std::size_t estimate_resident_disaggregation_bytes(
 
 void BBSolver::solveTask(BBTask &task)
 {
+  // The legacy disaggregation in updateX does not implement the single-day
+  // switch-on count; refuse the combination instead of solving silently
+  // under a different constraint.
+  config.validate();
+
   Project p;
   task.p = &p;
   task.cost = std::numeric_limits<double>::max();
@@ -186,7 +191,8 @@ void BBSolver::solveTask(BBTask &task)
   if (config.enable_exact_disaggregation)
   {
     task.disaggregation_snapshots[0].emplace(
-        task.num_pumps, config.max_actuations);
+        task.num_pumps, config.max_actuations,
+        config.periodic_switch_count);
   }
   task.periodic_witness.reset();
   task.is_feasible = true;
@@ -307,7 +313,7 @@ BBPrune::Reason BBSolver::initSnapshots(BBTask &task)
       }
     }
 
-    prune_reason = constraints.check_feasibility(p, dt, task.h, task.cost, config.verbose);
+    prune_reason = constraints.check_feasibility(p, dt, task.h, task.cost, config.verbose, t_new);
     if (prune_reason != BBPrune::Reason::NONE)
     {
       stats.add_stats(prune_reason, task.h + 1);
@@ -588,12 +594,16 @@ BBPrune::Reason BBSolver::epanetSolve(BBTask &task)
       task.show_xy(h);
     }
 
-    prune_reason = constraints.check_feasibility(p, dt, task.h, task.cost, config.verbose);
+    prune_reason = constraints.check_feasibility(p, dt, task.h, task.cost, config.verbose, t_new);
 
     task.is_feasible = (prune_reason == BBPrune::Reason::NONE);
     if (!task.is_feasible)
     {
-      if (prune_reason == BBPrune::Reason::COST) task.y[task.h] = task.num_pumps;
+      // Skip the siblings with more pumps: valid for COST only, since the
+      // accumulated cost grows with the number of pumps. COST_TO_GO has no
+      // such monotonicity (Remark S1 of the cost-to-go proof).
+      if (prune_reason == BBPrune::Reason::COST)
+        task.y[task.h] = task.num_pumps;
       return prune_reason;
     }
 

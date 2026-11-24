@@ -422,7 +422,11 @@ else:
             self.assertEqual(result.returncode, 0, result.stderr)
             plan = json.loads(result.stdout)
             commands = plan["tasks"][0]["commands"]
-            self.assertEqual(len(commands), 6)
+            self.assertEqual(len(commands), 7)
+            self.assertIn(
+                {"BB_ENABLE_COST_TO_GO": "0"},
+                [command["environment"] for command in commands],
+            )
             self.assertEqual(
                 commands[0]["environment"], {"BB_ENABLE_SNAPSHOTS": "0"}
             )
@@ -430,6 +434,65 @@ else:
             argv = commands[0]["argv"]
             actuations_index = argv.index("--actuations")
             self.assertEqual(argv[actuations_index + 1], "3")
+
+    def test_single_day_final_cases_mirror_final_cases_with_environment(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(RUNNER),
+                    "--dry-run",
+                    "--select",
+                    "final-cases",
+                    "--select",
+                    "final-cases-single-day",
+                    "--np",
+                    "16",
+                    "--binary",
+                    sys.executable,
+                    "--input",
+                    str(NETWORK),
+                    "--mpi-launcher",
+                    sys.executable,
+                    "--output-dir",
+                    str(Path(temporary) / "campaign"),
+                ],
+                cwd=ROOT.parent,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            plan = json.loads(result.stdout)
+            periodic, single_day = plan["tasks"]
+            self.assertEqual(single_day["id"], "final-cases-single-day")
+            self.assertEqual(single_day["kind"], "solver-matrix")
+            self.assertEqual(len(single_day["commands"]), 1)
+            self.assertEqual(periodic["commands"][0]["environment"], {})
+            command = single_day["commands"][0]
+            self.assertEqual(
+                command["environment"], {"BB_PERIODIC_SWITCH_COUNT": "0"}
+            )
+            self.assertEqual(command["np"], 16)
+            self.assertEqual(
+                Path(command["output_dir"]).name, "final-cases-single-day"
+            )
+
+            def options(argv: list[str]) -> list[str]:
+                start = argv.index("--hours")
+                return argv[start:]
+
+            self.assertEqual(
+                options(command["argv"]),
+                options(periodic["commands"][0]["argv"]),
+            )
+            argv = command["argv"]
+            actuations_index = argv.index("--actuations")
+            self.assertEqual(argv[actuations_index + 1 : actuations_index + 4], ["1", "2", "3"])
+            self.assertEqual(argv[argv.index("--level") + 1], "8")
+            self.assertEqual(argv[argv.index("--sync-interval") + 1], "32768")
 
     def test_final_scalability_uses_tuned_na_max_two_case(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

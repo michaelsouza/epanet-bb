@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <functional>
 #include <mpi.h>
+#include <optional>
 #include <random>
 #include <string>
 #include <vector>
@@ -199,11 +200,26 @@ int main(int argc, char *argv[])
   {
     ProfileScope scope("main");
 
-    // Parse config
-    BBConfig config(argc, argv);
+    // Parse config (every rank sees the same arguments and environment, so
+    // an invalid configuration is rejected consistently on all ranks).
+    std::optional<BBConfig> parsed_config;
+    try
+    {
+      parsed_config.emplace(argc, argv);
+    }
+    catch (const std::exception &error)
+    {
+      if (rank == 0)
+        Console::printf(Console::Color::BRIGHT_RED,
+                        "Configuration error: %s\n", error.what());
+      MPI_Finalize();
+      return EXIT_FAILURE;
+    }
+    BBConfig &config = *parsed_config;
     BBConstraints constraints(config);
     BBStatistics stats(config);
     stats.set_run_metadata(RunMetadata::capture(argv[0], num_procs));
+    stats.set_cost_to_go_status(constraints.ctg_info.to_json());
 
     if (rank == 0)
     {

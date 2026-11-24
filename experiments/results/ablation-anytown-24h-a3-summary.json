@@ -1,32 +1,32 @@
 {
   "campaigns": [
     {
-      "campaign": "ablation-anytown-24h-a3",
-      "compatibility_sha256": "20eec504c5a9f2c4c8eae59148391e80c4f9ae3b0eca37fc4531fca5f0a342ce",
-      "duration_seconds": 19205.464719680138,
-      "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
+      "campaign": "ablation-anytown-24h-a3-rep-01",
+      "compatibility_sha256": "c2b3dc8d751bf5145be84b4588850d728e4bbf1fb5308e63c397f8740079972c",
+      "duration_seconds": 11955.201802720316,
+      "executable_sha256": "7c15adade06496705818f73e97a3a0a8bb64d41fa537e58b4ed804f67c174ac7",
       "git": {
-        "commit": "60f4313ea15b7df625ff0ace722b3db77acdaad1",
+        "commit": "2b6b7c243894a1598dc62a246ce5f6edfcda1c11",
         "dirty": false
       }
     },
     {
       "campaign": "ablation-anytown-24h-a3-rep-02",
-      "compatibility_sha256": "dbde6abce24f73defc75531f0d858a23ee7ee3498fcd14b47a79b1b054b8ca19",
-      "duration_seconds": 19573.378853821196,
-      "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
+      "compatibility_sha256": "db45bc4ad4ba95896a96015b09fdab4bb078a80dd29aa407f1b4d85c9a06cdbc",
+      "duration_seconds": 12108.306504801847,
+      "executable_sha256": "7c15adade06496705818f73e97a3a0a8bb64d41fa537e58b4ed804f67c174ac7",
       "git": {
-        "commit": "4aeeb8229f88b76cd5235c9b64b7b3b9ec6b088f",
+        "commit": "2b6b7c243894a1598dc62a246ce5f6edfcda1c11",
         "dirty": false
       }
     },
     {
       "campaign": "ablation-anytown-24h-a3-rep-03",
-      "compatibility_sha256": "59a6575106f717a7aa55eb580c452ef2be7ee5ad2f3fc0206da0f6de7eee4d2b",
-      "duration_seconds": 19893.092603557277,
-      "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
+      "compatibility_sha256": "779c53fcd46c5a7162dbe5d5b4082b8812c31ac581aef95cfb3ba27217c05390",
+      "duration_seconds": 12236.685804428533,
+      "executable_sha256": "7c15adade06496705818f73e97a3a0a8bb64d41fa537e58b4ed804f67c174ac7",
       "git": {
-        "commit": "4aeeb8229f88b76cd5235c9b64b7b3b9ec6b088f",
+        "commit": "2b6b7c243894a1598dc62a246ce5f6edfcda1c11",
         "dirty": false
       }
     }
@@ -40,8 +40,8 @@
     "np": 64,
     "sync_interval": 32768
   },
-  "executable_sha256": "1ace83ef42d13ea81f5d7985d33eb8e3802ae469e40e3b2d9d244bd3b7b7f9a6",
-  "global_best_cost": 3575.5380640403023,
+  "executable_sha256": "7c15adade06496705818f73e97a3a0a8bb64d41fa537e58b4ed804f67c174ac7",
+  "global_best_cost": 3575.538064040429,
   "repetition_count": 3,
   "schema_version": 1,
   "variants": [
@@ -52,57 +52,61 @@
       "id": "no-snapshots",
       "repetitions": [
         {
-          "average_rank_seconds": 2931.904774625,
+          "average_rank_seconds": 598.5949852812499,
           "best_files": 64,
-          "campaign": "ablation-anytown-24h-a3",
-          "candidate_assignments": 2724315159,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.4045960386031719,
-          "maximum_rank_seconds": 4118.141832,
+          "campaign": "ablation-anytown-24h-a3-rep-01",
+          "candidate_assignments": 829150912,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.310881945713786,
+          "maximum_rank_seconds": 784.687359,
+          "nodes_total": 81146837,
           "number": 1,
-          "paired_slowdown": 9.511170920067054,
+          "paired_slowdown": 10.197306258053489,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 4119.0633730478585
+          "wall_seconds": 785.6003301180899
         },
         {
-          "average_rank_seconds": 2927.65051834375,
+          "average_rank_seconds": 605.619779984375,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-02",
-          "candidate_assignments": 2724254320,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.4136003317572467,
-          "maximum_rank_seconds": 4138.527744,
+          "candidate_assignments": 829787888,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.33468749158234967,
+          "maximum_rank_seconds": 808.313145,
+          "nodes_total": 81240541,
           "number": 2,
-          "paired_slowdown": 9.601364554994477,
+          "paired_slowdown": 10.19312644406699,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 4139.4232981591485
+          "wall_seconds": 809.208588427864
         },
         {
-          "average_rank_seconds": 2989.8357139218747,
+          "average_rank_seconds": 605.185494421875,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-03",
-          "candidate_assignments": 2726582321,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.4422141557550051,
-          "maximum_rank_seconds": 4311.983389999999,
+          "candidate_assignments": 829988679,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.33081671557474845,
+          "maximum_rank_seconds": 805.3909719999999,
+          "nodes_total": 81264830,
           "number": 3,
-          "paired_slowdown": 9.888759823350036,
+          "paired_slowdown": 10.094544632050148,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 4312.864609810058
+          "wall_seconds": 806.2829557592049
         }
       ],
       "summary": {
-        "candidate_assignments_median": 2724315159,
-        "load_imbalance_factor_median": 0.4136003317572467,
-        "paired_slowdown_maximum": 9.888759823350036,
-        "paired_slowdown_median": 9.601364554994477,
-        "paired_slowdown_minimum": 9.511170920067054,
-        "wall_seconds_maximum": 4312.864609810058,
-        "wall_seconds_median": 4139.4232981591485,
-        "wall_seconds_minimum": 4119.0633730478585
+        "candidate_assignments_median": 829787888,
+        "load_imbalance_factor_median": 0.33081671557474845,
+        "nodes_total_median": 81240541,
+        "paired_slowdown_maximum": 10.197306258053489,
+        "paired_slowdown_median": 10.19312644406699,
+        "paired_slowdown_minimum": 10.094544632050148,
+        "wall_seconds_maximum": 809.208588427864,
+        "wall_seconds_median": 806.2829557592049,
+        "wall_seconds_minimum": 785.6003301180899
       }
     },
     {
@@ -110,57 +114,61 @@
       "id": "baseline",
       "repetitions": [
         {
-          "average_rank_seconds": 290.196258484375,
+          "average_rank_seconds": 55.762006921875,
           "best_files": 64,
-          "campaign": "ablation-anytown-24h-a3",
-          "candidate_assignments": 2727058852,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.4891419457197028,
-          "maximum_rank_seconds": 432.143421,
+          "campaign": "ablation-anytown-24h-a3-rep-01",
+          "candidate_assignments": 829731243,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.36517010778779735,
+          "maximum_rank_seconds": 76.124625,
+          "nodes_total": 81242749,
           "number": 1,
           "paired_slowdown": 1.0,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 433.0763696357608
+          "wall_seconds": 77.03998587839305
         },
         {
-          "average_rank_seconds": 288.084701875,
+          "average_rank_seconds": 56.111489453124996,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-02",
-          "candidate_assignments": 2727465207,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.4933386090965265,
-          "maximum_rank_seconds": 430.208008,
+          "candidate_assignments": 830048387,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.398478061530583,
+          "maximum_rank_seconds": 78.470687,
+          "nodes_total": 81290418,
           "number": 2,
           "paired_slowdown": 1.0,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 431.1286457721144
+          "wall_seconds": 79.38767294492573
         },
         {
-          "average_rank_seconds": 291.571484109375,
+          "average_rank_seconds": 56.347609890624994,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-03",
-          "candidate_assignments": 2727248624,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.4927449175267464,
-          "maximum_rank_seconds": 435.241851,
+          "candidate_assignments": 830222309,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.4005509755105011,
+          "maximum_rank_seconds": 78.9177,
+          "nodes_total": 81310456,
           "number": 3,
           "paired_slowdown": 1.0,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 436.1380685600452
+          "wall_seconds": 79.87313793227077
         }
       ],
       "summary": {
-        "candidate_assignments_median": 2727248624,
-        "load_imbalance_factor_median": 0.4927449175267464,
+        "candidate_assignments_median": 830048387,
+        "load_imbalance_factor_median": 0.398478061530583,
+        "nodes_total_median": 81290418,
         "paired_slowdown_maximum": 1.0,
         "paired_slowdown_median": 1.0,
         "paired_slowdown_minimum": 1.0,
-        "wall_seconds_maximum": 436.1380685600452,
-        "wall_seconds_median": 433.0763696357608,
-        "wall_seconds_minimum": 431.1286457721144
+        "wall_seconds_maximum": 79.87313793227077,
+        "wall_seconds_median": 79.38767294492573,
+        "wall_seconds_minimum": 77.03998587839305
       }
     },
     {
@@ -170,57 +178,125 @@
       "id": "no-cost-pruning",
       "repetitions": [
         {
-          "average_rank_seconds": 6472.545339968749,
+          "average_rank_seconds": 5782.160460328125,
           "best_files": 64,
-          "campaign": "ablation-anytown-24h-a3",
-          "candidate_assignments": 35455425760,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.737288424008829,
-          "maximum_rank_seconds": 11244.678092999999,
+          "campaign": "ablation-anytown-24h-a3-rep-01",
+          "candidate_assignments": 35152413992,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.7564333523223724,
+          "maximum_rank_seconds": 10155.979481,
+          "nodes_total": 6386528859,
           "number": 1,
-          "paired_slowdown": 25.9667204379911,
+          "paired_slowdown": 131.83738356496022,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 11245.573018631898
+          "wall_seconds": 10156.750168088824
         },
         {
-          "average_rank_seconds": 6522.345685015624,
+          "average_rank_seconds": 5804.99852509375,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-02",
-          "candidate_assignments": 35455425760,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.77507188611581,
-          "maximum_rank_seconds": 11577.632457,
+          "candidate_assignments": 35152413992,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.7706186310932792,
+          "maximum_rank_seconds": 10278.438542,
+          "nodes_total": 6386528859,
           "number": 2,
-          "paired_slowdown": 26.856057463894903,
+          "paired_slowdown": 129.4811816917405,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 11578.415685187094
+          "wall_seconds": 10279.209704666398
         },
         {
-          "average_rank_seconds": 6536.671288703124,
+          "average_rank_seconds": 5811.57153546875,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-03",
-          "candidate_assignments": 35455425760,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.7953089783299004,
-          "maximum_rank_seconds": 11735.344653,
+          "candidate_assignments": 35152413992,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.7914766507576415,
+          "maximum_rank_seconds": 10411.29471,
+          "nodes_total": 6386528859,
           "number": 3,
-          "paired_slowdown": 26.909166977489733,
+          "paired_slowdown": 130.35780269093573,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 11736.112112122122
+          "wall_seconds": 10412.086754880846
         }
       ],
       "summary": {
-        "candidate_assignments_median": 35455425760,
-        "load_imbalance_factor_median": 0.77507188611581,
-        "paired_slowdown_maximum": 26.909166977489733,
-        "paired_slowdown_median": 26.856057463894903,
-        "paired_slowdown_minimum": 25.9667204379911,
-        "wall_seconds_maximum": 11736.112112122122,
-        "wall_seconds_median": 11578.415685187094,
-        "wall_seconds_minimum": 11245.573018631898
+        "candidate_assignments_median": 35152413992,
+        "load_imbalance_factor_median": 0.7706186310932792,
+        "nodes_total_median": 6386528859,
+        "paired_slowdown_maximum": 131.83738356496022,
+        "paired_slowdown_median": 130.35780269093573,
+        "paired_slowdown_minimum": 129.4811816917405,
+        "wall_seconds_maximum": 10412.086754880846,
+        "wall_seconds_median": 10279.209704666398,
+        "wall_seconds_minimum": 10156.750168088824
+      }
+    },
+    {
+      "environment": {
+        "BB_ENABLE_COST_TO_GO": "0"
+      },
+      "id": "no-cost-to-go",
+      "repetitions": [
+        {
+          "average_rank_seconds": 266.97893615625,
+          "best_files": 64,
+          "campaign": "ablation-anytown-24h-a3-rep-01",
+          "candidate_assignments": 2745213809,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.5053635083959844,
+          "maximum_rank_seconds": 401.900348,
+          "nodes_total": 355196268,
+          "number": 1,
+          "paired_slowdown": 5.228514660525033,
+          "stats_files": 64,
+          "tasks_processed": 65536,
+          "wall_seconds": 402.8046956118196
+        },
+        {
+          "average_rank_seconds": 266.75506792187497,
+          "best_files": 64,
+          "campaign": "ablation-anytown-24h-a3-rep-02",
+          "candidate_assignments": 2745081567,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.5139251829257672,
+          "maximum_rank_seconds": 403.847215,
+          "nodes_total": 355162857,
+          "number": 2,
+          "paired_slowdown": 5.098689359208338,
+          "stats_files": 64,
+          "tasks_processed": 65536,
+          "wall_seconds": 404.77308329660445
+        },
+        {
+          "average_rank_seconds": 266.72638815625,
+          "best_files": 64,
+          "campaign": "ablation-anytown-24h-a3-rep-03",
+          "candidate_assignments": 2745337764,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.5052102785001193,
+          "maximum_rank_seconds": 401.47930099999996,
+          "nodes_total": 355226502,
+          "number": 3,
+          "paired_slowdown": 5.037632006652589,
+          "stats_files": 64,
+          "tasks_processed": 65536,
+          "wall_seconds": 402.37147611938417
+        }
+      ],
+      "summary": {
+        "candidate_assignments_median": 2745213809,
+        "load_imbalance_factor_median": 0.5053635083959844,
+        "nodes_total_median": 355196268,
+        "paired_slowdown_maximum": 5.228514660525033,
+        "paired_slowdown_median": 5.098689359208338,
+        "paired_slowdown_minimum": 5.037632006652589,
+        "wall_seconds_maximum": 404.77308329660445,
+        "wall_seconds_median": 402.8046956118196,
+        "wall_seconds_minimum": 402.37147611938417
       }
     },
     {
@@ -230,57 +306,61 @@
       "id": "no-pump-sorting",
       "repetitions": [
         {
-          "average_rank_seconds": 289.027948875,
+          "average_rank_seconds": 56.22372325,
           "best_files": 64,
-          "campaign": "ablation-anytown-24h-a3",
-          "candidate_assignments": 2727418672,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.5036185486267708,
-          "maximum_rank_seconds": 434.587785,
+          "campaign": "ablation-anytown-24h-a3-rep-01",
+          "candidate_assignments": 830094601,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.38791306390403435,
+          "maximum_rank_seconds": 78.03363999999999,
+          "nodes_total": 81301264,
           "number": 1,
-          "paired_slowdown": 1.005532618379232,
+          "paired_slowdown": 1.0249193706009505,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 435.47241591801867
+          "wall_seconds": 78.95977383758873
         },
         {
-          "average_rank_seconds": 291.67217734375,
+          "average_rank_seconds": 56.17529403125,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-02",
-          "candidate_assignments": 2726943256,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.47749388688558897,
-          "maximum_rank_seconds": 430.943859,
+          "candidate_assignments": 830119874,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.3989092777384321,
+          "maximum_rank_seconds": 78.58413999999999,
+          "nodes_total": 81298999,
           "number": 2,
-          "paired_slowdown": 1.0016866648622118,
+          "paired_slowdown": 1.0013149460341748,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 431.8558153100312
+          "wall_seconds": 79.49206345062703
         },
         {
-          "average_rank_seconds": 291.02408128125,
+          "average_rank_seconds": 56.22557384375,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-03",
-          "candidate_assignments": 2727986080,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.48724278105945795,
-          "maximum_rank_seconds": 432.823464,
+          "candidate_assignments": 830022791,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.3935214999803779,
+          "maximum_rank_seconds": 78.351546,
+          "nodes_total": 81283355,
           "number": 3,
-          "paired_slowdown": 0.9945267894219841,
+          "paired_slowdown": 0.992446532548736,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 433.750993069727
+          "wall_seconds": 79.26981878466904
         }
       ],
       "summary": {
-        "candidate_assignments_median": 2727418672,
-        "load_imbalance_factor_median": 0.48724278105945795,
-        "paired_slowdown_maximum": 1.005532618379232,
-        "paired_slowdown_median": 1.0016866648622118,
-        "paired_slowdown_minimum": 0.9945267894219841,
-        "wall_seconds_maximum": 435.47241591801867,
-        "wall_seconds_median": 433.750993069727,
-        "wall_seconds_minimum": 431.8558153100312
+        "candidate_assignments_median": 830094601,
+        "load_imbalance_factor_median": 0.3935214999803779,
+        "nodes_total_median": 81298999,
+        "paired_slowdown_maximum": 1.0249193706009505,
+        "paired_slowdown_median": 1.0013149460341748,
+        "paired_slowdown_minimum": 0.992446532548736,
+        "wall_seconds_maximum": 79.49206345062703,
+        "wall_seconds_median": 79.26981878466904,
+        "wall_seconds_minimum": 78.95977383758873
       }
     },
     {
@@ -290,57 +370,61 @@
       "id": "no-task-shuffle",
       "repetitions": [
         {
-          "average_rank_seconds": 315.29327153124996,
+          "average_rank_seconds": 60.56594984375,
           "best_files": 64,
-          "campaign": "ablation-anytown-24h-a3",
-          "candidate_assignments": 2851424950,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 7.012481439045267,
-          "maximum_rank_seconds": 2526.281486,
+          "campaign": "ablation-anytown-24h-a3-rep-01",
+          "candidate_assignments": 856974377,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 5.104832169789792,
+          "maximum_rank_seconds": 369.744959,
+          "nodes_total": 84053449,
           "number": 1,
-          "paired_slowdown": 5.835274357795397,
+          "paired_slowdown": 4.811755456843408,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 2527.119434702676
+          "wall_seconds": 370.6975724454969
         },
         {
-          "average_rank_seconds": 317.501245203125,
+          "average_rank_seconds": 60.478695781249996,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-02",
-          "candidate_assignments": 2851427307,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 7.024885138229758,
-          "maximum_rank_seconds": 2547.911024,
+          "candidate_assignments": 857074188,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 5.133559962035495,
+          "maximum_rank_seconds": 370.949707,
+          "nodes_total": 84070564,
           "number": 2,
-          "paired_slowdown": 5.912005814715562,
+          "paired_slowdown": 4.684118535667252,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 2548.8350606951863
+          "wall_seconds": 371.86127034481615
         },
         {
-          "average_rank_seconds": 317.71662471875,
+          "average_rank_seconds": 60.509723671874994,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-03",
-          "candidate_assignments": 2851367641,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 6.976888314369762,
-          "maximum_rank_seconds": 2534.390031,
+          "candidate_assignments": 856854909,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 5.138133203418263,
+          "maximum_rank_seconds": 371.416744,
+          "nodes_total": 84049836,
           "number": 3,
-          "paired_slowdown": 5.81310751461749,
+          "paired_slowdown": 4.661895772639504,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 2535.317483757157
+          "wall_seconds": 372.36024407390505
         }
       ],
       "summary": {
-        "candidate_assignments_median": 2851424950,
-        "load_imbalance_factor_median": 7.012481439045267,
-        "paired_slowdown_maximum": 5.912005814715562,
-        "paired_slowdown_median": 5.835274357795397,
-        "paired_slowdown_minimum": 5.81310751461749,
-        "wall_seconds_maximum": 2548.8350606951863,
-        "wall_seconds_median": 2535.317483757157,
-        "wall_seconds_minimum": 2527.119434702676
+        "candidate_assignments_median": 856974377,
+        "load_imbalance_factor_median": 5.133559962035495,
+        "nodes_total_median": 84053449,
+        "paired_slowdown_maximum": 4.811755456843408,
+        "paired_slowdown_median": 4.684118535667252,
+        "paired_slowdown_minimum": 4.661895772639504,
+        "wall_seconds_maximum": 372.36024407390505,
+        "wall_seconds_median": 371.86127034481615,
+        "wall_seconds_minimum": 370.6975724454969
       }
     },
     {
@@ -350,57 +434,61 @@
       "id": "no-global-sync",
       "repetitions": [
         {
-          "average_rank_seconds": 292.72283109374996,
+          "average_rank_seconds": 56.600977421875,
           "best_files": 64,
-          "campaign": "ablation-anytown-24h-a3",
-          "candidate_assignments": 2746913804,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.5171102108457367,
-          "maximum_rank_seconds": 444.09279599999996,
+          "campaign": "ablation-anytown-24h-a3-rep-01",
+          "candidate_assignments": 836782019,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.45232428385998863,
+          "maximum_rank_seconds": 82.202974,
+          "nodes_total": 82141854,
           "number": 1,
-          "paired_slowdown": 1.0275007044443827,
+          "paired_slowdown": 1.0790680520856613,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 444.9862748789601
+          "wall_seconds": 83.13138749450445
         },
         {
-          "average_rank_seconds": 293.47824668749996,
+          "average_rank_seconds": 56.588954765625,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-02",
-          "candidate_assignments": 2746913804,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.5081482528798681,
-          "maximum_rank_seconds": 442.608705,
+          "candidate_assignments": 836782019,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.47000258874778394,
+          "maximum_rank_seconds": 83.18590999999999,
+          "nodes_total": 82141854,
           "number": 2,
-          "paired_slowdown": 1.0288157210219728,
+          "paired_slowdown": 1.060082215938852,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 443.5519285532646
+          "wall_seconds": 84.15746025368571
         },
         {
-          "average_rank_seconds": 293.99675109375,
+          "average_rank_seconds": 56.727204296874994,
           "best_files": 64,
           "campaign": "ablation-anytown-24h-a3-rep-03",
-          "candidate_assignments": 2746913804,
-          "global_best_cost": 3575.5380640403023,
-          "load_imbalance_factor": 0.48928917877864286,
-          "maximum_rank_seconds": 437.84618,
+          "candidate_assignments": 836782019,
+          "global_best_cost": 3575.538064040429,
+          "load_imbalance_factor": 0.46866751204570806,
+          "maximum_rank_seconds": 83.313402,
+          "nodes_total": 82141854,
           "number": 3,
-          "paired_slowdown": 1.0059633784378912,
+          "paired_slowdown": 1.0544650048768558,
           "stats_files": 64,
           "tasks_processed": 65536,
-          "wall_seconds": 438.73892491403967
+          "wall_seconds": 84.22342877928168
         }
       ],
       "summary": {
-        "candidate_assignments_median": 2746913804,
-        "load_imbalance_factor_median": 0.5081482528798681,
-        "paired_slowdown_maximum": 1.0288157210219728,
-        "paired_slowdown_median": 1.0275007044443827,
-        "paired_slowdown_minimum": 1.0059633784378912,
-        "wall_seconds_maximum": 444.9862748789601,
-        "wall_seconds_median": 443.5519285532646,
-        "wall_seconds_minimum": 438.73892491403967
+        "candidate_assignments_median": 836782019,
+        "load_imbalance_factor_median": 0.46866751204570806,
+        "nodes_total_median": 82141854,
+        "paired_slowdown_maximum": 1.0790680520856613,
+        "paired_slowdown_median": 1.060082215938852,
+        "paired_slowdown_minimum": 1.0544650048768558,
+        "wall_seconds_maximum": 84.22342877928168,
+        "wall_seconds_median": 84.15746025368571,
+        "wall_seconds_minimum": 83.13138749450445
       }
     }
   ]

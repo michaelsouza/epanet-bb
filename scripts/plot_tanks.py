@@ -40,7 +40,8 @@ NUM_PUMPS = len(PUMP_ORDER)
 HOURS = 24
 TANK_IDS = ["65", "165", "265"]
 
-# Tank level bounds from the network file
+# Operating tank level bounds (must match `src/CLI/BBConstraints.cpp`). The
+# network file declares wider limits so that EPANET never clamps tank levels.
 LEVEL_MIN = 66.53
 LEVEL_MAX = 71.53
 LEVEL_INIT = 66.93
@@ -237,9 +238,9 @@ def main() -> None:
 
         # Add bound labels on the first subplot
         if idx == 0:
-            ax.text(24.5, LEVEL_MIN, "$L_{min}$", va="center", fontsize=8)
-            ax.text(24.5, LEVEL_MAX, "$L_{max}$", va="center", fontsize=8)
-            ax.text(24.5, LEVEL_INIT, "$L_0$", va="center", fontsize=8)
+            ax.text(24.5, LEVEL_MIN, "$L_{min}$", va="center", fontsize=11)
+            ax.text(24.5, LEVEL_MAX, "$L_{max}$", va="center", fontsize=11)
+            ax.text(24.5, LEVEL_INIT, "$L_0$", va="center", fontsize=11)
 
     for idx, node_id in enumerate(PRESSURE_NODE_IDS):
         ax = axes[1, idx]
@@ -264,7 +265,7 @@ def main() -> None:
                 y=threshold, color="gray", linestyle="--", alpha=0.7, linewidth=0.8
             )
             if idx == 0:
-                ax.text(24.5, threshold, "$P_{\\min}$", va="center", fontsize=8)
+                ax.text(24.5, threshold, "$P_{\\min}$", va="center", fontsize=11)
 
         if all_values:
             y_min = min(all_values + ([threshold] if threshold is not None else [])) - 1

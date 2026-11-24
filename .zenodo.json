@@ -1,6 +1,6 @@
 {
   "title": "EPANET-BB: Parallel Branch-and-Bound Pump Scheduling Optimizer",
-  "version": "v2.0.1",
+  "version": "v3.0.0",
   "upload_type": "software",
   "access_right": "open",
   "license": "mit",
