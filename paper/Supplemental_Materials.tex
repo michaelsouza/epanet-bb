@@ -1,0 +1,392 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[margin=1in]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\renewcommand{\thetheorem}{S\arabic{theorem}}
+\renewcommand{\thelemma}{S\arabic{lemma}}
+\renewcommand{\theproposition}{S\arabic{proposition}}
+\renewcommand{\thecorollary}{S\arabic{corollary}}
+\renewcommand{\theremark}{S\arabic{remark}}
+\renewcommand{\thetable}{S\arabic{table}}
+
+\newenvironment{assumption}[2]
+  {\begin{trivlist}\item[\hskip\labelsep(#1)]\emph{#2.}}
+  {\end{trivlist}}
+
+\newcommand{\dtau}{\Delta\tau}
+\newcommand{\emin}{e_{\min}}
+\newcommand{\Vmin}{V^{\min}}
+\newcommand{\Vmax}{V^{\max}}
+\newcommand{\Vfin}{V^{\mathrm{fin}}}
+\newcommand{\Lmin}{L^{\min}}
+\newcommand{\Lmax}{L^{\max}}
+\newcommand{\hres}{h_{\mathrm{res}}}
+\newcommand{\Du}{D^{\mathrm{u}}}
+
+\begin{document}
+
+\begin{center}
+  {\Large Supplemental Materials}\\[0.75em]
+  {\large Parallel Branch-and-Bound for Pump Scheduling with Constant-Time Hydraulic Backtracking}
+\end{center}
+\vspace{1em}
+
+This supplement has two parts. Section~\ref{sec:proof} states and proves the lower bound
+on the cost of completing a partial pump schedule that the branch-and-bound solver uses
+for pruning. Section~\ref{sec:setting} fixes the setting, Sections~\ref{sec:mass}
+and~\ref{sec:energy} establish the hydraulic facts on which the bound rests,
+Section~\ref{sec:bound} defines the bound and proves its validity,
+Section~\ref{sec:table} shows that the tabulated version used by the solver is also
+valid, and Section~\ref{sec:remarks} collects remarks on the implementation.
+Section~\ref{sec:accuracy} reports the sensitivity of the results to the hydraulic
+convergence tolerance.
+
+\section{Cost-to-go lower bound}\label{sec:proof}
+
+\subsection{Setting}\label{sec:setting}
+
+The horizon is divided into $N$ hydraulic steps of length $\dtau$, with $t_n = n\,\dtau$
+(in the benchmark, $N = 48$ and $\dtau = 0.5$~h, that is, two steps per hourly
+scheduling period of the main text). At each $t_n$ the hydraulic solver
+computes a steady state for the current pump statuses; flows are held constant over
+$[t_n, t_{n+1})$. For step $n$ we use the following notation.
+\begin{itemize}
+  \item $q_{p,n} \ge 0$ is the flow of pump $p$ and $H_{p,n}$ its head gain.
+  \item $D_n$ is the total nodal demand rate and $\bar D_n = \dtau\, D_n$ the demand
+    volume ($\bar D_n \ge 0$ by S2 below). Demands are fixed (demand-driven analysis), so
+    $\bar D_n$ does not depend on the schedule.
+  \item $V_n = A \sum_{k=1}^{m} L_{k,n}$ is the aggregate stored volume, where $m$ is the
+    number of tanks, $A$ the common tank area and $L_{k,n}$ the level of tank $k$ at $t_n$.
+  \item $u_n = \dtau \sum_p q_{p,n}$ is the pumped volume.
+  \item $c_n$ is the energy price and $\gamma_n$ the cost charged in step $n$.
+  \item $z_n = \sum_{\ell < n} \gamma_\ell$ is the accumulated cost.
+\end{itemize}
+
+A schedule is feasible if, at every hydraulic step, every tank level lies in
+$[\Lmin, \Lmax]$ and the pressure constraints hold, and if every final level is at least
+the initial level, $L_{k,N} \ge L_{k,0}$. In the benchmark all tanks start at the same
+level $L_0$ ($L_{k,0} = L_0$ for every $k$), so the final-level condition implies
+$V_N \ge \Vfin$ with $\Vfin = V_0 = mAL_0$. Let $\Vmin = mA\Lmin$ and $\Vmax = mA\Lmax$.
+
+The results below rely on three assumptions.
+
+\begin{assumption}{A1}{Exact hydraulics}
+Nodal continuity and the pump head--flow relation hold exactly at each step. In the
+implementation they hold up to the solver tolerance; see Remark~\ref{rem:tolerance}.
+\end{assumption}
+
+\begin{assumption}{A2}{Network structure}
+The source reservoir is connected to the network only through the pump station; pumps do
+not allow reverse flow; there are no emitters or leakage; all other links are pipes, so
+flow in a link goes from higher to lower head.
+\end{assumption}
+
+\begin{assumption}{A3}{No clamping}
+In a feasible schedule no tank reaches the limits declared in the input file. In the
+AnyTown Modified benchmark this holds because those limits (61.53~m and 75.53~m) lie
+strictly outside the operating limits $\Lmin = 66.53$~m and $\Lmax = 71.53$~m.
+\end{assumption}
+
+In addition, the proofs use the following standing hypotheses on the input data.
+
+\begin{assumption}{S1}{Prices}
+The energy prices are nonnegative, $c_n \ge 0$ for every $n$.
+\end{assumption}
+
+\begin{assumption}{S2}{Demands}
+The nodal demands are nonnegative.
+\end{assumption}
+
+\begin{assumption}{S3}{Head curve}
+The pump head curve $H$ is strictly decreasing on its whole range, including the linear
+extension beyond the last breakpoint (Section~\ref{sec:energy}); in particular $H^{-1}$
+exists.
+\end{assumption}
+
+\begin{assumption}{S4}{Curves from zero flow}
+The pump curves are defined from zero flow: the first breakpoint is $q_1 = 0$.
+\end{assumption}
+
+We use the convention that the infimum (in particular, the minimum) of an empty set is
+$+\infty$, and $a + (+\infty) = +\infty$ for every real $a$.
+
+\subsection{Mass balance}\label{sec:mass}
+
+\begin{lemma}[Mass balance]\label{lem:mass}
+Under A1 to A3, for every step of a feasible schedule, $V_{n+1} = V_n + u_n - \bar D_n$.
+\end{lemma}
+
+\begin{proof}
+Sum the continuity equations over all junctions. Flows in pipes between two junctions
+cancel. What remains is that pump inflow minus demand equals the net flow into the tanks,
+$\sum_p q_{p,n} - D_n = \sum_k r_{k,n}$, where $r_{k,n}$ is the net inflow to tank $k$.
+By A3 the tank update is $A L_{k,n+1} = A L_{k,n} + \dtau\, r_{k,n}$. Summing over $k$
+gives the claim.
+\end{proof}
+
+\subsection{Energy per unit volume}\label{sec:energy}
+
+The cost charged for pump $p$ in step $n$ is
+$c_n\, \dtau\, \kappa\, q_{p,n} H_{p,n} / \eta(q_{p,n})$, where $\eta$ is the efficiency
+curve and $\kappa$ the unit constant used by the simulator. All pumps have the same head
+curve $H(\cdot)$ and efficiency curve $\eta(\cdot)$, as in the benchmark. A1 gives $H_{p,n} = H(q_{p,n})$, so the energy per unit volume is
+\[
+  e(q) = \kappa\, \frac{H(q)}{\eta(q)}.
+\]
+Let $q_1 < \dots < q_K$ be the breakpoints of the curves (the union of the breakpoints of
+the head and efficiency curves), so that $q_1 = 0$ by S4, and define
+\[
+  \emin = \min_{r :\, q_r > 0} e(q_r), \qquad H^* = \frac{\emin\, \eta(q_K)}{\kappa}.
+\]
+Between breakpoints the simulator interpolates the efficiency data linearly and then clamps
+the result to $[1\%, 100\%]$; we write $\eta(q_r)$ for the efficiency data at $q_r$.
+
+\begin{lemma}[Energy per unit volume at breakpoints]\label{lem:energy}
+Suppose that
+\begin{enumerate}
+  \item[(a)] $\eta(q_1) \le 1\% \le \eta(q_r) \le 100\%$ for $2 \le r \le K$, and
+  \item[(b)] $\kappa\, H(q_2) / 0.01 \ge \emin$.
+\end{enumerate}
+Then $e(q) \ge \emin$ for all $0 < q \le q_K$.
+\end{lemma}
+
+\begin{proof}
+On each segment $[q_r, q_{r+1}]$ with $r \ge 2$, the data at both endpoints lie in
+$[1\%, 100\%]$ by (a), so the clamp is inactive, and both $H$ and $\eta$ are affine with
+$\eta > 0$. Then $H/\eta$ is a ratio of affine functions with positive denominator, hence
+monotone, and its minimum over the segment is attained at an endpoint, where
+$e \ge \emin$.
+
+On the first segment $[q_1, q_2] = [0, q_2]$, let $a$ be the affine interpolant of the
+efficiency data. By (a), $a(0) \le 1\% \le a(q_2) \le 100\%$, so the efficiency used by the
+simulator is $\max(1\%, a(q))$ and the set where the floor is active is an interval
+$[0, q_f]$ with $q_f \le q_2$. On $(0, q_f]$, $e(q) = \kappa H(q)/0.01 \ge \kappa
+H(q_2)/0.01 \ge \emin$, using $H(q) \ge H(q_2)$ (S3) and (b). On $[q_f, q_2]$ the
+efficiency is $a(q) \ge 1\%$, so the affine-ratio argument applies and the minimum of $e$
+is attained at $q_f$ or at $q_2$; at $q_f$ the floor bound gives $e(q_f) \ge \emin$, and
+$e(q_2) \ge \emin$ because $q_2 > 0$ is a breakpoint.
+\end{proof}
+
+In the AnyTown Modified data both curves have the breakpoints $0$, $454.25$, $908.50$,
+$1362.75$ and $1817.00$~m$^3$/h, with heads $91.44$, $89.00$, $82.30$, $70.10$ and
+$55.17$~m and efficiencies $0$, $50$, $65$, $55$ and $40\%$. Hence $q_1 = 0$ (S4), $H$ is
+strictly decreasing on every segment and on its extension (S3), and (a) holds. Condition
+(b) is equivalent to $H(q_2) \ge 0.01\, \emin/\kappa$; since $\emin/\kappa = 82.296/0.65
+= 126.61$~m (see below), it reads $89.00~\mathrm{m} \ge 1.27$~m.
+
+Beyond $q_K$ the simulator keeps $\eta = \eta(q_K)$ and extends $H$ linearly, so $e$
+decreases and Lemma~\ref{lem:energy} fails for large $q$. For $q > q_K$,
+$e(q) \ge \emin$ if and only if $H(q) \ge H^*$. The next lemma shows that feasibility
+excludes $H < H^*$.
+
+\begin{lemma}[Head floor]\label{lem:head}
+Let $q^* = H^{-1}(H^*)$, which exists by S3 because $H^* \le H(q_K)$ (since
+$\emin \le e(q_K)$), let $\hres$ be the head of the source reservoir, and let $\Du$ be the
+maximum over time of the total demand of the junctions without a pressure constraint.
+Suppose that
+\begin{enumerate}
+  \item[(i)] $\hres + H^*$ is lower than the minimum head of every tank (its elevation plus
+    $\Lmin$) and lower than the minimum head implied by each pressure constraint, and
+  \item[(ii)] $q^* > \Du$.
+\end{enumerate}
+Then, in every step of a feasible schedule, every running pump has head gain at least
+$H^*$.
+\end{lemma}
+
+\begin{proof}
+Suppose a running pump has $H_{p,n} < H^*$. Then $q_{p,n} > q^*$, and the head at the
+discharge node is $h_s < \hres + H^*$. Let $W$ be the set of junctions with head at most
+$h_s$. By (i), $W$ contains no tank and no pressure-constrained junction. By A2, every
+pipe joining $W$ to its complement carries flow into $W$ or no flow. Continuity over $W$
+then gives that pump inflow plus pipe inflow equals the demand in $W$, so the demand in
+$W$ is at least $q_{p,n} > q^*$. But the demand in $W$ is at most $\Du$, contradicting
+(ii).
+\end{proof}
+
+The AnyTown Modified data satisfy both conditions. The minimum $\emin$ is attained at
+$q = 908.50$~m$^3$/h ($H = 82.296$~m, $\eta = 65\%$), which gives
+$\emin = 0.34474$~kWh/m$^3$. The last breakpoint has $\eta(q_K) = 40\%$, so
+$H^* = 82.296 \times 40/65 = 50.644$~m and $q^* = 1954.6$~m$^3$/h.
+\begin{enumerate}
+  \item[(i)] $\hres + H^* = 53.69$~m, which is below the minimum tank head (66.53~m) and
+    below the heads implied by the pressure constraints (66.38~m at node 55, 66.24~m at
+    node 90 and 66.58~m at node 170). The tank elevations are zero, so tank levels and
+    tank heads coincide.
+  \item[(ii)] The total base demand is 1521.74~m$^3$/h, of which 295.26~m$^3$/h is at
+    nodes 55, 90 and 170. With the peak demand multiplier 1.3,
+    $\Du = (1521.74 - 295.26) \times 1.3 = 1594.4$~m$^3$/h $< q^*$.
+\end{enumerate}
+Condition (ii) needs the exclusion of the constrained nodes: the total peak demand is
+1978.3~m$^3$/h, which exceeds $q^*$.
+
+\begin{corollary}\label{cor:cost}
+Under A1 to A3, the standing hypotheses and the conditions of Lemmas~\ref{lem:energy}
+and~\ref{lem:head}, in a feasible schedule
+$\gamma_n \ge c_n\, \emin\, u_n$ for every $n$.
+\end{corollary}
+
+\begin{proof}
+By Lemma~\ref{lem:head}, every running pump has $H(q_{p,n}) \ge H^*$. If
+$q_{p,n} \le q_K$, Lemma~\ref{lem:energy} gives $e(q_{p,n}) \ge \emin$; if
+$q_{p,n} > q_K$, the same follows from $H(q_{p,n}) \ge H^*$. Hence
+$\gamma_n = c_n\, \dtau \sum_p q_{p,n}\, e(q_{p,n}) \ge c_n\, \emin\, \dtau \sum_p q_{p,n}
+= c_n\, \emin\, u_n$.
+\end{proof}
+
+\subsection{The relaxation and the bound}\label{sec:bound}
+
+Define, for $V \in [\Vmin, \Vmax]$,
+\[
+  F_N(V) =
+  \begin{cases}
+    0, & V \ge \Vfin,\\
+    +\infty, & \text{otherwise},
+  \end{cases}
+\]
+and, for $n = N-1, \dots, 0$,
+\[
+  F_n(V) = \inf_{u \ge 0}\ \bigl\{\, c_n\, \emin\, u + F_{n+1}(V + u - \bar D_n)\ :\
+  \Vmin \le V + u - \bar D_n \le \Vmax \,\bigr\}.
+\]
+A value $u \ge 0$ with $\Vmin \le V + u - \bar D_n \le \Vmax$ is called feasible for
+$F_n(V)$.
+
+\begin{theorem}[Validity]\label{thm:validity}
+Assume A1 to A3, the standing hypotheses S1 to S4 and the conditions of
+Lemmas~\ref{lem:energy} and~\ref{lem:head}. Consider a search node at time $t_n$ with
+accumulated cost $z_n$ and aggregate storage $V_n$. Every feasible completion of the node
+has total cost at least $z_n + F_n(V_n)$.
+\end{theorem}
+
+\begin{proof}
+Take a feasible completion, with pumped volumes $u_n, \dots, u_{N-1}$ and storages
+$V_n, \dots, V_N$. By Lemma~\ref{lem:mass} the storages follow the recursion of the
+relaxation. Feasibility of the levels gives $\Vmin \le V_\ell \le \Vmax$ for all $\ell$
+and $V_N \ge \Vfin$, and $u_\ell \ge 0$ by A2. So $(u_\ell)$ is feasible for the problem
+defining $F_n(V_n)$, with relaxation cost $\sum_{\ell \ge n} c_\ell\, \emin\, u_\ell$. By
+Corollary~\ref{cor:cost} the true remaining cost is at least this sum, which is at least
+$F_n(V_n)$: indeed, $F_N(V_N) = 0$, and if
+$\sum_{\ell' > \ell} c_{\ell'} \emin u_{\ell'} \ge F_{\ell+1}(V_{\ell+1})$, then, since
+$u_\ell$ is feasible for $F_\ell(V_\ell)$,
+$\sum_{\ell' \ge \ell} c_{\ell'} \emin u_{\ell'} \ge c_\ell\, \emin\, u_\ell +
+F_{\ell+1}(V_{\ell+1}) \ge F_\ell(V_\ell)$.
+\end{proof}
+
+The pruning rule discards a node when $z_n + F_n(V_n) \ge \mathrm{UB}$, where UB is the
+incumbent cost. By Theorem~\ref{thm:validity}, no completion of a discarded node improves
+the incumbent. The bound uses only the level limits, the final-level condition and the
+pressure constraints (through Lemma~\ref{lem:head}); the actuation limits are relaxed.
+
+\subsection{Tabulation}\label{sec:table}
+
+\begin{lemma}[Monotonicity]\label{lem:monotone}
+Each $F_n$ is non-increasing in $V$.
+\end{lemma}
+
+\begin{proof}
+By backward induction; $F_N$ is non-increasing. Let $V \le V'$. If $F_n(V) = +\infty$
+there is nothing to prove. Otherwise fix $\varepsilon > 0$ and let $u$ be feasible for
+$F_n(V)$ with $c_n\, \emin\, u + F_{n+1}(V + u - \bar D_n) \le F_n(V) + \varepsilon$. If
+$u \ge V' - V$, use $u' = u - (V' - V)$ from $V'$: the successor is the same and the cost
+is not larger, since $c_n \ge 0$ (S1). Otherwise use $u' = 0$: the successor
+$V' - \bar D_n$ satisfies $V + u - \bar D_n \le V' - \bar D_n \le \Vmax$ (as
+$\bar D_n \ge 0$), so it is feasible, and
+$F_{n+1}(V' - \bar D_n) \le F_{n+1}(V + u - \bar D_n)$ by the induction hypothesis, while
+the pumping cost $0$ does not exceed $c_n\, \emin\, u$. In both cases
+$F_n(V') \le F_n(V) + \varepsilon$, and $\varepsilon$ is arbitrary.
+\end{proof}
+
+Take a grid $\hat V_j = \Vmin + j\delta$, $j = 0, \dots, G-1$, with
+$\hat V_{G-1} = \Vmax$, and let $\lceil V \rceil$ denote the smallest $j$ with
+$\hat V_j \ge V$. Put $\hat V_{-1} = \hat V_0$ and define
+\[
+  T_N[j] = F_N(\hat V_j), \qquad
+  T_n[i] = \min_{0 \le j < G} \bigl\{\, c_n\, \emin \max\bigl(0,\ \hat V_{j-1} - \hat V_i
+  + \bar D_n\bigr) + T_{n+1}[j] \,\bigr\}.
+\]
+
+\begin{proposition}[The table is a lower bound]\label{prop:table}
+$T_n[\lceil V \rceil] \le F_n(V)$ for all $n$ and all $V \in [\Vmin, \Vmax]$.
+\end{proposition}
+
+\begin{proof}
+By backward induction. Let $i = \lceil V \rceil$, so $\hat V_i \ge V$. For $n = N$ the
+claim follows from Lemma~\ref{lem:monotone}. For $n < N$, if $F_n(V) = +\infty$ there is
+nothing to prove. Otherwise fix $\varepsilon > 0$, let $u$ be feasible for $F_n(V)$ with
+$c_n\, \emin\, u + F_{n+1}(V') \le F_n(V) + \varepsilon$, where
+$V' = V + u - \bar D_n \in [\Vmin, \Vmax]$, and let $j = \lceil V' \rceil$. Then
+$V' \ge \hat V_{j-1}$ (by the choice of $j$ if $j \ge 1$, and because
+$\hat V_{-1} = \hat V_0 = \Vmin$ if $j = 0$), hence
+$u \ge \hat V_{j-1} - V + \bar D_n \ge \hat V_{j-1} - \hat V_i + \bar D_n$, and
+$u \ge 0$. Therefore, as $c_n\, \emin \ge 0$,
+$c_n\, \emin\, u \ge c_n\, \emin \max(0,\ \hat V_{j-1} - \hat V_i + \bar D_n)$, and
+$F_{n+1}(V') \ge T_{n+1}[j]$ by the induction hypothesis. Adding the two inequalities
+gives $F_n(V) + \varepsilon \ge T_n[i]$, and $\varepsilon$ is arbitrary.
+\end{proof}
+
+The solver uses $T_n[\lceil V_n \rceil]$ in place of $F_n(V_n)$, which by
+Proposition~\ref{prop:table} and Theorem~\ref{thm:validity} is still a valid bound. Each
+stage is computed in $O(G)$ operations with a prefix minimum (targets reached without
+pumping) and a suffix minimum (targets that need pumping), so the table costs $O(NG)$
+once per run and each lookup costs $O(1)$.
+
+\subsection{Implementation remarks}\label{sec:remarks}
+
+\begin{remark}\label{rem:siblings}
+After a node is pruned by cost, the solver skips its siblings with more running pumps.
+This rule relies on $z_n$ increasing with the number of pumps. The quantity
+$z_n + F_n(V_n)$ has no such monotonicity, since pumping more now raises $V_n$ and lowers
+$F_n(V_n)$. Sibling skipping is therefore applied only when $z_n \ge \mathrm{UB}$ by
+itself, that is, only to the accumulated-cost bound.
+\end{remark}
+
+\begin{remark}\label{rem:tolerance}
+The results are stated for the exact discrete model (A1). The hydraulic solver satisfies
+continuity and the head--flow relation only up to its convergence tolerance, so the
+implementation multiplies the unit cost $c_n\, \emin$ by 0.999 as an empirical safeguard;
+we do not prove that this factor covers the convergence residuals. As a check, the search
+with the bound returns the same optima as the search without it in all benchmark cases.
+\end{remark}
+
+\begin{remark}\label{rem:generality}
+Lemma~\ref{lem:head} is the only network-specific step.  At start-up the implementation
+verifies conditions (i) and (ii), assumption A3 (identical cylindrical tanks whose declared
+limits lie outside the operating limits), the fixed-demand model, and the parts of A2 that
+concern the reservoir, emitters and leakage; it also checks that the head curve decreases
+beyond the last breakpoint. The bound is disabled if any of these checks fails. The
+remaining hypotheses were verified for the benchmark from the input data.
+\end{remark}
+
+
+\section{Hydraulic accuracy sensitivity}\label{sec:accuracy}
+
+To assess numerical sensitivity, we varied the hydraulic convergence tolerance across $10^{-3}$, $10^{-4}$, and $10^{-7}$. The study comprised two complementary experiments. First, each of the three optimal pump schedules under the periodic count was replayed five times at every tolerance while holding all pump decisions fixed, thereby isolating hydraulic solver behavior. Second, the complete problem was reoptimized three times for every combination of the maximum number of actuations per pump, $NA_{\max}\in\{1,2,3\}$, and tolerance, capturing possible effects on the search tree, selected schedule, and runtime. Both schedule replays and full re-optimizations converged successfully, producing feasible schedules across all tested solver tolerances.
+
+The results of the sensitivity analysis are summarized in Tables~\ref{tab:accuracy_fixed} and~\ref{tab:accuracy_optimization}. For fixed schedules (Table~\ref{tab:accuracy_fixed}), relative to the $10^{-4}$ baseline, median hydraulic execution time decreases by 5--9\% at $10^{-3}$ and increases by 12--13\% at $10^{-7}$. The median cumulative number of hydraulic iterations (\emph{trials}) decreases by 7--10\% at $10^{-3}$ and increases by 15--18\% at $10^{-7}$. Because these sub-millisecond measurements isolate the hydraulic kernel, Table~\ref{tab:accuracy_optimization} evaluates the end-to-end optimization impact. Tightening the accuracy to $10^{-7}$ increases total wall-clock time by 7--8\% for $NA_{\max}=2$ and $3$, where solver computation dominates MPI launch overhead. Although tree-traversal node counts exhibit minor floating-point variations, all nine optimizations for each $NA_{\max}$ select the same optimal schedule. Accuracy-dependent costs differ by less than $10^{-4}$ and therefore agree at the reported cent precision. We retain $10^{-4}$ as the reference used in the main experiments.
+
+\begin{table}[htbp]
+\centering
+\caption{Hydraulic sensitivity of fixed schedules across convergence tolerances.}
+\label{tab:accuracy_fixed}
+\small
+\input{Table_5_accuracy_fixed.tex}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{End-to-end optimization sensitivity across convergence tolerances.}
+\label{tab:accuracy_optimization}
+\small
+\input{Table_6_accuracy_optimization.tex}
+\end{table}
+
+\end{document}
