@@ -9,7 +9,8 @@ embedded EPANET hydraulic engine to optimize day-ahead pump schedules subject
 to hydraulic, operational, and energy-cost constraints.
 
 The repository includes the precomputed data used to reconstruct the tables
-and figures of the accompanying article. Versioned releases are archived in the
+and figures of the accompanying article, and its
+[Supplemental Materials](paper/Supplemental_Materials.pdf). Versioned releases are archived in the
 [project Zenodo record](https://doi.org/10.5281/zenodo.19363091).
 
 ## Requirements and build
